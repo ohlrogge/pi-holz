@@ -274,21 +274,26 @@ Gallery image uploads are done via the GitHub web UI or by a future gallery coll
 
 ## 7. Implementation Order
 
-1. **`hugo.toml`** — rename config, fill in real values, delete `config.toml` + `netlify.toml`
-2. **Content scaffold** — create placeholder `index.md` files for all sections
-3. **Hero partial** — `layouts/partials/hero.html` + `layouts/index.html`
-4. **Custom CSS** — `assets/css/custom.css` with full design from draft
-5. **CMS cleanup** — fix `static/admin/config.yml`, update `index.html` to Decap v3
-6. **Cloudflare Pages** — connect repo, set env vars
-7. **OAuth proxy** — set up GitHub OAuth for CMS
-8. **Content hand-off** — short guide for Matthias
+1. [x] **`hugo.toml`** — rename config, fill in real values
+2. [x] **Content scaffold** — placeholder `index.md` files for all sections
+3. [x] **Hero partial** — `layouts/partials/hero.html` + `layouts/index.html`
+4. [x] **Custom CSS** — `assets/css/custom.css` with full design, Adobe Fonts
+5. [x] **Cloudflare Pages** — connected, build command `hugo -b $CF_PAGES_URL`, `HUGO_VERSION=0.157.0`
+6. [x] **German README** — content editing guide for Matthias, npm setup
+7. [ ] **Husky pre-commit hook** — block commits that break the Hugo build
+   - `npm install --save-dev husky`
+   - `.husky/pre-commit` runs `npm run build`
+   - If Hugo errors → commit is blocked with clear message
+   - Protects Matthias from pushing broken content to the live site
+8. [ ] **Contact form** — `mailto:` is current fallback; investigate Cloudflare Email Routing
+   - Cloudflare Email Routing can forward form submissions to `ohlrogge@outlook.com`
+   - May need a small Cloudflare Worker to handle POST from a form
+9. [ ] **Go live** — remove `noindex` from `hugo.toml` when ready to publish
 
 ---
 
 ## 8. Open Questions
 
-- [ ] Contact form: the draft uses `mailto:` — keep as-is, or use a form service (Formspree)?
-  Formspree gives a real inbox and spam filter, no backend needed. - Can I use cloudflare mail service?
-- [ ] Gallery: do photos exist yet, or does Matthias upload them after launch? Matthias will upload them after launch
-- [ ] `noindex` stays on until Matthias is ready to go live — remove `robots` meta then.
-- [x] Logo: Generate a logo with the new font. use the SVG π mark from the draft as favicon too
+- [ ] Contact form: Cloudflare Email Routing + Worker, or third-party (Formspree)?
+- [ ] Logo / favicon: generate proper favicon from the π SVG mark with EB Garamond font
+- [ ] Real gallery photos: Matthias uploads after launch via git
