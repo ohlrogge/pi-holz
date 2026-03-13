@@ -206,9 +206,14 @@ git checkout -- .   # Alle Änderungen seit dem letzten Commit rückgängig mach
 
 ## Technische Details (für den Entwickler)
 
-- **Framework:** Hugo Extended v0.157.0 via [`hugo-extended`](https://www.npmjs.com/package/hugo-extended) npm-Paket
+- **Framework:** Hugo Extended v0.157.0
+  - Lokal: via [`hugo-extended`](https://www.npmjs.com/package/hugo-extended) npm-Paket (`npm install`)
+  - Cloudflare: built-in Hugo via Umgebungsvariable `HUGO_VERSION=0.157.0`
 - **Theme:** [hugo-theme-gallery](https://github.com/nicokaiser/hugo-theme-gallery) (Git-Submodul)
-- **Hosting:** Cloudflare Pages — Deploy-Befehl: `bash build.sh` (`npm install && npm run build`), Output: `public/` (via `wrangler.toml`)
+- **Hosting:** Cloudflare Pages
+  - Build-Befehl: `hugo -b $CF_PAGES_URL`
+  - Output-Verzeichnis: `public`
+  - Umgebungsvariablen: `HUGO_VERSION=0.157.0`, `CF_PAGES_URL=pi-holz.de`
 - **Schriften:** Adobe Fonts via Typekit (`rks3jql`) — EB Garamond + FF Dagny Web Pro
 - **Farben:** `--dark: #2a1a0e`, `--gold: #a0732a`, `--cream: #f5f0e8`
 - **Layouts überschrieben:** `layouts/index.html`, `layouts/partials/hero.html`, `layouts/partials/site-nav.html`, `layouts/partials/footer.html`
