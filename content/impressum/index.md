@@ -17,8 +17,6 @@ Web: [www.pi-holz.de](https://pi-holz.de)
 
 ## Steuer & Gewerbe
 
-Privatperson – kein Gewerbe angemeldet.
-Keine Umsatzsteuer-ID vorhanden.
 Gemäß § 19 UStG wird keine Umsatzsteuer erhoben (Kleinunternehmerregelung).
 
 ## Haftung für Inhalte (§ 7 TMG)
