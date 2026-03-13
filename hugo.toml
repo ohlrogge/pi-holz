@@ -1,0 +1,39 @@
+baseURL       = "https://pi-holz.de/"
+languageCode  = "de"
+title         = "pi Holz"
+theme         = "hugo-theme-gallery"
+publishDir    = "public"
+
+[params]
+  description  = "Handgedrehte Holzobjekte aus Hamburg – mit Leidenschaft gefertigt."
+  defaultTheme = "light"
+  heroLine1    = "Holz."
+  heroLine2    = "Gedreht."
+  heroLine3    = "Mit Herz."
+  heroSubtitle = "Unikate aus Hamburg"
+  author       = { name = "Matthias Pienitz", email = "kontakt@pi-holz.de" }
+
+[[menus.main]]
+  name   = "Über mich"
+  url    = "/#ueber"
+  weight = 1
+[[menus.main]]
+  name   = "Galerie"
+  url    = "/galerie/"
+  weight = 2
+[[menus.main]]
+  name   = "Blog"
+  url    = "/blog/"
+  weight = 3
+
+[[menus.footer]]
+  name = "Impressum"
+  url  = "/impressum/"
+[[menus.footer]]
+  name = "Datenschutz"
+  url  = "/datenschutz/"
+
+copyright = "© Matthias Pienitz · Fotos: [Joel & Jasmin Forestbird](https://unsplash.com/@theforestbird) und [Alexandre Jaquetoni](https://unsplash.com/@alex_jaquetoni) via Unsplash"
+
+[markup.goldmark.renderer]
+  unsafe = true

@@ -1,0 +1,67 @@
+{{ define "header" }}
+  {{ partial "site-nav.html" . }}
+  {{ partial "hero.html" . }}
+{{ end }}
+
+{{ define "main" }}
+
+  {{/* ── Über mich ── */}}
+  <section id="ueber" class="home-section home-section--light">
+    <div class="home-section-inner">
+      <div class="section-label">Über mich</div>
+      <h2>Matthias Pienitz –<br><em>Leidenschaft</em> für Holz</h2>
+      <div class="prose-text">{{ .Content }}</div>
+    </div>
+  </section>
+
+  <div class="home-divider"></div>
+
+  {{/* ── Leistungen ── */}}
+  {{ if .Params.leistungen }}
+  <section id="leistungen" class="home-section home-section--cream">
+    <div class="home-section-inner">
+      <div class="section-label">Was ich anbiete</div>
+      <h2>Handgedreht –<br>nach Ihrem <em>Wunsch</em></h2>
+      <div class="leistungen-grid">
+        {{ range $i, $card := .Params.leistungen }}
+        <div class="leistung-card" data-nr="{{ printf "%02d" (add $i 1) }}">
+          <h3>{{ $card.title }}</h3>
+          <p>{{ $card.text }}</p>
+        </div>
+        {{ end }}
+      </div>
+    </div>
+  </section>
+  {{ end }}
+
+  <div class="home-divider"></div>
+
+  {{/* ── Galerie ── */}}
+  {{ $albums := where .Pages "Params.private" "ne" true }}
+  {{ if $albums }}
+  <section id="galerie" class="home-section home-section--light">
+    <div class="home-section-inner">
+      <div class="section-label">Galerie</div>
+      <h2>Aus der <em>Werkstatt</em></h2>
+    </div>
+    <section class="galleries">
+      {{ range $albums }}
+        {{ partial "album-card.html" . }}
+      {{ end }}
+    </section>
+  </section>
+  {{ end }}
+
+  {{/* ── Anfrage CTA ── */}}
+  <section id="anfrage" class="home-section home-section--dark">
+    <div class="home-section-inner home-section-inner--center">
+      <div class="section-label section-label--light">Kontakt & Anfrage</div>
+      <h2 class="h2--light">Ihr <em>Wunschstück</em><br>beginnt hier</h2>
+      <p class="anfrage-text">
+        Schildern Sie mir Ihre Idee – ich melde mich persönlich mit einem unverbindlichen Angebot zurück.
+      </p>
+      <a href="mailto:kontakt@pi-holz.de" class="anfrage-btn">Unverbindlich anfragen →</a>
+    </div>
+  </section>
+
+{{ end }}
