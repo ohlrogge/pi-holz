@@ -1,3 +1,4 @@
 #!/bin/bash
 set -e
-hugo --gc --minify
+npm install
+npm run build
