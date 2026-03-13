@@ -18,21 +18,22 @@ Du brauchst keinen FTP-Zugang, kein WordPress, kein Admin-Panel.
 
 ## Einmalige Einrichtung
 
+Du brauchst: **Git** und **Node.js** (einmalig installieren von [nodejs.org](https://nodejs.org), LTS-Version).
+
 ```bash
 # Repository auf deinen Computer laden
 git clone https://github.com/ohlrogge/pi-holz.git
 cd pi-holz
 
-# Hugo installieren (falls noch nicht vorhanden)
-# macOS: brew install hugo
-# Doku: https://gohugo.io/installation/
+# Abhängigkeiten installieren (lädt Hugo automatisch herunter)
+npm install
 
 # Website lokal starten und im Browser ansehen
-hugo server
+npm run dev
 # Öffne http://localhost:1313 im Browser
 ```
 
-Mit `hugo server` siehst du sofort, wie die Seite nach deinen Änderungen aussieht — ohne etwas hochzuladen.
+Mit `npm run dev` siehst du sofort, wie die Seite nach deinen Änderungen aussieht — ohne etwas hochzuladen.
 
 ---
 
@@ -205,9 +206,9 @@ git checkout -- .   # Alle Änderungen seit dem letzten Commit rückgängig mach
 
 ## Technische Details (für den Entwickler)
 
-- **Framework:** Hugo (extended) v0.157.0
+- **Framework:** Hugo Extended v0.157.0 via [`hugo-extended`](https://www.npmjs.com/package/hugo-extended) npm-Paket
 - **Theme:** [hugo-theme-gallery](https://github.com/nicokaiser/hugo-theme-gallery) (Git-Submodul)
-- **Hosting:** Cloudflare Pages — Build-Befehl: `hugo`, Output: `public/`, Umgebungsvariable: `HUGO_VERSION=0.157.0`
+- **Hosting:** Cloudflare Pages — Deploy-Befehl: `bash build.sh` (`npm install && npm run build`), Output: `public/` (via `wrangler.toml`)
 - **Schriften:** Adobe Fonts via Typekit (`rks3jql`) — EB Garamond + FF Dagny Web Pro
 - **Farben:** `--dark: #2a1a0e`, `--gold: #a0732a`, `--cream: #f5f0e8`
 - **Layouts überschrieben:** `layouts/index.html`, `layouts/partials/hero.html`, `layouts/partials/site-nav.html`, `layouts/partials/footer.html`
