@@ -14,11 +14,11 @@ leistungen:
 
 Das Drechseln ist für mich kein Beruf und kein Gewerbe – sondern eine echte Leidenschaft.
 In meiner privaten Werkstatt in Hamburg entstehen handgedrehte Unikate, jedes ein Einzelstück,
-mit Sorgfalt und Freude gefertigt.
+mit Sorgfalt und Freude gefertigt.  
+Ich bin kein ausgebildeter Drechsler, größere Objekte und Serienfertigungen überlasse ich gerne den Profis.
 
-Ich bin kein ausgebildeter Drechsler, aber ich arbeite mit dem Anspruch, etwas Bleibendes zu schaffen.
-Meine Materialien beziehe ich möglichst aus regionalen Quellen – kurze Wege.
+Meine Materialien beziehe ich möglichst aus regionalen Quellen.  
 Die Oberflächen behandle ich vorzugsweise mit natürlichen Ölen und Wachsen, ohne unnötige Chemie.
 
-Als Privatperson biete ich keine gewerblichen Leistungen an.
-Jede Anfrage wird individuell und persönlich besprochen – ich verspreche nur, was ich auch halten kann.
+Als Privatperson biete ich keine gewerblichen Leistungen an.  
+Jede Anfrage wird individuell und persönlich besprochen.
