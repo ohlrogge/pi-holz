@@ -3,7 +3,7 @@ title: "pi Holz"
 description: "Handgedrehte Holzobjekte aus Hamburg – mit Leidenschaft gefertigt."
 leistungen:
   - title: "Schreibstifte & Drehobjekte"
-    text: "Ich habe immer fertige Stifte im Angebot, nach Absprache stelle ich aus einem breites Spektrum an Hölzern neue her – ganz nach Ihrem Geschmack."
+    text: "Ich habe immer fertige Stifte im Angebot, nach Absprache stelle ich aus einem breiten Spektrum an Hölzern neue her – ganz nach Ihrem Geschmack."
   - title: "Kleine Küchenhelfer"
     text: "Trichter für Pfeffermühlen, Deckel für Dosen, kleine Schalen oder andere nützliche Drehobjekte für den Alltag."
   - title: "Sonderanfertigungen"
