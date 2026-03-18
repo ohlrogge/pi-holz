@@ -17,7 +17,7 @@ In meiner privaten Werkstatt in Hamburg entstehen handgedrehte Unikate, jedes ei
 mit Sorgfalt und Freude gefertigt.
 
 Ich bin kein ausgebildeter Drechsler, aber ich arbeite mit dem Anspruch, etwas Bleibendes zu schaffen.
-Meine Materialien beziehe ich möglichst aus regionalen Quellen – kurze Wege, bewusstes Handwerk.
+Meine Materialien beziehe ich möglichst aus regionalen Quellen – kurze Wege.
 Die Oberflächen behandle ich vorzugsweise mit natürlichen Ölen und Wachsen, ohne unnötige Chemie.
 
 Als Privatperson biete ich keine gewerblichen Leistungen an.
