@@ -6,7 +6,7 @@ type: "prose"
 ## Verantwortlicher
 
 Matthias Pienitz, Hamburg
-E-Mail: kontakt@pi-holz.de
+E-Mail: matthias@pi-holz.de
 
 ## Datenerfassung
 
