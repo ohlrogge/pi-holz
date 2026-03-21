@@ -1,5 +1,5 @@
 ---
-title: "pi Holz"
+title: "Handgemacht. Aus Holz. Aus Hamburg."
 description: "Handgedrehte Holzobjekte aus Hamburg – mit Leidenschaft gefertigt."
 leistungen:
   - title: "Schreibstifte & Drehobjekte"
