@@ -190,8 +190,6 @@ file at the project root level (`assets/css/custom.css`) to override the empty t
 ```
 content/
   _index.md              ← Home intro text (below hero, above gallery cards)
-  angebot/
-    index.md             ← Leistungen / offerings (prose, type: prose)
   galerie/               ← Hugo-theme-gallery albums
     stifte/
       index.md           ← Album: Stifte & Drehobjekte
@@ -280,14 +278,7 @@ Gallery image uploads are done via the GitHub web UI or by a future gallery coll
 4. [x] **Custom CSS** — `assets/css/custom.css` with full design, Adobe Fonts
 5. [x] **Cloudflare Pages** — connected, build command `hugo -b $CF_PAGES_URL`, `HUGO_VERSION=0.157.0`
 6. [x] **German README** — content editing guide for Matthias, npm setup
-7. [ ] **Husky pre-commit hook** — block commits that break the Hugo build
-   - `npm install --save-dev husky`
-   - `.husky/pre-commit` runs `npm run build`
-   - If Hugo errors → commit is blocked with clear message
-   - Protects Matthias from pushing broken content to the live site
-8. [ ] **Contact form** — `mailto:` is current fallback; investigate Cloudflare Email Routing
-   - Cloudflare Email Routing can forward form submissions to `ohlrogge@outlook.com`
-   - May need a small Cloudflare Worker to handle POST from a form
+8. [ ] **Contact form** — `mailto:` we use mailto:matthias@pi-holz.de
 9. [ ] **Go live** — remove `noindex` from `hugo.toml` when ready to publish
 
 ---

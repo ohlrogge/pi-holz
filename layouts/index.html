@@ -37,18 +37,14 @@
   <div class="home-divider"></div>
 
   {{/* ── Galerie ── */}}
-  {{ $albums := where .Pages "Params.private" "ne" true }}
-  {{ if $albums }}
+  {{ $imagesPage := .Site.GetPage "images" }}
+  {{ with $imagesPage }}
   <section id="galerie" class="home-section home-section--light">
     <div class="home-section-inner">
       <div class="section-label">Galerie</div>
       <h2>Aus der <em>Werkstatt</em></h2>
     </div>
-    <section class="galleries">
-      {{ range $albums }}
-        {{ partial "album-card.html" . }}
-      {{ end }}
-    </section>
+    {{ partial "gallery.html" . }}
   </section>
   {{ end }}
 
