@@ -8,6 +8,7 @@
   --brown: #5c3d2e;
   --dark:  #2a1a0e;
   --gold:  #a0732a;
+  --gold-light: #e8c97a;
   --light: #faf7f2;
   --text:  #3a2510;
   --muted: #8a7060;
@@ -57,7 +58,7 @@ body::before {
 
 .nav-brand {
   font-family: eb-garamond, Georgia, serif;
-  color: var(--gold);
+  color: var(--gold-light);
   font-size: 1.05rem;
   letter-spacing: 0.1em;
   text-decoration: none;
@@ -101,7 +102,7 @@ body::before {
 /* CTA button */
 .nav-cta {
   display: inline-block;
-  background: var(--gold);
+  background: var(--gold-light);
   color: var(--dark);
   padding: 0.5rem 1.25rem;
   font-family: Lato, sans-serif;
@@ -191,7 +192,7 @@ body::before {
 }
 
 .hero-headline span {
-  color: var(--gold);
+  color: var(--gold-light);
   font-style: italic;
 }
 
@@ -232,7 +233,11 @@ body::before {
 
 .home-section--light  { background: var(--light); }
 .home-section--cream  { background: var(--cream); }
-.home-section--dark   { background: var(--dark); }
+.home-section--dark   {
+  background:
+    linear-gradient(rgba(42, 26, 14, 0.87), rgba(42, 26, 14, 0.87)),
+    url('/images/header-background.webp') center / cover no-repeat;
+}
 
 .home-section-inner {
   max-width: 900px;
@@ -272,7 +277,7 @@ body::before {
 }
 
 .section-label--light {
-  color: var(--gold);
+  color: var(--gold-light);
   justify-content: center;
 }
 
@@ -300,7 +305,7 @@ h2 em {
 }
 
 .h2--light em {
-  color: var(--gold);
+  color: var(--cream);
 }
 
 /* Prose text */
@@ -346,7 +351,7 @@ h2 em {
 
 /* ── Anfrage CTA ── */
 .anfrage-text {
-  color: rgba(245, 240, 232, 0.6);
+  color: var(--cream);
   max-width: 540px;
   margin: 0 auto 2.5rem;
   font-size: 1.05rem;
@@ -354,7 +359,7 @@ h2 em {
 
 .anfrage-btn {
   display: inline-block;
-  background: var(--gold);
+  background: var(--gold-light);
   color: var(--dark);
   padding: 1rem 2.5rem;
   font-family: Lato, sans-serif;
