@@ -2,10 +2,10 @@
 title: "Handgemacht. Aus Holz. Aus Hamburg."
 description: "Handgedrehte Holzobjekte aus Hamburg – mit Leidenschaft gefertigt."
 leistungen:
-  - title: "Schreibstifte & Drehobjekte"
+  - title: "Kugelschreiber"
     text: "Ich habe immer fertige Stifte im Angebot, nach Absprache stelle ich aus einem breiten Spektrum an Hölzern neue her – ganz nach Ihrem Geschmack."
   - title: "Kleine Küchenhelfer"
-    text: "Trichter für Pfeffermühlen, Deckel für Dosen, kleine Schalen oder andere nützliche Drehobjekte für den Alltag."
+    text: "Trichter für Pfeffermühlen, Salz- und Pfefferstreuer, Eierbecher, Deckel für Dosen, kleine Schalen oder andere nützliche Drehobjekte für den Alltag."
   - title: "Sonderanfertigungen"
     text: "Sie haben eine Idee? Ich höre zu. Was ich leisten kann, besprechen wir persönlich – ehrlich und ohne leere Versprechen."
   - title: "Natürliche Oberflächen"
