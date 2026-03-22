@@ -42,7 +42,9 @@ body::before {
   left: 0;
   right: 0;
   z-index: 200;
-  background: rgba(42, 26, 14, 0.92);
+  background:
+    linear-gradient(rgba(42, 26, 14, 0.93), rgba(42, 26, 14, 0.93)),
+    url('/images/header-background.webp') center / cover no-repeat;
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border-bottom: 1px solid rgba(160, 115, 42, 0.2);
@@ -128,7 +130,9 @@ body::before {
   align-items: center;
   text-align: center;
   padding: 4rem 2rem;
-  background: var(--dark);
+  background:
+    linear-gradient(rgba(42, 26, 14, 0.82), rgba(42, 26, 14, 0.82)),
+    url('/images/header-background.webp') center / cover no-repeat;
   overflow: hidden;
 }
 
