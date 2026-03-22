@@ -74,13 +74,14 @@ body::before {
 
 .nav-links {
   display: flex;
-  gap: 2rem;
+  gap: 1rem;
   list-style: none;
   margin: 0;
   padding: 0;
 }
 
 .nav-links a {
+  padding: 1rem;
   color: rgba(245, 240, 232, 0.65);
   text-decoration: none;
   font-size: 0.78rem;
@@ -324,18 +325,6 @@ h2 em {
 .leistung-card:hover {
   transform: translateY(-4px);
   box-shadow: 0 12px 40px rgba(92, 61, 46, 0.1);
-}
-
-.leistung-card::before {
-  content: attr(data-nr);
-  position: absolute;
-  top: 1.2rem;
-  right: 1.5rem;
-  font-family: eb-garamond, Georgia, serif;
-  font-size: 2.5rem;
-  color: var(--warm);
-  font-weight: 700;
-  line-height: 1;
 }
 
 .leistung-card h3 {

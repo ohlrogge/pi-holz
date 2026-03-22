@@ -24,7 +24,7 @@
       <h2>Handgedreht –<br>nach Ihrem <em>Wunsch</em></h2>
       <div class="leistungen-grid">
         {{ range $i, $card := .Params.leistungen }}
-        <div class="leistung-card" data-nr="{{ printf "%02d" (add $i 1) }}">
+        <div class="leistung-card">
           <h3>{{ $card.title }}</h3>
           <p>{{ $card.text }}</p>
         </div>
