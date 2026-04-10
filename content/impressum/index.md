@@ -12,7 +12,7 @@ Hamburg, Deutschland
 
 ## Kontakt
 
-E-Mail: kontakt@pi-holz.de
+E-Mail: matthias@pi-holz.de
 Web: [www.pi-holz.de](https://pi-holz.de)
 
 ## Steuer & Gewerbe

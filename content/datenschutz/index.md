@@ -20,4 +20,4 @@ Kontaktanfragen per E-Mail oder Formular werden ausschließlich zur Bearbeitung 
 
 ## Ihre Rechte
 
-Sie haben das Recht auf Auskunft (Art. 15), Berichtigung (Art. 16), Löschung (Art. 17), Einschränkung der Verarbeitung (Art. 18) sowie Widerspruch (Art. 21 DSGVO). Bitte wenden Sie sich dazu per E-Mail an: kontakt@pi-holz.de
+Sie haben das Recht auf Auskunft (Art. 15), Berichtigung (Art. 16), Löschung (Art. 17), Einschränkung der Verarbeitung (Art. 18) sowie Widerspruch (Art. 21 DSGVO). Bitte wenden Sie sich dazu per E-Mail an: matthias@pi-holz.de

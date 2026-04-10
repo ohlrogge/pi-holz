@@ -11,7 +11,7 @@ publishDir    = "public"
   heroLine2    = "Gedreht."
   heroLine3    = "Mit Herz."
   heroSubtitle = "Unikate aus Hamburg"
-  author       = { name = "Matthias Pienitz", email = "kontakt@pi-holz.de" }
+  author       = { name = "Matthias Pienitz", email = "matthias@pi-holz.de" }
 
 [[menus.main]]
   name   = "Über mich"
