@@ -18,9 +18,13 @@ publishDir    = "public"
   url    = "/#ueber"
   weight = 1
 [[menus.main]]
+  name   = "Angebot"
+  url    = "/#leistungen"
+  weight = 2
+[[menus.main]]
   name   = "Galerie"
   url    = "/#galerie"
-  weight = 2
+  weight = 3
 
 [[menus.footer]]
   name = "Impressum"
