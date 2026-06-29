@@ -14,8 +14,6 @@
     </div>
   </section>
 
-  <div class="home-divider"></div>
-
   {{/* ── Leistungen ── */}}
   {{ if .Params.leistungen }}
   <section id="leistungen" class="home-section home-section--cream" data-nav-title="Was ich mache">
@@ -33,8 +31,6 @@
     </div>
   </section>
   {{ end }}
-
-  <div class="home-divider"></div>
 
   {{/* ── Galerie ── */}}
   {{ $imagesPage := .Site.GetPage "images" }}

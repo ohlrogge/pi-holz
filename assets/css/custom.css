@@ -241,7 +241,7 @@ body::before {
 
 /* ── Home sections ── */
 .home-section {
-  padding: 6rem 2rem;
+  padding: 4.5rem 2rem;
 }
 
 .home-section--light  { background: var(--light); }
@@ -259,12 +259,6 @@ body::before {
 
 .home-section-inner--center {
   text-align: center;
-}
-
-.home-divider {
-  width: 100%;
-  height: 1px;
-  background: linear-gradient(to right, transparent, var(--warm), transparent);
 }
 
 /* Section label */
