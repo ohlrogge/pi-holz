@@ -62,6 +62,11 @@ document.querySelectorAll('[id^="fs-gallery-"]').forEach(gallery => {
         best = s;
       }
     }
+    // The last section may sit too low on the page to ever reach the header band;
+    // once scrolled to the very bottom, treat it as active.
+    if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 2) {
+      best = sections[sections.length - 1];
+    }
     setBrand(best ? best.getAttribute("data-nav-title") : DEFAULT);
   };
 
