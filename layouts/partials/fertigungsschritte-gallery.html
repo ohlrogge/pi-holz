@@ -1,0 +1,32 @@
+{{ $slug := .RelPermalink | urlize }}
+<div class="fs-grid" id="fs-gallery-{{ $slug }}">
+  {{ range sort (.Resources.ByType "image") "Name" "asc" }}
+    {{ $title := "" }}
+    {{ with .Exif }}
+      {{ with .Tags.ImageDescription }}
+        {{ $title = . }}
+      {{ end }}
+    {{ end }}
+    {{ if and (not $title) (ne .Title .Name) }}
+      {{ $title = .Title }}
+    {{ end }}
+    {{ $thumb := .Filter (slice images.AutoOrient (images.Process "fit 800x800")) }}
+    {{ $full  := .Filter (slice images.AutoOrient (images.Process "fit 1600x1600")) }}
+    {{ $color := index $thumb.Colors 0 | default "transparent" }}
+    <a class="fs-item gallery-item"
+       href="{{ .RelPermalink }}"
+       data-pswp-src="{{ $full.RelPermalink }}"
+       data-pswp-width="{{ $full.Width }}"
+       data-pswp-height="{{ $full.Height }}"
+       title="{{ $title }}">
+      <figure style="background-color: {{ $color }}">
+        <img class="lazyload"
+             width="{{ $thumb.Width }}"
+             height="{{ $thumb.Height }}"
+             data-src="{{ $thumb.RelPermalink }}"
+             alt="{{ $title }}" />
+      </figure>
+      {{ with $title }}<figcaption class="fs-caption">{{ . }}</figcaption>{{ end }}
+    </a>
+  {{ end }}
+</div>

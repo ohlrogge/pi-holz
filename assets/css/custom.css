@@ -381,6 +381,69 @@ h2 em {
   margin-bottom: 3rem;
 }
 
+/* ── Fertigungsschritte ── */
+.fs-section {
+  margin-top: 4rem;
+  background: var(--cream);
+  border: 1px solid var(--warm);
+  padding: 2rem;
+  transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.fs-section:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+}
+
+.fs-title {
+  font-family: eb-garamond, Georgia, serif;
+  font-size: 1.3rem;
+  color: var(--brown);
+  margin: 0 0 0.8rem;
+}
+
+.fs-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+}
+
+.fs-item {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+}
+
+.fs-item figure {
+  margin: 0;
+  overflow: hidden;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+}
+
+.fs-item figure img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.4s ease;
+}
+
+.fs-item:hover figure img {
+  transform: scale(1.03);
+}
+
+.fs-caption {
+  display: block;
+  font-family: Lato, sans-serif;
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  text-align: center;
+  padding-top: 0.5rem;
+}
+
 /* ── Animations ── */
 @keyframes fadeUp {
   from { opacity: 0; transform: translateY(30px); }
@@ -397,4 +460,9 @@ h2 em {
   .nav-links { display: none; }
   .home-section { padding: 4rem 1.5rem; }
   .leistungen-grid { grid-template-columns: 1fr; }
+  .fs-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 900px) and (min-width: 641px) {
+  .fs-grid { grid-template-columns: repeat(2, 1fr); }
 }

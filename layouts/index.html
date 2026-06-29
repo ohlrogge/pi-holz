@@ -45,6 +45,15 @@
       <h2>Aus der <em>Werkstatt</em></h2>
     </div>
     {{ partial "gallery.html" . }}
+    {{ $fsPage := $.Site.GetPage "fertigungsschritte" }}
+    {{ with $fsPage }}
+      {{ range .Pages }}
+      <div class="home-section-inner fs-section">
+        <h3 class="fs-title">{{ .Title }}</h3>
+        {{ partial "fertigungsschritte-gallery.html" . }}
+      </div>
+      {{ end }}
+    {{ end }}
   </section>
   {{ end }}
 
