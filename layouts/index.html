@@ -6,7 +6,7 @@
 {{ define "main" }}
 
   {{/* ── Über mich ── */}}
-  <section id="ueber" class="home-section home-section--light">
+  <section id="ueber" class="home-section home-section--light" data-nav-title="Über mich">
     <div class="home-section-inner">
       <div class="section-label">Über mich</div>
       <h2>Matthias Pienitz –<br><em>Leidenschaft</em> für Holz</h2>
@@ -18,9 +18,9 @@
 
   {{/* ── Leistungen ── */}}
   {{ if .Params.leistungen }}
-  <section id="leistungen" class="home-section home-section--cream">
+  <section id="leistungen" class="home-section home-section--cream" data-nav-title="Was ich mache">
     <div class="home-section-inner">
-      <div class="section-label">Was ich anbiete</div>
+      <div class="section-label">Was ich mache</div>
       <h2>Handgedreht –<br>nach Ihrem <em>Wunsch</em></h2>
       <div class="leistungen-grid">
         {{ range $i, $card := .Params.leistungen }}
@@ -39,7 +39,7 @@
   {{/* ── Galerie ── */}}
   {{ $imagesPage := .Site.GetPage "images" }}
   {{ with $imagesPage }}
-  <section id="galerie" class="home-section home-section--light">
+  <section id="galerie" class="home-section home-section--light" data-nav-title="Galerie">
     <div class="home-section-inner">
       <div class="section-label">Galerie</div>
       <h2>Aus der <em>Werkstatt</em></h2>
@@ -48,7 +48,7 @@
     {{ $fsPage := $.Site.GetPage "fertigungsschritte" }}
     {{ with $fsPage }}
       {{ range .Pages }}
-      <div class="home-section-inner fs-section">
+      <div class="home-section-inner fs-section" data-nav-title="{{ .Title }}">
         <h3 class="fs-title">{{ .Title }}</h3>
         {{ partial "fertigungsschritte-gallery.html" . }}
       </div>
