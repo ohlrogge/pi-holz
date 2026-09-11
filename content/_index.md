@@ -18,6 +18,6 @@ mit Sorgfalt und Freude gefertigt.
 Ich bin kein ausgebildeter Drechsler, größere Objekte und Serienfertigungen überlasse ich gerne den Profis.
 
 Meine Materialien beziehe ich möglichst aus regionalen Quellen.  
-Die Oberflächen behandle ich vorzugsweise mit natürlichen Ölen und Wachsen, ohne unnötige Chemie.
+Die Oberflächen behandle ich vorzugsweise mit natürlichen Ölen und Wachsen ohne unnötige Chemie.
  
 Jede Anfrage wird individuell und persönlich bearbeitet.
