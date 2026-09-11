@@ -206,7 +206,7 @@ body::before {
 .hero-headline {
   font-family: Alegreya, Georgia, serif;
   font-size: clamp(3rem, 8vw, 7rem);
-  font-weight: 800;
+  font-weight: 600;
   color: var(--cream);
   line-height: 1.05;
   letter-spacing: -0.02em;
@@ -304,7 +304,7 @@ body::before {
 h2 {
   font-family: Alegreya, Georgia, serif;
   font-size: clamp(2rem, 5vw, 3.2rem);
-  font-weight: 400;
+  font-weight: 600;
   line-height: 1.2;
   color: var(--dark);
   margin: 0 0 1.5rem;
@@ -353,6 +353,7 @@ h2 em {
 
 .leistung-card h3 {
   font-family: Alegreya, Georgia, serif;
+  font-weight: 600;
   font-size: 1.3rem;
   color: var(--brown);
   margin: 0 0 0.8rem;
@@ -413,7 +414,7 @@ h2 em {
 .fs-title {
   font-family: Alegreya, Georgia, serif;
   font-size: clamp(1.9rem, 4.5vw, 2.8rem);
-  font-weight: 400;
+  font-weight: 600;
   line-height: 1.15;
   color: var(--brown);
   margin: 0 0 1.5rem;
@@ -441,6 +442,15 @@ h2 em {
 
 .fs-track::-webkit-scrollbar {
   display: none;
+}
+
+/* Brief fade while jumping from the last slide back to the first. */
+.fs-track {
+  transition: opacity 0.2s ease;
+}
+
+.fs-track.is-restarting {
+  opacity: 0;
 }
 
 .fs-slide {
@@ -518,6 +528,11 @@ h2 em {
   background: var(--gold-light);
   border-color: var(--gold-light);
   color: var(--dark);
+}
+
+/* The ↺ glyph renders noticeably smaller than the arrows at the same size. */
+.fs-arrow--restart {
+  font-size: 1.4rem;
 }
 
 .fs-arrow:disabled {

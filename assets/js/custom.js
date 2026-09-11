@@ -48,6 +48,21 @@ document.querySelectorAll(".fs-carousel").forEach((carousel) => {
     const idx = Math.max(0, Math.min(slides.length - 1, i));
     track.scrollTo({ left: offsetOf(idx) });
   };
+  const last = slides.length - 1;
+  const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  // From the last slide, jump straight back to the first instead of scrolling past all of them.
+  const restart = () => {
+    const jump = () => {
+      track.scrollTo({ left: 0, behavior: "instant" });
+      track.classList.remove("is-restarting");
+      update();
+    };
+    if (reduceMotion) return jump();
+    track.classList.add("is-restarting");
+    setTimeout(jump, 200);
+  };
+  const forward = () => (current() === last ? restart() : goTo(current() + 1));
 
   // Load the current slide's image and its neighbours before they scroll into view.
   const preload = (idx) => {
@@ -62,16 +77,20 @@ document.querySelectorAll(".fs-carousel").forEach((carousel) => {
   const update = () => {
     const idx = current();
     prev.disabled = idx === 0;
-    next.disabled = idx === slides.length - 1;
+    const atEnd = idx === last;
+    next.textContent = atEnd ? "↺" : "→";
+    next.setAttribute("aria-label", atEnd ? "Zurück zum Anfang" : "Nächster Schritt");
+    next.title = atEnd ? "Von vorn" : "";
+    next.classList.toggle("fs-arrow--restart", atEnd);
     bar.style.width = `${((idx + 1) / slides.length) * 100}%`;
     preload(idx);
   };
 
   prev.addEventListener("click", () => goTo(current() - 1));
-  next.addEventListener("click", () => goTo(current() + 1));
+  next.addEventListener("click", forward);
   carousel.addEventListener("keydown", (e) => {
     if (e.key === "ArrowLeft") { e.preventDefault(); goTo(current() - 1); }
-    if (e.key === "ArrowRight") { e.preventDefault(); goTo(current() + 1); }
+    if (e.key === "ArrowRight") { e.preventDefault(); forward(); }
   });
 
   let ticking = false;
