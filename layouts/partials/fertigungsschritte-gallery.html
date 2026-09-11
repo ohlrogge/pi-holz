@@ -1,32 +1,50 @@
 {{ $slug := .RelPermalink | urlize }}
-<div class="fs-grid" id="fs-gallery-{{ $slug }}">
-  {{ range sort (.Resources.ByType "image") "Name" "asc" }}
-    {{ $title := "" }}
-    {{ with .Exif }}
-      {{ with .Tags.ImageDescription }}
-        {{ $title = . }}
+{{ $images := sort (.Resources.ByType "image") "Name" "asc" }}
+{{ $count := len $images }}
+<div class="fs-carousel" id="fs-gallery-{{ $slug }}"
+     role="region" aria-roledescription="Karussell" aria-label="{{ .Title }}" tabindex="0">
+  <div class="fs-track">
+    {{ range $i, $img := $images }}
+      {{ $title := "" }}
+      {{ with $img.Exif }}
+        {{ with .Tags.ImageDescription }}
+          {{ $title = . }}
+        {{ end }}
       {{ end }}
+      {{ if and (not $title) (ne $img.Title $img.Name) }}
+        {{ $title = $img.Title }}
+      {{ end }}
+      {{ $thumb := $img.Filter (slice images.AutoOrient (images.Process "fit 900x900")) }}
+      {{ $full  := $img.Filter (slice images.AutoOrient (images.Process "fit 1600x1600")) }}
+      {{ $color := index $thumb.Colors 0 | default "transparent" }}
+      <div class="fs-slide" role="group" aria-roledescription="Folie"
+           aria-label="Schritt {{ add $i 1 }} von {{ $count }}">
+        <a class="fs-slide-image gallery-item"
+           href="{{ $img.RelPermalink }}"
+           data-pswp-src="{{ $full.RelPermalink }}"
+           data-pswp-width="{{ $full.Width }}"
+           data-pswp-height="{{ $full.Height }}"
+           title="{{ $title }}"
+           style="background-color: {{ $color }}">
+          {{/* Only the first slides load up front; custom.js loads the rest as the carousel nears them. */}}
+          <img {{ if lt $i 2 }}src{{ else }}data-fs-src{{ end }}="{{ $thumb.RelPermalink }}"
+               width="{{ $thumb.Width }}"
+               height="{{ $thumb.Height }}"
+               decoding="async"
+               alt="{{ $title }}" />
+        </a>
+        <div class="fs-slide-text">
+          <span class="fs-step">Schritt {{ printf "%02d" (add $i 1) }}<span class="fs-step-total"> / {{ printf "%02d" $count }}</span></span>
+          {{ with $title }}<p class="fs-slide-caption">{{ . }}</p>{{ end }}
+        </div>
+      </div>
     {{ end }}
-    {{ if and (not $title) (ne .Title .Name) }}
-      {{ $title = .Title }}
-    {{ end }}
-    {{ $thumb := .Filter (slice images.AutoOrient (images.Process "fit 800x800")) }}
-    {{ $full  := .Filter (slice images.AutoOrient (images.Process "fit 1600x1600")) }}
-    {{ $color := index $thumb.Colors 0 | default "transparent" }}
-    <a class="fs-item gallery-item"
-       href="{{ .RelPermalink }}"
-       data-pswp-src="{{ $full.RelPermalink }}"
-       data-pswp-width="{{ $full.Width }}"
-       data-pswp-height="{{ $full.Height }}"
-       title="{{ $title }}">
-      <figure style="background-color: {{ $color }}">
-        <img class="lazyload"
-             width="{{ $thumb.Width }}"
-             height="{{ $thumb.Height }}"
-             data-src="{{ $thumb.RelPermalink }}"
-             alt="{{ $title }}" />
-      </figure>
-      {{ with $title }}<figcaption class="fs-caption">{{ . }}</figcaption>{{ end }}
-    </a>
+  </div>
+  {{ if gt $count 1 }}
+  <div class="fs-controls">
+    <button type="button" class="fs-arrow fs-prev" aria-label="Vorheriger Schritt">←</button>
+    <div class="fs-progress" aria-hidden="true"><span class="fs-progress-bar"></span></div>
+    <button type="button" class="fs-arrow fs-next" aria-label="Nächster Schritt">→</button>
+  </div>
   {{ end }}
 </div>

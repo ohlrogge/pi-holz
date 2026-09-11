@@ -206,7 +206,6 @@ body::before {
 
 .hero-headline span {
   color: var(--gold-light);
-  font-style: italic;
 }
 
 .hero-tagline {
@@ -304,7 +303,8 @@ h2 {
 
 h2 em {
   color: var(--gold);
-  font-style: italic;
+  font-style: normal;
+  font-weight: 700;
 }
 
 .h2--light {
@@ -312,7 +312,7 @@ h2 em {
 }
 
 .h2--light em {
-  color: var(--cream);
+  color: var(--gold-light);
 }
 
 /* Prose text */
@@ -404,31 +404,54 @@ h2 em {
 
 .fs-title {
   font-family: eb-garamond, Georgia, serif;
-  font-size: 1.3rem;
+  font-size: clamp(1.9rem, 4.5vw, 2.8rem);
+  font-weight: 400;
+  line-height: 1.15;
   color: var(--brown);
-  margin: 0 0 0.8rem;
+  margin: 0 0 1.5rem;
 }
 
-.fs-grid {
+/* Carousel */
+.fs-carousel {
+  outline: none;
+}
+
+.fs-carousel:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 4px;
+}
+
+.fs-track {
+  display: flex;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  gap: 2rem; /* keeps the neighbouring slide's edge from peeking in */
+}
+
+.fs-track::-webkit-scrollbar {
+  display: none;
+}
+
+.fs-slide {
+  flex: 0 0 100%;
+  scroll-snap-align: start;
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 1rem;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 2.5rem;
+  align-items: center;
 }
 
-.fs-item {
+.fs-slide-image {
   display: block;
-  text-decoration: none;
-  color: inherit;
-}
-
-.fs-item figure {
-  margin: 0;
   overflow: hidden;
-  width: 100%;
   aspect-ratio: 1 / 1;
+  cursor: zoom-in;
 }
 
-.fs-item figure img {
+.fs-slide-image img {
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -436,19 +459,76 @@ h2 em {
   transition: transform 0.4s ease;
 }
 
-.fs-item:hover figure img {
+.fs-slide-image:hover img {
   transform: scale(1.03);
 }
 
-.fs-caption {
+.fs-step {
   display: block;
   font-family: Lato, sans-serif;
   font-size: 0.72rem;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.3em;
   text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 1rem;
+}
+
+.fs-step-total {
   color: var(--muted);
-  text-align: center;
-  padding-top: 0.5rem;
+  opacity: 0.7;
+}
+
+.fs-slide-caption {
+  font-family: eb-garamond, Georgia, serif;
+  font-size: clamp(1.5rem, 3.5vw, 2.2rem);
+  line-height: 1.25;
+  color: var(--dark);
+  margin: 0;
+}
+
+.fs-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.25rem;
+  margin-top: 1.5rem;
+}
+
+.fs-arrow {
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 1px solid var(--warm);
+  background: var(--light);
+  color: var(--brown);
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.25s, color 0.25s, border-color 0.25s, opacity 0.25s;
+}
+
+.fs-arrow:hover:not(:disabled) {
+  background: var(--gold-light);
+  border-color: var(--gold-light);
+  color: var(--dark);
+}
+
+.fs-arrow:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.fs-progress {
+  flex: 0 1 240px;
+  height: 2px;
+  background: var(--warm);
+}
+
+.fs-progress-bar {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: var(--gold);
+  transition: width 0.3s ease;
 }
 
 /* ── Animations ── */
@@ -467,9 +547,11 @@ h2 em {
   .nav-links { display: none; }
   .home-section { padding: 4rem 1.5rem; }
   .leistungen-grid { grid-template-columns: 1fr; }
-  .fs-grid { grid-template-columns: 1fr; }
+  .fs-section { padding: 1.25rem; }
+  .fs-slide { grid-template-columns: 1fr; gap: 1.25rem; }
+  .fs-slide-text { text-align: center; }
 }
 
-@media (max-width: 900px) and (min-width: 641px) {
-  .fs-grid { grid-template-columns: repeat(2, 1fr); }
+@media (prefers-reduced-motion: reduce) {
+  .fs-track { scroll-behavior: auto; }
 }

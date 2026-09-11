@@ -27,6 +27,70 @@ document.querySelectorAll('[id^="fs-gallery-"]').forEach(gallery => {
   lightbox.init();
 });
 
+/* Fertigungsschritte carousel: arrows, progress bar and keyboard on top of CSS scroll-snap. */
+document.querySelectorAll(".fs-carousel").forEach((carousel) => {
+  const track = carousel.querySelector(".fs-track");
+  const slides = [...track.querySelectorAll(".fs-slide")];
+  const prev = carousel.querySelector(".fs-prev");
+  const next = carousel.querySelector(".fs-next");
+  const bar = carousel.querySelector(".fs-progress-bar");
+  if (slides.length < 2) return;
+
+  const offsetOf = (i) => slides[i].offsetLeft - slides[0].offsetLeft;
+  const current = () => {
+    let best = 0;
+    slides.forEach((_, i) => {
+      if (Math.abs(offsetOf(i) - track.scrollLeft) < Math.abs(offsetOf(best) - track.scrollLeft)) best = i;
+    });
+    return best;
+  };
+  const goTo = (i) => {
+    const idx = Math.max(0, Math.min(slides.length - 1, i));
+    track.scrollTo({ left: offsetOf(idx) });
+  };
+
+  // Load the current slide's image and its neighbours before they scroll into view.
+  const preload = (idx) => {
+    for (let i = idx - 1; i <= idx + 2; i++) {
+      const img = slides[i]?.querySelector("img[data-fs-src]");
+      if (!img) continue;
+      img.src = img.dataset.fsSrc;
+      img.removeAttribute("data-fs-src");
+    }
+  };
+
+  const update = () => {
+    const idx = current();
+    prev.disabled = idx === 0;
+    next.disabled = idx === slides.length - 1;
+    bar.style.width = `${((idx + 1) / slides.length) * 100}%`;
+    preload(idx);
+  };
+
+  prev.addEventListener("click", () => goTo(current() - 1));
+  next.addEventListener("click", () => goTo(current() + 1));
+  carousel.addEventListener("keydown", (e) => {
+    if (e.key === "ArrowLeft") { e.preventDefault(); goTo(current() - 1); }
+    if (e.key === "ArrowRight") { e.preventDefault(); goTo(current() + 1); }
+  });
+
+  let ticking = false;
+  track.addEventListener(
+    "scroll",
+    () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        update();
+        ticking = false;
+      });
+    },
+    { passive: true }
+  );
+  window.addEventListener("resize", update);
+  update();
+});
+
 /* Replace the header brand text with the active section name while scrolling. */
 (() => {
   const brand = document.getElementById("nav-brand-text");
