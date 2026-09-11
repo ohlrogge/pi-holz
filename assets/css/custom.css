@@ -1,6 +1,15 @@
 /* ── Adobe Fonts ── */
 @import url("https://use.typekit.net/rks3jql.css");
 
+/* ── Alegreya (headings), self-hosted variable font, SIL Open Font License ── */
+@font-face {
+  font-family: "Alegreya";
+  font-style: normal;
+  font-weight: 400 900;
+  font-display: swap;
+  src: url("/fonts/alegreya-latin.woff2") format("woff2");
+}
+
 /* ── Design tokens ── */
 :root {
   --cream: #f5f0e8;
@@ -57,7 +66,7 @@ body::before {
 }
 
 .nav-brand {
-  font-family: eb-garamond, Georgia, serif;
+  font-family: Alegreya, Georgia, serif;
   color: var(--gold-light);
   font-size: 1.05rem;
   letter-spacing: 0.1em;
@@ -195,9 +204,9 @@ body::before {
 }
 
 .hero-headline {
-  font-family: eb-garamond, Georgia, serif;
+  font-family: Alegreya, Georgia, serif;
   font-size: clamp(3rem, 8vw, 7rem);
-  font-weight: 700;
+  font-weight: 800;
   color: var(--cream);
   line-height: 1.05;
   letter-spacing: -0.02em;
@@ -276,7 +285,7 @@ body::before {
 .section-label::after {
   content: '';
   flex: 1;
-  max-width: 60px;
+  max-width: 120px;
   height: 1px;
   background: var(--gold);
   opacity: 0.35;
@@ -293,7 +302,7 @@ body::before {
 
 /* Headings */
 h2 {
-  font-family: eb-garamond, Georgia, serif;
+  font-family: Alegreya, Georgia, serif;
   font-size: clamp(2rem, 5vw, 3.2rem);
   font-weight: 400;
   line-height: 1.2;
@@ -304,7 +313,6 @@ h2 {
 h2 em {
   color: var(--gold);
   font-style: normal;
-  font-weight: 700;
 }
 
 .h2--light {
@@ -344,7 +352,7 @@ h2 em {
 }
 
 .leistung-card h3 {
-  font-family: eb-garamond, Georgia, serif;
+  font-family: Alegreya, Georgia, serif;
   font-size: 1.3rem;
   color: var(--brown);
   margin: 0 0 0.8rem;
@@ -403,7 +411,7 @@ h2 em {
 }
 
 .fs-title {
-  font-family: eb-garamond, Georgia, serif;
+  font-family: Alegreya, Georgia, serif;
   font-size: clamp(1.9rem, 4.5vw, 2.8rem);
   font-weight: 400;
   line-height: 1.15;
@@ -479,7 +487,7 @@ h2 em {
 }
 
 .fs-slide-caption {
-  font-family: eb-garamond, Georgia, serif;
+  font-family: Alegreya, Georgia, serif;
   font-size: clamp(1.5rem, 3.5vw, 2.2rem);
   line-height: 1.25;
   color: var(--dark);
