@@ -416,6 +416,7 @@ h2 em {
   font-size: clamp(1.9rem, 4.5vw, 2.8rem);
   font-weight: 600;
   line-height: 1.15;
+  text-wrap: balance;
   color: var(--brown);
   margin: 0 0 1.5rem;
 }

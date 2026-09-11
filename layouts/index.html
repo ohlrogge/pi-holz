@@ -44,7 +44,7 @@
     {{ $fsPage := $.Site.GetPage "fertigungsschritte" }}
     {{ with $fsPage }}
       {{ range .Pages }}
-      <div class="home-section-inner fs-section" data-nav-title="{{ .Title }}">
+      <div class="home-section-inner fs-section" data-nav-title="{{ .Params.navTitle | default .Title }}">
         <h3 class="fs-title">{{ .Title }}</h3>
         {{ partial "fertigungsschritte-gallery.html" . }}
       </div>
