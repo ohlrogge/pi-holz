@@ -22,7 +22,7 @@
   --f0:#1b1b1b; --f1:#e07b17; --f2:#16803c; --f3:#cf2020;
   --tile:38px; --gap:2px;
 }
-*{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent; touch-action:manipulation;}
 html,body{height:100%;}
 body{
   margin:0; position:fixed; inset:0; overflow:hidden;
@@ -55,6 +55,7 @@ input, textarea{user-select:text; -webkit-user-select:text; font-size:16px;}
 .btn.go{background:linear-gradient(180deg,#8fe08f,#3aa03a); color:#0b2f0b; border-color:#ccf5cc #1c6b1c #1c6b1c #ccf5cc;}
 .btn.aktiv{background:linear-gradient(180deg,#ffe7b8,#e39b3d); box-shadow:inset 0 2px 6px rgba(122,47,24,.55);}
 .btn.aktiv .ico,.btn.aktiv .lbl{color:#5a2109;}
+.nurHandy{display:none;}
 #spacer{flex:1 1 auto;}
 #stack{
   display:flex; flex-direction:column; align-items:center; justify-content:center;
@@ -440,7 +441,9 @@ table.sc tr.me{background:rgba(255,210,58,.3);}
 @media (max-width:560px){
   #bar{gap:2px; padding:2px 2px calc(2px + env(safe-area-inset-bottom)); flex-wrap:nowrap;}
   .btn{min-width:42px; padding:2px 3px;}
-  .btn .lbl{display:none;}
+  #bSortN, #bSortC, #bSortM, #bOrdnen{display:none;}
+  .nurHandy{display:flex;}
+  .btn .lbl{font-size:9px; line-height:1.1;}
   .btn .ico{font-size:20px;}
   #bPlay{min-width:54px; font-size:12px;}
   #stack{min-width:30px; font-size:14px; padding:2px 2px;}
@@ -470,8 +473,9 @@ table.sc tr.me{background:rgba(255,210,58,.3);}
 @media (max-width:560px){
   #spacer{display:none;}
   #bar .btn{min-width:0; flex:1 1 0; min-height:48px; padding:2px 1px; overflow:hidden; container-type:inline-size;}
-  #bar .btn .ico{font-size:clamp(10px, 60cqi, 19px); white-space:nowrap;}
-  #bar #bSortN .ico, #bar #bSortC .ico{font-size:clamp(8px, 38cqi, 17px); letter-spacing:-.04em;}
+  #bar .btn .ico{font-size:clamp(11px, 42cqi, 19px); white-space:nowrap;}
+  #bar #bSort .ico{font-size:clamp(9px, 30cqi, 17px); letter-spacing:-.04em;}
+  #bar .btn .lbl{font-size:clamp(7px, 19cqi, 10px); white-space:nowrap;}
   #bPlay{flex:2.1 1 0; min-width:0; font-size:12px;}
   #bPlay #playTxt{font-size:clamp(9px, 22cqi, 12px);}
   #stack{flex:0 0 auto; min-width:28px; padding:2px 3px;}
@@ -491,6 +495,7 @@ table.sc tr.me{background:rgba(255,210,58,.3);}
     <button class="btn" id="bSortC"><span class="ico">&#9679;&#9679;&#9679;</span><span class="lbl">Farbe</span></button>
     <button class="btn" id="bSortM"><span class="ico">&#8596;</span><span class="lbl">Manuell</span></button>
     <button class="btn" id="bOrdnen"><span class="ico">&#9638;</span><span class="lbl">Ordnen</span></button>
+    <button class="btn nurHandy" id="bSort"><span class="ico">123</span><span class="lbl">Reihe</span></button>
     <div id="spacer"></div>
     <button class="btn" id="bUndo"><span class="ico">&#8630;</span><span class="lbl">Zurück</span></button>
     <button class="btn" id="bReset"><span class="ico">&#10007;</span><span class="lbl">Abbr.</span></button>
@@ -1337,6 +1342,8 @@ function meldung(txt, dauer, art){
 }
 function renderAll(){ fitTiles(); renderTable(); renderHand(); renderFoes(); renderStatus(); knoepfe(); }
 
+var SORTKNOPF = { n:['123','Reihe'], c:['&#9679;&#9679;&#9679;','Farbe'], m:['&#8596;','Manuell'] };
+var SORTFOLGE = { n:'c', c:'m', m:'n' };
 function knoepfe(){
   var meins = G.dran === 0 && !G.warten && G.laeuft;
   var gelegt = zugGelegt().length;
@@ -1348,6 +1355,10 @@ function knoepfe(){
   el('bSortN').classList.toggle('aktiv', cfg.sortMode === 'n');
   el('bSortC').classList.toggle('aktiv', cfg.sortMode === 'c');
   el('bSortM').classList.toggle('aktiv', cfg.sortMode === 'm');
+  el('bSort').disabled = !meins;
+  var sm = SORTKNOPF[cfg.sortMode] || SORTKNOPF.n;
+  el('bSort').querySelector('.ico').innerHTML = sm[0];
+  el('bSort').querySelector('.lbl').textContent = sm[1];
   el('playTxt').textContent = (gelegt || G.gehoben.length) ? 'Spielen' : 'Ziehen';
   el('stackN').textContent = G.deck.length;
 }
@@ -1897,13 +1908,26 @@ if (!window.PointerEvent){
   document.addEventListener('touchend', greifEnde, {passive:true});
 }
 /* Tippen auf alles, was kein Stein ist (Ablegefelder, freie Flaeche, Hand) */
+var tippStart = null;
 el('wrap').addEventListener(tapEvt, function(e){
+  tippStart = null;
   if (e.pointerType === 'mouse' && e.button !== 0) return;
   var p = e.target;
   while (p && p !== document.body){ if (p.tagName === 'BUTTON') return; p = p.parentNode; }
   if (steinNode(e.target) || griffNode(e.target)) return;   /* laufen ueber greifStart/greifEnde */
-  tippen(e);
-}, {passive:false});
+  var z = zeigerXY(e);
+  tippStart = { target:e.target, x:z.x, y:z.y, t:Date.now() };
+}, {passive:true});
+/* Der Tipp zaehlt erst beim Loslassen - und nur, wenn der Finger ruhig lag.
+   Sonst waehlt man beim Wischen oder Abstuetzen versehentlich etwas aus. */
+el('wrap').addEventListener(upEvt, function(e){
+  var s = tippStart; tippStart = null;
+  if (!s) return;
+  var z = zeigerXY(e);
+  if (Math.abs(z.x - s.x) + Math.abs(z.y - s.y) > 12) return;
+  if (Date.now() - s.t > 900) return;
+  tippen({ target:s.target, clientX:z.x, clientY:z.y, cancelable:false });
+}, {passive:true});
 
 /* ---------- Sortieren ---------- */
 function sortHand(modus){
@@ -2342,6 +2366,7 @@ $dlg.addEventListener('click', function(e){
   else if (a === 'karte') zeigeKarte();
   else if (a === 'menu') zeigeMenu();
   else if (a === 'ecke') location.href = './';
+  else if (a === 'ordnen'){ zu(); tischAufraeumen(); }
   else if (a === 'sw'){
     var f = n.getAttribute('data-f');
     cfg[f] = !cfg[f]; saveCfg();
@@ -2430,6 +2455,7 @@ function zeigeMenu(){
   var h = '<h2>Menü</h2><div class="lvl">'+
     (G.laeuft ? '<button data-act="zu"><b>Weiterspielen</b><em>&#9654;</em></button>' : '') +
     '<button data-act="neu"><b>Neues Spiel</b><em>&#8635;</em></button>'+
+    '<button data-act="ordnen"><b>Tisch ordnen</b><em>&#9638;</em></button>'+
     '<button data-act="karte"><b>Punktekarte</b><em>&#931;</em></button>'+
     '<button data-act="hilfe"><b>Regeln und Bedienung</b><em>?</em></button>'+
     '<button data-act="opt"><b>Einstellungen</b><em>&#9881;</em></button>'+
@@ -2566,6 +2592,7 @@ el('bSortN').onclick = function(){ sortiere('n'); };
 el('bSortC').onclick = function(){ sortiere('c'); };
 el('bSortM').onclick = function(){ sortiere('m'); };
 el('bOrdnen').onclick = function(){ tischAufraeumen(); };
+el('bSort').onclick = function(){ sortiere(SORTFOLGE[cfg.sortMode] || 'n'); };
 el('bUndo').onclick = function(){ zurueck(); };
 el('bReset').onclick = function(){ abbrechen(); };
 el('bPlay').onclick = function(){ spielen(); };
