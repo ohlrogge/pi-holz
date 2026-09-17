@@ -218,7 +218,8 @@ table.times td.r{text-align:right; font-variant-numeric:tabular-nums;}
 .badge.time{background:linear-gradient(180deg,#ffe9a8,var(--hot)); color:#5a3200;
   font-variant-numeric:tabular-nums; min-width:118px; text-align:center;}
 .gamebtns{position:absolute; left:50%; top:574px; transform:translateX(-50%);
-  display:flex; gap:16px; z-index:4;}
+  display:flex; gap:14px; z-index:4; width:max-content;}
+.gamebtns .pill{white-space:nowrap;}
 
 /* ---------- Schwebendes Zahlenfeld ---------- */
 #pad{
@@ -343,6 +344,8 @@ body.handy #phonebar{display:flex;}
 #phonebar .k.teddy{background:linear-gradient(180deg,#a9e6a2,#3fae4a); color:#fff;}
 #phonebar .k:active{transform:translateY(2px); box-shadow:0 1px 0 rgba(20,40,90,.4);}
 #phonebar .k svg{width:26px; height:26px; margin-right:5px; flex:0 0 26px;}
+#phonebar .k.ecke{flex:0 0 50px;}
+#phonebar .k .ecke-ico{width:30px; height:30px; border-radius:22%; display:block;}
 
 /* ---------- Drucken ---------- */
 #printarea{display:none;}
@@ -401,6 +404,7 @@ body.handy #phonebar{display:flex;}
       <div class="badge time" id="badge-time">00:00:00</div>
     </div>
     <div class="gamebtns">
+      <div class="pill sm ecke" id="b-ecke-spiel"><img class="ecke-ico" src="favicon.svg" alt="">Spieleecke</div>
       <div class="pill sm teddybtn" id="b-teddy"><span id="teddy-icon"></span>Frag Teddy</div>
       <div class="pill sm" id="b-menu">Menü</div>
       <div class="pill sm" id="b-give">Aufgeben</div>
@@ -1716,6 +1720,11 @@ function buildPhoneBar(){
     k.onclick=(function(n){ return function(){ pickNumber(n); }; })(v);
     nums.appendChild(k);
   }
+  var ecke=document.createElement('div');
+  ecke.className='k wide ecke'; ecke.title='Zur Spieleecke';
+  ecke.innerHTML='<img class="ecke-ico" src="favicon.svg" alt="Spieleecke">';
+  ecke.onclick=function(){ spielSpeichern(); location.href='./'; };
+  acts.appendChild(ecke);
   [['Radieren', pickEraser, 'eraser'],
    ['Rückg.',   undo,       ''],
    ['Teddy',    askTeddy,   'teddy'],
@@ -1770,6 +1779,7 @@ document.getElementById('teddy-icon').innerHTML=teddySVG();
 document.getElementById('b-teddy').onclick=askTeddy;
 document.getElementById('b-menu').onclick=toMenu;
 document.getElementById('b-give').onclick=giveUp;
+document.getElementById('b-ecke-spiel').onclick=function(){ spielSpeichern(); location.href='./'; };
 
 /* ---------- Start ---------- */
 buildPhoneBar();
