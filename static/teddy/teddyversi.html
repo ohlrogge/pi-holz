@@ -2,6 +2,12 @@
 <html lang="de">
 <head>
   <meta name="robots" content="noindex, nofollow">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Spieleecke">
+<script>if('serviceWorker' in navigator && location.protocol.indexOf('http')===0) navigator.serviceWorker.register('sw.js');</script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
 <title>Teddyversi</title>
@@ -561,7 +567,31 @@ function meldung(txt, dauer, art){
   if (txt) G.meldTimer = setTimeout(function(){ G.meldung=''; renderStatus(); }, dauer || 2200);
   renderStatus();
 }
+/* ---------- Spielstand sichern ---------- */
+function spielSpeichern(){
+  if (!G.laeuft) return;
+  lsSet('teddyversi.spiel', { brett:G.brett, dran:G.dran, modus:G.modus, stufe:cfg.stufe });
+}
+function spielLaden(){
+  var d = lsGet('teddyversi.spiel', null);
+  if (!d || !d.brett || d.brett.length !== 64) return false;
+  cfg.modus = d.modus; cfg.stufe = d.stufe; G.modus = d.modus;
+  el('nameSpieler2').textContent = spielerName(2);
+  G.brett = d.brett; G.dran = d.dran; G.laeuft = true; G.warten = false; G.spielNr = (G.spielNr||0) + 1;
+  brettAufbauen();
+  for (var i=0;i<64;i++) if (G.brett[i]) steinSetzen(i, G.brett[i], false);
+  meldung('Spiel fortgesetzt.', 1800);
+  aktualisieren();
+  if (istKI(G.dran)){
+    var nr = G.spielNr;
+    G.warten = true; aktualisieren();
+    setTimeout(function(){ teddyZug(nr); }, 700);
+  }
+  return true;
+}
+
 function aktualisieren(){
+  spielSpeichern();
   punkteAnzeigen(); renderStatus();
   if (G.laeuft && !G.warten && !istKI(G.dran) && cfg.hinweise) legaleZuegeAnzeigen(zuegeMitFlips(G.brett, G.dran));
   else legaleZuegeAnzeigen([]);
@@ -654,6 +684,7 @@ function bilanzLesen(modus){
 }
 function spielEnde(){
   G.laeuft = false; legaleZuegeAnzeigen([]);
+  lsSet('teddyversi.spiel', null);
   var st = zaehleSteine(G.brett);
   var bilanz = bilanzLesen();
   var sieger = st.du > st.teddy ? 'du' : (st.teddy > st.du ? (G.modus === 'zweit' ? 'spieler2' : 'teddy') : 'unentschieden');
@@ -684,6 +715,7 @@ $dlg.addEventListener('click', function(e){
   else if (a === 'opt') zeigeOptionen();
   else if (a === 'menu') zeigeMenu();
   else if (a === 'bilanz') zeigeBilanz();
+  else if (a === 'ecke') location.href = './';
   else if (a === 'stufe'){ cfg.stufe = parseInt(v,10); saveCfg(); zeigeOptionen(); }
   else if (a === 'sw'){
     var f = n.getAttribute('data-f');
@@ -726,6 +758,7 @@ function zeigeMenu(){
     '<button data-act="bilanz"><b>Bilanz</b></button>'+
     '<button data-act="hilfe"><b>Regeln und Bedienung</b></button>'+
     '<button data-act="opt"><b>Einstellungen</b></button>'+
+    '<button data-act="ecke"><b>Zur Spieleecke</b></button>'+
     '</div>';
   auf(h);
 }
@@ -806,7 +839,7 @@ G.brett[feld(3,3)] = 2; G.brett[feld(3,4)] = 1; G.brett[feld(4,3)] = 1; G.brett[
 steinSetzen(feld(3,3),2,false); steinSetzen(feld(3,4),1,false);
 steinSetzen(feld(4,3),1,false); steinSetzen(feld(4,4),2,false);
 punkteAnzeigen();
-zeigeStart(false);
+if (!spielLaden()) zeigeStart(false);
 brettGroesse();
 setTimeout(brettGroesse, 80);
 </script>

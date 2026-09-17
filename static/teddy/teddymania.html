@@ -2,9 +2,14 @@
 <html lang="de">
 <head>
   <meta name="robots" content="noindex, nofollow">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Spieleecke">
+<script>if('serviceWorker' in navigator && location.protocol.indexOf('http')===0) navigator.serviceWorker.register('sw.js');</script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="apple-mobile-web-app-capable" content="yes">
 <title>Teddymania!</title>
 <style>
 /* ------------------------------------------------------------------
@@ -730,6 +735,28 @@ function update(){
   var b=bestFor(cfgKey());
   elRec.textContent = 'Stufe '+cfg.level+' – '+levelName(cfg.level) + (b? '  ·  Rekord '+b : '');
   buildMenus(); buildToolbar();
+  spielSpeichern();
+}
+
+/* ---------- Spielstand sichern ---------- */
+function spielSpeichern(){
+  if(!running || moves===0){ lsSet('clicko.spiel', null); return; }
+  lsSet('clicko.spiel', { g:snapshot().g, score:score, moves:moves, cols:COLS, rows:ROWS,
+    colors:cfg.colors, level:cfg.level, undo:undoStack.slice(-50) });
+}
+function spielLaden(){
+  var d=lsGet('clicko.spiel', null);
+  if(!d || !d.g || !d.cols) return false;
+  cfg.cols=d.cols; cfg.rows=d.rows; cfg.colors=d.colors; cfg.level=d.level;
+  COLS=d.cols; ROWS=d.rows; TOTAL=COLS*ROWS;
+  fitCells();
+  board.style.width=(COLS*CW)+'px'; board.style.height=(ROWS*CH)+'px';
+  build(d.g);
+  score=d.score; moves=d.moves; running=true; undoStack=d.undo||[]; hlGroup=[]; armed=null; hideConfirm();
+  elHint.textContent='Spiel fortgesetzt.';
+  fitCells(); applyCellSize();
+  update();
+  return true;
 }
 
 /* ---------- Eingabe: Maus und Finger ---------- */
@@ -1052,7 +1079,9 @@ function menuDef(){
       {label:'Zug zurück', key:'Strg+Z', fn:undo, disabled:!undoStack.length},
       {label:'Feld zurücksetzen', fn:restart, disabled:!undoStack.length},
       {sep:true},
-      {label:'Bestenliste …', fn:showScores}
+      {label:'Bestenliste …', fn:showScores},
+      {sep:true},
+      {label:'Zur Spieleecke', fn:function(){ location.href='./'; }}
     ]},
     { label:'Optionen', items:[
       {label:'Einstellungen …', key:'F5', fn:showSettings},
@@ -1228,7 +1257,8 @@ function maybeOfferTouchLayout(){
 }
 
 /* ---------- Start ---------- */
-buildMenus(); buildToolbar(); newGame();
+buildMenus(); buildToolbar();
+if(!spielLaden()) newGame();
 setTimeout(function(){ relayout(); maybeOfferTouchLayout(); }, 80);
 </script>
 </body>

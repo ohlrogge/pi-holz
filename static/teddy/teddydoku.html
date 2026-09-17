@@ -2,6 +2,12 @@
 <html lang="de">
 <head>
   <meta name="robots" content="noindex, nofollow">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Spieleecke">
+<script>if('serviceWorker' in navigator && location.protocol.indexOf('http')===0) navigator.serviceWorker.register('sw.js');</script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Teddydoku</title>
@@ -629,8 +635,12 @@ function startGame(n){
   var made = puzzleForLevel(diffLevel);
   puzzle = made.puzzle; solution = made.solution;
   board = puzzle.slice();
+  undoStack=[]; seconds=0;
+  zeigeSpiel();
+}
+function zeigeSpiel(){
   fixed = puzzle.map(function(v){ return v>0; });
-  selCell=-1; pen=0; eraser=false; undoStack=[]; seconds=0; solved=false; gaveUp=false; lastKind=null;
+  selCell=-1; pen=0; eraser=false; solved=false; gaveUp=false; lastKind=null;
   buildGrid(); buildPalettes();
   var bd=document.getElementById('badge-diff');
   bd.textContent = diffLevel+' · '+LV(diffLevel).name;
@@ -747,7 +757,28 @@ function undo(){
   var u=undoStack.pop(); board[u.i]=u.prev; selCell=u.i; render();
 }
 function countOf(v){ var n=0; for(var i=0;i<81;i++) if(board[i]===v) n++; return n; }
+/* ---------- Spielstand sichern ---------- */
+function spielSpeichern(){
+  if(!board || solved) return;
+  lsSet('sud.spiel', {user:cfg.user, level:diffLevel, puzzle:puzzle, solution:solution,
+    board:board, undo:undoStack, seconds:seconds});
+}
+function spielLoeschen(){ lsSet('sud.spiel', null); }
+function gespeichertesSpiel(){
+  var d=lsGet('sud.spiel', null);
+  return (d && d.board && d.user===cfg.user) ? d : null;
+}
+function spielFortsetzen(){
+  var d=gespeichertesSpiel(); if(!d) return;
+  diffLevel=d.level; puzzle=d.puzzle; solution=d.solution; board=d.board;
+  undoStack=d.undo||[]; seconds=d.seconds||0;
+  zeigeSpiel();
+}
+document.addEventListener('visibilitychange', function(){ if(document.hidden) spielSpeichern(); });
+window.addEventListener('pagehide', spielSpeichern);
+
 function render(){
+  spielSpeichern();
   var i;
   var selVal = (selCell>=0)? board[selCell] : 0;
   for(i=0;i<81;i++){
@@ -780,7 +811,7 @@ function render(){
 }
 function checkSolved(){
   for(var i=0;i<81;i++) if(board[i]!==solution[i]) return;
-  solved=true; stopTimer(); konfettiAn();
+  solved=true; stopTimer(); konfettiAn(); spielLoeschen();
   var list=bestTimes(cfg.user,diffLevel);
   var rank=0;
   if(!gaveUp){
@@ -809,7 +840,7 @@ function giveUp(){
       {label:'Ja', cls:'red', fn:function(){
         gaveUp=true;
         for(var i=0;i<81;i++) board[i]=solution[i];
-        stopTimer(); solved=true; render();
+        stopTimer(); solved=true; spielLoeschen(); render();
         document.getElementById('hint').textContent='Aufgegeben – die Lösung steht im Feld.';
       }},
       {label:'Weiterspielen', fn:function(){}}
@@ -825,6 +856,7 @@ function startTimer(){
   document.getElementById('badge-time').textContent=fmt(seconds);
   timerId=setInterval(function(){
     seconds++; document.getElementById('badge-time').textContent=fmt(seconds);
+    if(seconds%10===0) spielSpeichern();
   },1000);
 }
 function stopTimer(){ if(timerId){ clearInterval(timerId); timerId=null; } }
@@ -843,7 +875,9 @@ function showWelcome(){
   setPanel('<h2>Willkommen</h2><h3>'+esc(cfg.user)+'</h3>'+
     '<p>Willkommen zu Teddydoku.</p>'+
     '<p>Das ursprünglich aus Japan stammende Spiel ist mittlerweile auf der ganzen Welt beliebt.</p>'+
-    '<p>Nun ist dieses äußerst fesselnde Puzzle auch für dich hier – ganz ohne Musik und Klingeln.</p>');
+    '<p>Nun ist dieses äußerst fesselnde Puzzle auch für dich hier – ganz ohne Musik und Klingeln.</p>'+
+    (gespeichertesSpiel() ? '<div class="stack">'+pillHTML('b-weiter','Weiterspielen','green')+'</div>' : ''));
+  if(gespeichertesSpiel()) document.getElementById('b-weiter').onclick=spielFortsetzen;
   highlightMenu(null);
 }
 function showDifficulty(){
@@ -969,9 +1003,10 @@ function showQuit(){
   setPanel('<h2>Beenden</h2><h3>Bis zum nächsten Mal</h3>'+
     '<p>Danke fürs Spielen, '+esc(cfg.user)+'.</p>'+
     '<p>Du kannst das Fenster jetzt schließen – oder einfach weitermachen.</p>'+
-    '<div class="stack">'+pillHTML('q-back','Weiterspielen','green')+'</div>');
+    '<div class="stack">'+pillHTML('q-back','Weiterspielen','green')+pillHTML('q-ecke','Zur Spieleecke','blue')+'</div>');
   highlightMenu('b-quit');
   document.getElementById('q-back').onclick=showWelcome;
+  document.getElementById('q-ecke').onclick=function(){ location.href='./'; };
 }
 function highlightMenu(id){
   ['b-play','b-user','b-rules','b-opts','b-times','b-quit'].forEach(function(x){

@@ -7,6 +7,12 @@
       "runtimeArgs": ["server", "--bind", "0.0.0.0"],
       "port": 1313,
       "autoPort": true
+    },
+    {
+      "name": "static",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "8765", "--directory", "static"],
+      "port": 8765
     }
   ]
 }
