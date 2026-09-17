@@ -279,6 +279,10 @@ body.ordne{-webkit-user-select:none; user-select:none;}
   background-clip:content-box, border-box; padding:calc(var(--tile)*.2) 3px;
 }
 .griff:active{background-color:rgba(0,0,0,.34);}
+@media (max-width:560px){
+  .griff{width:calc(var(--tile)*.36); margin-right:2px; padding-left:2px; padding-right:2px;}
+  .drop{width:calc(var(--tile)*.6); margin-left:3px; font-size:calc(var(--tile)*.5); border-width:2px;}
+}
 .set.teilt .t.hoch{margin:0 3px;}
 #platz{
   position:absolute; pointer-events:none; border:3px dashed #ffd23a; border-radius:8px;
@@ -1007,7 +1011,12 @@ function darfAnlegen(st){
    seinen Nachbarn hinein; dann weicht der Nachbar zum naechsten
    freien Platz aus.
    ================================================================== */
-var RAND = 10, LUFT = 2;
+var RAND = 10;
+/* Auf schmalen Schirmen ist jeder Satz eine Spalte schmaler und die Sätze
+   rücken enger zusammen - sonst passt neben einen kurzen Satz nichts mehr. */
+function schmal(){ return document.documentElement.clientWidth <= 560; }
+function luft(){ return schmal() ? 1 : 2; }
+function satzRand(){ return schmal() ? 1 : 2; }
 function rasterMass(){
   var T = G.tile || 40;
   var u = T + 2, v = Math.round(T*1.34) + 10 + 14;
@@ -1015,8 +1024,8 @@ function rasterMass(){
   return { T:T, u:u, v:v, spalten: Math.max(5, Math.floor((breite - 2*RAND) / u)) };
 }
 /* Griff + Steine + Ablegefeld + Luft, in Spalten */
-function satzBreite(st){ return (typeof st === 'number' ? st : st.tiles.length) + 2; }
-function boxPixel(n, m){ return n*(m.T+2) + Math.round(1.36*m.T) + 14; }
+function satzBreite(st){ return (typeof st === 'number' ? st : st.tiles.length) + satzRand(); }
+function boxPixel(n, m){ return n*(m.T+2) + Math.round((schmal() ? 0.96 : 1.36)*m.T) + (schmal() ? 9 : 14); }
 function satzById(id){
   for (var i=0;i<G.saetze.length;i++) if (G.saetze[i].id === id) return G.saetze[i];
   return null;
@@ -1062,7 +1071,8 @@ function ersterPlatz(w, m, frei){
   frei = frei || function(x, y, ww){ return !belegt(x, y, ww, null, m); };
   for (var y=0; y<400; y++)
     for (var x=0; x<=Math.max(0, m.spalten - w); x++){
-      var a = Math.max(0, x - LUFT), b = Math.min(m.spalten, x + w + LUFT);
+      var L = luft();
+      var a = Math.max(0, x - L), b = Math.min(m.spalten, x + w + L);
       if (frei(a, y, b - a) && frei(x, y, w)) return { x:x, y:y };
     }
   return { x:0, y:tiefsteZeile() + 1 };
