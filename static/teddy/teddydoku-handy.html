@@ -1,0 +1,1709 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta name="robots" content="noindex, nofollow">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Teddydoku Pocket</title>
+<style>
+/* ==================================================================
+   Teddydoku - die Sudoku Challenge für Uli
+   Eine Nachempfindung der alten Windows-Sudoku-Spiele: lila Grund mit
+   Zahlen-Tapete, hellblaue Karte, Pillen-Knöpfe, Zahlenleisten links
+   und rechts. Ohne Musik und ohne Klänge. Läuft komplett offline.
+   ================================================================== */
+:root{
+  --violet:#7b62c8; --violet2:#5f47a8; --violet3:#9d86e0;
+  --card:#bfe4f7; --card2:#8fcdee;
+  --panel:#123c8c; --panel2:#0b2a6b;
+  --ink:#123c8c; --gold:#ffd23a;
+  --pill:#f2fbff; --pill2:#c8e6f6;
+  --hot:#ffb02e; --hot2:#f08a12;
+  --green:#3fae4a; --green2:#2b8434;
+  --red:#e2402f; --red2:#b32a1c;
+  --blue:#4fa8e8; --blue2:#2b7fc4;
+}
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+html,body{height:100%; margin:0; padding:0;}
+body{
+  position:fixed; top:0; left:0; right:0; bottom:0; overflow:hidden;
+  background:#4a3a86;
+  font-family:"Trebuchet MS","Segoe UI",Tahoma,Verdana,sans-serif;
+  color:var(--ink);
+  user-select:none; -webkit-user-select:none; -webkit-touch-callout:none;
+  touch-action:manipulation; overscroll-behavior:none;
+}
+
+/* ---------- Bühne: feste Größe, wird auf den Bildschirm skaliert ---------- */
+#stage{
+  position:absolute; left:50%; top:50%; width:640px; height:900px;
+  transform-origin:50% 50%;
+  background:
+    radial-gradient(120% 100% at 50% 0%, var(--violet3) 0%, var(--violet) 45%, var(--violet2) 100%);
+  overflow:hidden;
+}
+/* Zahlen-Tapete im Hintergrund */
+.wallpaper{position:absolute; inset:0; overflow:hidden; pointer-events:none;}
+.wallpaper span{
+  position:absolute; font-weight:bold; color:#ffffff; opacity:.13;
+  font-family:"Trebuchet MS",Verdana,sans-serif; line-height:1;
+}
+
+/* ---------- Karte ---------- */
+.card{
+  position:absolute; left:18px; top:96px; width:604px; height:706px;
+  background:linear-gradient(165deg,#dff3fd 0%, var(--card) 42%, var(--card2) 100%);
+  border-radius:54px; transform:rotate(-.7deg);
+  box-shadow:0 18px 44px rgba(30,10,70,.42), inset 0 3px 0 rgba(255,255,255,.75);
+}
+.card::after{
+  content:""; position:absolute; inset:16px; border-radius:42px;
+  border:2px solid rgba(255,255,255,.45); pointer-events:none;
+}
+
+/* ---------- Logo ---------- */
+.logo{position:absolute; left:50%; top:14px; height:96px; transform:translateX(-50%) rotate(-2deg);
+  text-align:center; pointer-events:none; z-index:5;}
+.logo .die{
+  position:absolute; left:50%; top:0px; transform:translateX(-186px) rotate(-9deg);
+  font-size:30px; font-weight:bold; font-style:italic; color:#ff4a3d; z-index:2;
+  text-shadow:3.5px 0.0px 0 #ffffff, 3.2px 1.3px 0 #ffffff, 2.5px 2.5px 0 #ffffff, 1.3px 3.2px 0 #ffffff, 0.0px 3.5px 0 #ffffff, -1.3px 3.2px 0 #ffffff, -2.5px 2.5px 0 #ffffff, -3.2px 1.3px 0 #ffffff, -3.5px 0.0px 0 #ffffff, -3.2px -1.3px 0 #ffffff, -2.5px -2.5px 0 #ffffff, -1.3px -3.2px 0 #ffffff, -0.0px -3.5px 0 #ffffff, 1.3px -3.2px 0 #ffffff, 2.5px -2.5px 0 #ffffff, 3.2px -1.3px 0 #ffffff, 0 6px 5px rgba(0,0,0,.4);
+}
+.logo .main{
+  font-size:56px; font-weight:bold; font-style:italic; letter-spacing:0px; color:#fff;
+  text-shadow:5.0px 0.0px 0 #1c63c6, 4.6px 1.9px 0 #1c63c6, 3.5px 3.5px 0 #1c63c6, 1.9px 4.6px 0 #1c63c6, 0.0px 5.0px 0 #1c63c6, -1.9px 4.6px 0 #1c63c6, -3.5px 3.5px 0 #1c63c6, -4.6px 1.9px 0 #1c63c6, -5.0px 0.0px 0 #1c63c6, -4.6px -1.9px 0 #1c63c6, -3.5px -3.5px 0 #1c63c6, -1.9px -4.6px 0 #1c63c6, -0.0px -5.0px 0 #1c63c6, 1.9px -4.6px 0 #1c63c6, 3.5px -3.5px 0 #1c63c6, 4.6px -1.9px 0 #1c63c6, 0 9px 6px rgba(0,0,0,.35);
+}
+.logo .sub{
+  position:absolute; left:50%; top:44px; transform:translateX(46px) rotate(-4deg);
+  font-size:32px; font-weight:bold; font-style:italic; color:#ff4a3d; z-index:2;
+  text-shadow:4.0px 0.0px 0 #ffffff, 3.7px 1.5px 0 #ffffff, 2.8px 2.8px 0 #ffffff, 1.5px 3.7px 0 #ffffff, 0.0px 4.0px 0 #ffffff, -1.5px 3.7px 0 #ffffff, -2.8px 2.8px 0 #ffffff, -3.7px 1.5px 0 #ffffff, -4.0px 0.0px 0 #ffffff, -3.7px -1.5px 0 #ffffff, -2.8px -2.8px 0 #ffffff, -1.5px -3.7px 0 #ffffff, -0.0px -4.0px 0 #ffffff, 1.5px -3.7px 0 #ffffff, 2.8px -2.8px 0 #ffffff, 3.7px -1.5px 0 #ffffff, 0 7px 5px rgba(0,0,0,.4);
+}
+
+/* ---------- Pillen-Knöpfe ---------- */
+.pill{
+  display:flex; align-items:center; justify-content:center; text-align:center;
+  padding:9px 20px; min-width:150px; border-radius:999px; cursor:pointer;
+  font-size:23px; font-weight:bold; color:var(--ink);
+  background:linear-gradient(180deg,#ffffff 0%, var(--pill) 46%, var(--pill2) 100%);
+  box-shadow:0 4px 0 rgba(20,40,90,.28), inset 0 2px 0 rgba(255,255,255,.9);
+  transition:transform .06s linear, filter .1s linear;
+}
+.pill:hover{filter:brightness(1.06);}
+.pill:active{transform:translateY(2px); box-shadow:0 2px 0 rgba(20,40,90,.28);}
+.pill.hot{background:linear-gradient(180deg,#ffe9a8 0%, var(--hot) 55%, var(--hot2) 100%); color:#5a3200;}
+.pill.green{background:linear-gradient(180deg,#a9e6a2 0%, var(--green) 55%, var(--green2) 100%); color:#fff;}
+.pill.red{background:linear-gradient(180deg,#f7a89c 0%, var(--red) 55%, var(--red2) 100%); color:#fff;}
+.pill.blue{background:linear-gradient(180deg,#bfe6ff 0%, var(--blue) 60%, var(--blue2) 100%); color:#fff;}
+.pill.sm{font-size:19px; min-width:112px; padding:7px 16px;}
+.pill.off{opacity:.45; cursor:default;}
+
+.menu-left{position:absolute; left:50%; transform:translateX(-50%); top:556px;
+  display:flex; flex-direction:row; gap:16px; z-index:4;}
+.menu-right{position:absolute; left:50%; transform:translateX(-50%); top:628px;
+  display:flex; flex-direction:row; gap:16px; z-index:4;}
+.menu-print{position:absolute; left:50%; transform:translateX(-50%); bottom:120px; z-index:4;}
+
+/* ---------- Mittleres Panel ---------- */
+.panel{
+  position:absolute; left:50%; top:142px; transform:translateX(-50%);
+  width:556px; min-height:380px; padding:24px 24px 28px; z-index:3;
+  background:linear-gradient(180deg,#1a4ea8 0%, var(--panel) 55%, var(--panel2) 100%);
+  border-radius:22px; color:#fff; text-align:center;
+  box-shadow:0 10px 26px rgba(10,20,60,.45), inset 0 0 0 3px rgba(255,255,255,.18);
+}
+.panel h2{margin:4px 0 2px; font-size:34px; color:var(--gold); text-shadow:0 3px 0 rgba(0,0,0,.35);}
+.panel h3{margin:0 0 18px; font-size:19px; font-weight:normal; color:#cfe4ff;}
+.panel p{margin:0 0 12px; font-size:18px; line-height:1.45;}
+.panel .big{font-size:30px; font-weight:bold; color:var(--gold);}
+.panel ul{margin:0 0 12px; padding-left:22px; text-align:left; font-size:17px; line-height:1.5;}
+.panel .stack{display:flex; flex-direction:column; align-items:center; gap:16px; margin-top:18px;}
+.panel .rowline{display:flex; align-items:center; justify-content:space-between; gap:14px; margin:12px 0; font-size:19px;}
+.panel .rowline .opts{display:flex; gap:10px;}
+.scrollbox{max-height:250px; overflow:auto;}
+
+/* Benutzerliste */
+.userbox{display:flex; gap:16px; align-items:flex-start; justify-content:center; margin-top:8px;}
+.userlist{
+  width:230px; height:186px; overflow:auto; text-align:left; border-radius:10px;
+  background:linear-gradient(180deg,#ffffff,#d8eefb); color:var(--ink); padding:6px;
+  box-shadow:inset 0 2px 6px rgba(0,0,0,.28);
+}
+.userlist div{padding:6px 10px; border-radius:6px; font-size:19px; cursor:pointer;}
+.userlist div.sel{background:linear-gradient(180deg,#bfe6ff,#7ec2ea);}
+.userbtns{display:flex; flex-direction:column; gap:12px;}
+input.name{
+  font:inherit; font-size:19px; padding:7px 10px; width:100%; border:none; border-radius:8px;
+  background:#fff; color:var(--ink); box-shadow:inset 0 2px 6px rgba(0,0,0,.28); outline:none;
+}
+.lvlwrap{margin:6px 12px 2px;}
+input[type=range].lvl{-webkit-appearance:none; appearance:none; width:100%; height:34px;
+  background:transparent; outline:none; margin:0;}
+input[type=range].lvl::-webkit-slider-runnable-track{height:14px; border-radius:999px;
+  background:linear-gradient(90deg,#4fa8e8 0%,#3fae4a 34%,#ffb02e 68%,#e2402f 100%);
+  box-shadow:inset 0 2px 5px rgba(0,0,0,.45);}
+input[type=range].lvl::-webkit-slider-thumb{-webkit-appearance:none; width:32px; height:32px;
+  margin-top:-9px; border-radius:999px;
+  background:linear-gradient(180deg,#ffffff 0%,#e6f4fd 50%,#b8dcf2 100%);
+  box-shadow:0 3px 0 rgba(20,40,90,.4), inset 0 2px 0 rgba(255,255,255,.9);}
+input[type=range].lvl::-moz-range-track{height:14px; border-radius:999px;
+  background:linear-gradient(90deg,#4fa8e8,#3fae4a 34%,#ffb02e 68%,#e2402f);}
+input[type=range].lvl::-moz-range-thumb{width:30px; height:30px; border:none; border-radius:999px;
+  background:linear-gradient(180deg,#ffffff,#b8dcf2); box-shadow:0 3px 0 rgba(20,40,90,.4);}
+.lvlticks{display:flex; justify-content:space-between; padding:0 6px; margin-top:-2px;
+  font-size:14px; color:#cfe4ff; font-variant-numeric:tabular-nums;}
+.lvlname{display:inline-block; margin:14px auto 6px; padding:7px 24px; border-radius:999px;
+  font-size:24px; font-weight:bold; box-shadow:0 3px 0 rgba(20,40,90,.3);}
+.lvlinfo{font-size:16px; color:#cfe4ff; min-height:22px;}
+table.times{width:100%; border-collapse:collapse; font-size:18px; color:#fff;}
+table.times td{padding:5px 8px; border-bottom:1px solid rgba(255,255,255,.18);}
+table.times td.r{text-align:right; font-variant-numeric:tabular-nums;}
+
+/* ---------- Spielansicht ---------- */
+.grid{
+  position:absolute; left:50%; top:132px; transform:translateX(-50%);
+  width:558px; height:558px; z-index:3;
+  display:grid; grid-template-columns:repeat(3,1fr); grid-template-rows:repeat(3,1fr);
+  gap:3px; padding:3px; background:#1b3f86; border-radius:8px;
+  box-shadow:0 8px 20px rgba(20,10,60,.4);
+}
+.box{display:grid; grid-template-columns:repeat(3,1fr); grid-template-rows:repeat(3,1fr);
+  gap:1px; background:#9db4cc;}
+.cell{
+  background:#fff; display:flex; align-items:center; justify-content:center;
+  font-size:36px; font-weight:bold; color:#111; cursor:pointer; position:relative;
+}
+.cell.user{color:#2b7fc4;}
+.cell.wrong{color:var(--red);}
+.cell.peer{background:#e8f4ff;}
+.cell.same{background:#d5ecff;}
+.cell.sel{background:#ffe9a8; box-shadow:inset 0 0 0 3px var(--hot);}
+.cell.given{background:#f4f7fb;}
+
+.pal{display:none;}
+.pal.left{left:118px;} .pal.right{right:118px;}
+.pal .undo{margin-top:12px; width:96px; min-width:0; padding:7px 6px; font-size:16px;}
+.num{
+  width:56px; height:36px; border-radius:999px; display:flex; align-items:center; justify-content:center;
+  font-size:23px; font-weight:bold; color:var(--ink); cursor:pointer;
+  background:linear-gradient(180deg,#ffffff 0%, var(--pill) 50%, var(--pill2) 100%);
+  box-shadow:0 3px 0 rgba(20,40,90,.25), inset 0 2px 0 rgba(255,255,255,.9);
+}
+.num.on{background:linear-gradient(180deg,#ffe9a8 0%, var(--hot) 55%, var(--hot2) 100%); color:#5a3200;}
+.num.done{opacity:.4;}
+.eraser{
+  width:104px; margin-bottom:10px; padding:7px 0; text-align:center; cursor:pointer;
+  font-size:18px; font-weight:bold; color:#8a3a2a; transform:rotate(-7deg);
+  background:linear-gradient(180deg,#ffd9cf 0%, #f7b9a6 55%, #e69a86 100%);
+  border-radius:6px; box-shadow:0 3px 0 rgba(90,30,10,.3);
+}
+.pal.right .eraser{transform:rotate(7deg);}
+.num.on.eraseron{}
+.eraser.on{background:linear-gradient(180deg,#ffe9a8 0%, var(--hot) 55%, var(--hot2) 100%); color:#5a3200;}
+
+.gamebar{position:absolute; left:50%; top:712px; transform:translateX(-50%);
+  display:flex; align-items:center; gap:14px; z-index:4;}
+.badge{
+  padding:6px 20px; border-radius:8px; font-size:19px; font-weight:bold; color:#fff;
+  box-shadow:0 3px 0 rgba(20,40,90,.28);
+}
+.badge.diff{background:linear-gradient(180deg,#a9e6a2,var(--green));}
+.badge.time{background:linear-gradient(180deg,#ffe9a8,var(--hot)); color:#5a3200;
+  font-variant-numeric:tabular-nums; min-width:118px; text-align:center;}
+.gamebtns{display:none;}
+
+/* ---------- Schwebendes Zahlenfeld ---------- */
+#pad{
+  position:absolute; z-index:14; display:none; padding:10px;
+  background:linear-gradient(180deg,#ffffff 0%,#e2f2fc 55%,#bfe0f5 100%);
+  border-radius:18px; box-shadow:0 10px 24px rgba(15,10,50,.45), inset 0 0 0 3px rgba(255,255,255,.8);
+}
+#pad.show{display:block;}
+#pad::after{content:""; position:absolute; left:var(--ax,50%); margin-left:-11px; border:11px solid transparent;}
+#pad.below::after{top:-21px; border-bottom-color:#fff;}
+#pad.above::after{bottom:-21px; border-top-color:#c6e3f6;}
+.padgrid{display:grid; grid-template-columns:repeat(3,1fr); gap:7px;}
+.padbtn{
+  width:56px; height:48px; border-radius:12px; display:flex; align-items:center; justify-content:center;
+  font-size:27px; font-weight:bold; color:var(--ink); cursor:pointer;
+  background:linear-gradient(180deg,#ffffff 0%,#eaf7ff 50%,#cfe8f8 100%);
+  box-shadow:0 3px 0 rgba(20,40,90,.3), inset 0 2px 0 rgba(255,255,255,.9);
+}
+.padbtn:active{transform:translateY(2px); box-shadow:0 1px 0 rgba(20,40,90,.3);}
+.padbtn.blocked{opacity:.34;}
+.padrow{display:flex; gap:7px; margin-top:8px;}
+.padwide{
+  flex:1; height:40px; border-radius:12px; display:flex; align-items:center; justify-content:center;
+  font-size:18px; font-weight:bold; cursor:pointer; color:#8a3a2a;
+  background:linear-gradient(180deg,#ffd9cf,#f0ab97);
+  box-shadow:0 3px 0 rgba(90,30,10,.3);
+}
+.padwide.close{color:var(--ink); background:linear-gradient(180deg,#ffffff,#cfe8f8); box-shadow:0 3px 0 rgba(20,40,90,.3);}
+
+/* ---------- Teddys Markierungen ---------- */
+.cell.coach{background:#e2f6e1;}
+.cell.coachhit{background:#bdefb8; box-shadow:inset 0 0 0 3px #3fae4a;}
+.cell.coachbad{background:#ffd6d0; box-shadow:inset 0 0 0 3px var(--red);}
+
+/* ---------- Teddy ---------- */
+.teddybtn{display:flex; align-items:center; gap:8px; padding:5px 18px 5px 8px;}
+.teddybtn svg{width:34px; height:34px; flex:0 0 34px;}
+#bubble{
+  position:fixed; left:8px; right:8px; bottom:var(--bar-h,120px); transform:none; width:auto; z-index:40; display:none;
+  max-height:42vh; padding:12px 14px; border-radius:18px; color:#fff; text-align:left; overflow:auto;
+  background:linear-gradient(180deg,#1a4ea8 0%, var(--panel) 60%, var(--panel2) 100%);
+  box-shadow:0 12px 26px rgba(10,20,60,.5), inset 0 0 0 3px rgba(255,255,255,.2);
+  transition:top .15s ease, bottom .15s ease;
+}
+/* Liegt das markierte Feld im unteren Teil des Bildschirms, springt die Blase
+   nach oben, damit sie das Feld nicht verdeckt. */
+#bubble.top{ bottom:auto; top:calc(8px + env(safe-area-inset-top)); }
+#bubble.show{display:flex; gap:14px;}
+#bubble .who{flex:0 0 72px; text-align:center;}
+#bubble .who svg{width:72px; height:72px;}
+#bubble .who b{display:block; font-size:14px; color:var(--gold); margin-top:-8px;}
+#bubble .say{flex:1 1 auto;}
+#bubble .say h4{margin:0 0 4px; font-size:19px; color:var(--gold);}
+#bubble .say p{margin:0 0 7px; font-size:16px; line-height:1.38;}
+#bubble .btns{display:flex; gap:10px; flex-wrap:wrap; margin-top:4px;}
+#bubble .btns .pill{min-width:0; font-size:16px; padding:5px 15px;}
+
+
+/* ---------- Overlay-Dialoge ---------- */
+#overlay{position:absolute; inset:0; z-index:20; display:none; background:rgba(20,10,60,.45);}
+#overlay.show{display:flex; align-items:center; justify-content:center;}
+.hint{position:absolute; left:50%; bottom:4px; transform:translateX(-50%);
+  color:#fff; opacity:.85; font-size:16px; z-index:6; text-shadow:0 2px 3px rgba(0,0,0,.4);}
+.credit{position:absolute; left:50%; bottom:34px; transform:translateX(-50%);
+  z-index:4; text-align:center; color:#22306b; font-size:12px; letter-spacing:2px;}
+.credit .tag{margin-top:4px; display:inline-block; background:#14203f; color:#fff;
+  padding:8px 20px; border-radius:12px; font-size:19px; font-weight:bold; letter-spacing:0;}
+.hidden{display:none !important;}
+
+/* ---------- Konfetti beim Lösen ---------- */
+#confetti{position:absolute; top:0; left:0; right:0; bottom:0; overflow:hidden;
+  pointer-events:none; z-index:210; display:none;}
+#confetti.show{display:block;}
+#confetti i{position:absolute; top:-30px; width:11px; height:7px; border-radius:2px;
+  animation-name:fallen; animation-timing-function:linear; animation-iteration-count:infinite;}
+@keyframes fallen{
+  0%{transform:translateY(-40px) rotate(0deg);}
+  100%{transform:translateY(760px) rotate(760deg);}
+}
+@media (prefers-reduced-motion: reduce){ #confetti{display:none !important;} }
+.winteddy{margin:-6px 0 2px;}
+.winteddy svg{width:118px; height:118px;}
+
+/* ---------- Feste Bedienleiste am unteren Rand (echte Pixel) ---------- */
+#phonebar{
+  position:fixed; left:0; right:0; bottom:0; z-index:30;
+  padding:6px 6px calc(6px + env(safe-area-inset-bottom));
+  background:linear-gradient(180deg,#6f57bd,#4b3790);
+  box-shadow:0 -4px 14px rgba(20,10,60,.45);
+  display:flex; flex-direction:column; gap:6px;
+}
+#phonebar .row{display:flex; gap:5px; justify-content:center;}
+#phonebar .k{
+  flex:1 1 0; min-width:0; height:48px; border-radius:10px; cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+  font-size:23px; font-weight:bold; color:var(--ink);
+  background:linear-gradient(180deg,#ffffff 0%,#eaf7ff 55%,#cfe6f6 100%);
+  box-shadow:0 3px 0 rgba(20,40,90,.4), inset 0 2px 0 rgba(255,255,255,.9);
+}
+#phonebar .k.on{background:linear-gradient(180deg,#ffe9a8,#ffb02e); color:#5a3200;}
+#phonebar .k.wide{font-size:15px; height:44px;}
+#phonebar .k.teddy{background:linear-gradient(180deg,#a9e6a2,#3fae4a); color:#fff;}
+#phonebar .k:active{transform:translateY(2px); box-shadow:0 1px 0 rgba(20,40,90,.4);}
+#phonebar .k svg{width:26px; height:26px; margin-right:5px; flex:0 0 26px;}
+
+/* ---------- Drucken ---------- */
+#printarea{display:none;}
+@media print{
+  body{position:static; background:#fff;}
+  #stage{display:none;}
+  #printarea{display:block; padding:24px; font-family:Georgia,serif;}
+  #printarea h1{font-size:22px; margin:0 0 4px;}
+  #printarea .meta{font-size:13px; color:#444; margin-bottom:16px;}
+  #printarea table{border-collapse:collapse;}
+  #printarea td{width:46px; height:46px; border:1px solid #888; text-align:center;
+    font-size:24px; font-family:Georgia,serif;}
+  #printarea tr:nth-child(3n) td{border-bottom:3px solid #000;}
+  #printarea tr:first-child td{border-top:3px solid #000;}
+  #printarea td:nth-child(3n){border-right:3px solid #000;}
+  #printarea td:first-child{border-left:3px solid #000;}
+}
+</style>
+</head>
+<body>
+
+<div id="stage">
+  <div class="wallpaper" id="wallpaper"></div>
+  <div class="card"></div>
+
+  <div class="logo">
+    <div class="die">Die</div>
+    <div class="main">Teddydoku</div>
+    <div class="sub">Challenge!</div>
+  </div>
+
+  <!-- Menüansicht -->
+  <div id="menuview">
+    <div class="menu-left">
+      <div class="pill" id="b-play">Spielen</div>
+      <div class="pill" id="b-user">Benutzer</div>
+      <div class="pill" id="b-rules">Regeln</div>
+    </div>
+    <div class="menu-right">
+      <div class="pill" id="b-opts">Optionen</div>
+      <div class="pill" id="b-times">Zeiten</div>
+      <div class="pill" id="b-quit">Beenden</div>
+    </div>
+    <div class="menu-print"><div class="pill green sm" id="b-print">Drucken</div></div>
+    <div class="panel" id="panel"></div>
+    <div class="credit">EIN SPIEL FÜR<div class="tag">Uli</div></div>
+  </div>
+
+  <!-- Spielansicht -->
+  <div id="gameview" class="hidden">
+    <div class="pal left" id="pal-left"></div>
+    <div class="pal right" id="pal-right"></div>
+    <div class="grid" id="grid"></div>
+    <div class="gamebar">
+      <div class="badge diff" id="badge-diff">Einfach</div>
+      <div class="badge time" id="badge-time">00:00:00</div>
+    </div>
+    <div class="gamebtns">
+      <div class="pill sm teddybtn" id="b-teddy"><span id="teddy-icon"></span>Frag Teddy</div>
+      <div class="pill sm" id="b-menu">Menü</div>
+      <div class="pill sm" id="b-give">Aufgeben</div>
+    </div>
+    <div id="pad"></div>
+    <div class="hint" id="hint">Auf ein Feld tippen. Hängst du fest: frag Teddy.</div>
+  </div>
+
+  <div id="overlay"></div>
+  <div id="confetti"></div>
+</div>
+
+<div id="bubble"></div>
+
+<div id="phonebar">
+  <div class="row" id="pb-nums"></div>
+  <div class="row" id="pb-acts"></div>
+</div>
+
+<div id="printarea"></div>
+
+<script>
+"use strict";
+
+/* ==================================================================
+   Zustand
+   ================================================================== */
+/* Zehn Stufen: weniger Vorgaben UND anspruchsvollere Logik nach oben hin.
+   singles:true  = mit Einzelziffern-Logik allein lösbar
+   singles:false = es braucht mehr als das               */
+var LEVELS = [
+  null,
+  {name:'Kinderleicht',    clues:52, singles:true },
+  {name:'Sehr einfach',    clues:48, singles:true },
+  {name:'Einfach',         clues:44, singles:true },
+  {name:'Locker',          clues:40, singles:true },
+  {name:'Mittel',          clues:36, singles:null },
+  {name:'Fortgeschritten', clues:33, singles:null },
+  {name:'Knifflig',        clues:30, singles:false},
+  {name:'Schwer',          clues:28, singles:false},
+  {name:'Sehr schwer',     clues:26, singles:false},
+  {name:'Fies',            clues:24, singles:false}
+];
+function LV(n){ return LEVELS[Math.max(1,Math.min(10,n))]; }
+function levelColor(n){
+  return n<=3 ? 'linear-gradient(180deg,#bfe6ff,#4fa8e8)'
+       : n<=5 ? 'linear-gradient(180deg,#a9e6a2,#3fae4a)'
+       : n<=7 ? 'linear-gradient(180deg,#ffe9a8,#ffb02e)'
+       :        'linear-gradient(180deg,#f7a89c,#e2402f)';
+}
+function levelInk(n){ return (n>=6 && n<=7) ? '#5a3200' : '#fff'; }
+var cfg = { user:'Uli', level:4, errors:true, highlight:true, sameNum:true };
+var users = ['Uli'];
+var puzzle = null, solution = null, board = null, fixed = null;
+var diffLevel = 4, selCell = -1, pen = 0, eraser = false;
+var undoStack = [], seconds = 0, timerId = null, solved = false, gaveUp = false;
+
+var stage = document.getElementById('stage');
+var panel = document.getElementById('panel');
+var menuview = document.getElementById('menuview');
+var gameview = document.getElementById('gameview');
+var gridEl = document.getElementById('grid');
+var overlay = document.getElementById('overlay');
+
+/* ---------- Speichern ---------- */
+var mem = {};
+function lsGet(k,d){ try{ var v=localStorage.getItem(k); if(v!==null) return JSON.parse(v); }catch(e){} return (k in mem)? mem[k] : d; }
+function lsSet(k,v){ mem[k]=v; try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} }
+users = lsGet('sud.users', ['Uli']);
+if(!users.length) users = ['Uli'];
+var savedCfg = lsGet('sud.cfg', null);
+if(savedCfg) for(var k in savedCfg) if(k in cfg) cfg[k]=savedCfg[k];
+if(users.indexOf(cfg.user)<0) cfg.user = users[0];
+function saveCfg(){ lsSet('sud.cfg', cfg); }
+function timesKey(u,d){ return 'sud.times.'+u+'.'+d; }
+function bestTimes(u,d){ return lsGet(timesKey(u,d), []); }
+
+/* ==================================================================
+   Sudoku: Erzeugen, Lösen, Eindeutigkeit
+   ================================================================== */
+function boxOf(i){ return Math.floor(i/27)*3 + Math.floor((i%9)/3); }
+function popcount(m){ var c=0; while(m){ m&=m-1; c++; } return c; }
+function shuffle(a){
+  for(var i=a.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)); var t=a[i]; a[i]=a[j]; a[j]=t; }
+  return a;
+}
+/* Zählt Lösungen bis maximal `limit` (2 reicht für den Eindeutigkeitstest). */
+function countSolutions(g, limit, collect){
+  var rows=new Array(9).fill(0), cols=new Array(9).fill(0), box=new Array(9).fill(0), i, v, b;
+  for(i=0;i<81;i++){ v=g[i]; if(v){ b=1<<v; rows[(i/9)|0]|=b; cols[i%9]|=b; box[boxOf(i)]|=b; } }
+  var count=0, found=null;
+  function rec(){
+    if(count>=limit) return;
+    var best=-1, bestMask=0, bestN=10, j;
+    for(j=0;j<81;j++){
+      if(g[j]) continue;
+      var mask = ~(rows[(j/9)|0]|cols[j%9]|box[boxOf(j)]) & 0x3FE;
+      var n = popcount(mask);
+      if(n===0) return;
+      if(n<bestN){ bestN=n; best=j; bestMask=mask; if(n===1) break; }
+    }
+    if(best<0){ count++; if(!found) found=g.slice(); return; }
+    var r=(best/9)|0, c=best%9, bx=boxOf(best);
+    var order=[1,2,3,4,5,6,7,8,9];
+    if(collect) shuffle(order);
+    for(var q=0;q<9;q++){
+      var val=order[q], bit=1<<val;
+      if(!(bestMask&bit)) continue;
+      g[best]=val; rows[r]|=bit; cols[c]|=bit; box[bx]|=bit;
+      rec();
+      g[best]=0; rows[r]&=~bit; cols[c]&=~bit; box[bx]&=~bit;
+      if(count>=limit) return;
+    }
+  }
+  rec();
+  return collect ? found : count;
+}
+function fullGrid(){ return countSolutions(new Array(81).fill(0), 1, true); }
+/* Lösbar allein mit nackten und versteckten Einzelziffern? */
+function solvableWithSingles(g0){
+  var g=g0.slice(), rows=new Array(9).fill(0), cols=new Array(9).fill(0), box=new Array(9).fill(0), i, v, b;
+  for(i=0;i<81;i++){ v=g[i]; if(v){ b=1<<v; rows[(i/9)|0]|=b; cols[i%9]|=b; box[boxOf(i)]|=b; } }
+  function cand(i){ return ~(rows[(i/9)|0]|cols[i%9]|box[boxOf(i)]) & 0x3FE; }
+  function put(i,val){ var bit=1<<val; g[i]=val; rows[(i/9)|0]|=bit; cols[i%9]|=bit; box[boxOf(i)]|=bit; }
+  var progress=true, empty;
+  while(progress){
+    progress=false; empty=0;
+    for(i=0;i<81;i++){
+      if(g[i]) continue;
+      empty++;
+      var m=cand(i);
+      if(m===0) return false;
+      if(popcount(m)===1){ for(v=1;v<=9;v++) if(m&(1<<v)){ put(i,v); break; } progress=true; }
+    }
+    if(progress) continue;
+    /* versteckte Einzelziffern in Zeile, Spalte und Kästchen */
+    var units=[], u, k;
+    for(u=0;u<9;u++){
+      var row=[], col=[], bx=[];
+      for(k=0;k<9;k++){ row.push(u*9+k); col.push(k*9+u); }
+      var br=Math.floor(u/3)*27, bc=(u%3)*3;
+      for(k=0;k<9;k++) bx.push(br + Math.floor(k/3)*9 + bc + (k%3));
+      units.push(row); units.push(col); units.push(bx);
+    }
+    for(u=0;u<units.length && !progress;u++){
+      for(v=1;v<=9 && !progress;v++){
+        var bit=1<<v, spot=-1, cnt=0, taken=false;
+        for(k=0;k<9;k++){
+          var idx=units[u][k];
+          if(g[idx]===v){ taken=true; break; }
+          if(!g[idx] && (cand(idx)&bit)){ cnt++; spot=idx; }
+        }
+        if(taken || cnt!==1) continue;
+        put(spot,v); progress=true;
+      }
+    }
+  }
+  for(i=0;i<81;i++) if(!g[i]) return false;
+  return true;
+}
+function makePuzzle(targetClues){
+  var sol = fullGrid(), g = sol.slice(), clues = 81, i;
+  var pairs = []; for(i=0;i<40;i++) pairs.push(i);
+  shuffle(pairs);
+  for(i=0;i<pairs.length && clues>targetClues;i++){
+    var a=pairs[i], b=80-a;
+    var va=g[a], vb=g[b];
+    if(!va && !vb) continue;
+    g[a]=0; g[b]=0;
+    if(countSolutions(g.slice(),2,false)!==1){ g[a]=va; g[b]=vb; }
+    else clues -= (va?1:0)+(vb?1:0);
+  }
+  if(g[40] && clues>targetClues){                 /* Mittelfeld einzeln */
+    var vm=g[40]; g[40]=0;
+    if(countSolutions(g.slice(),2,false)!==1) g[40]=vm; else clues--;
+  }
+  var single=[]; for(i=0;i<81;i++) single.push(i);
+  shuffle(single);
+  for(i=0;i<single.length && clues>targetClues;i++){      /* Rest asymmetrisch */
+    var p=single[i]; if(!g[p]) continue;
+    var vp=g[p]; g[p]=0;
+    if(countSolutions(g.slice(),2,false)!==1) g[p]=vp; else clues--;
+  }
+  return {puzzle:g, solution:sol, clues:clues};
+}
+
+/* ---------- Kandidaten und Einheiten ---------- */
+function candMask(b,i){
+  if(b[i]) return 0;
+  var used=0, r=(i/9)|0, c=i%9, bx=boxOf(i), k;
+  for(k=0;k<9;k++){ if(b[r*9+k]) used|=1<<b[r*9+k]; if(b[k*9+c]) used|=1<<b[k*9+c]; }
+  var br=Math.floor(bx/3)*27, bc=(bx%3)*3;
+  for(k=0;k<9;k++){ var idx=br+Math.floor(k/3)*9+bc+(k%3); if(b[idx]) used|=1<<b[idx]; }
+  return ~used & 0x3FE;
+}
+function unitCells(t,idx){
+  var out=[], k;
+  if(t==='row'){ for(k=0;k<9;k++) out.push(idx*9+k); }
+  else if(t==='col'){ for(k=0;k<9;k++) out.push(k*9+idx); }
+  else { var br=Math.floor(idx/3)*27, bc=(idx%3)*3;
+         for(k=0;k<9;k++) out.push(br+Math.floor(k/3)*9+bc+(k%3)); }
+  return out;
+}
+var BOXNAMES=['oben links','oben in der Mitte','oben rechts','links in der Mitte','ganz in der Mitte',
+              'rechts in der Mitte','unten links','unten in der Mitte','unten rechts'];
+function unitName(t,idx){
+  return t==='row' ? 'Zeile '+(idx+1) : t==='col' ? 'Spalte '+(idx+1) : 'das Kästchen '+BOXNAMES[idx];
+}
+function unitIn(t,idx){                    /* "in Zeile 4" / "im Kästchen oben links" */
+  return t==='box' ? 'im Kästchen '+BOXNAMES[idx] : 'in '+unitName(t,idx);
+}
+function unitDat(t,idx){                   /* "zu Zeile 4" / "zu dem Kästchen ..." */
+  return t==='box' ? 'dem Kästchen '+BOXNAMES[idx] : unitName(t,idx);
+}
+function cap(x){ return x.charAt(0).toUpperCase()+x.slice(1); }
+function cellName(i){ return 'Zeile '+(((i/9)|0)+1)+', Spalte '+((i%9)+1); }
+function firstDigit(mask){ for(var v=1;v<=9;v++) if(mask&(1<<v)) return v; return 0; }
+
+/* ==================================================================
+   Spiel
+   ================================================================== */
+/* Erzeugt so lange, bis die Logik-Anforderung der Stufe erfüllt ist. */
+function puzzleForLevel(n){
+  var L=LV(n), best=null, i;
+  for(i=0;i<18;i++){
+    var m=makePuzzle(L.clues);
+    if(!best) best=m;
+    if(L.singles===null) return m;
+    if(solvableWithSingles(m.puzzle)===L.singles) return m;
+    if(L.singles===false && m.clues<best.clues) best=m;
+  }
+  return best;
+}
+function startGame(n){
+  diffLevel = Math.max(1,Math.min(10,n));
+  cfg.level = diffLevel; saveCfg();
+  var made = puzzleForLevel(diffLevel);
+  puzzle = made.puzzle; solution = made.solution;
+  board = puzzle.slice();
+  fixed = puzzle.map(function(v){ return v>0; });
+  selCell=-1; pen=0; eraser=false; undoStack=[]; seconds=0; solved=false; gaveUp=false; lastKind=null;
+  buildGrid(); buildPalettes();
+  var bd=document.getElementById('badge-diff');
+  bd.textContent = diffLevel+' · '+LV(diffLevel).name;
+  bd.style.background = levelColor(diffLevel);
+  bd.style.color = levelInk(diffLevel);
+  document.getElementById('hint').textContent='Auf ein Feld tippen. Hängst du fest: frag Teddy.';
+  menuview.classList.add('hidden'); gameview.classList.remove('hidden');
+  closeOverlay(); closePad(); closeBubble(); konfettiAus(); startTimer(); render();
+}
+var cellEls = new Array(81);
+function buildGrid(){
+  gridEl.innerHTML='';
+  var boxes=[], b;
+  for(b=0;b<9;b++){ var bx=document.createElement('div'); bx.className='box'; boxes.push(bx); gridEl.appendChild(bx); }
+  for(var i=0;i<81;i++){
+    var d=document.createElement('div');
+    d.className='cell';
+    d.onclick=(function(idx){ return function(){ tapCell(idx); }; })(i);
+    cellEls[i]=d;
+    boxes[boxOf(i)].appendChild(d);
+  }
+}
+function numPill(v, side){
+  var d=document.createElement('div');
+  d.className='num'; d.textContent=v;
+  d.onclick=function(){ pickNumber(v); };
+  return d;
+}
+function buildPalettes(){
+  var L=document.getElementById('pal-left'), R=document.getElementById('pal-right');
+  L.innerHTML=''; R.innerHTML='';
+  var eL=document.createElement('div'); eL.className='eraser'; eL.textContent='Radieren';
+  eL.onclick=pickEraser; L.appendChild(eL);
+  var eR=document.createElement('div'); eR.className='eraser'; eR.textContent='Radieren';
+  eR.onclick=pickEraser; R.appendChild(eR);
+  for(var v=1;v<=9;v++) L.appendChild(numPill(v));
+  for(var w=9;w>=1;w--) R.appendChild(numPill(w));
+  [L,R].forEach(function(host){
+    var u=document.createElement('div');
+    u.className='pill sm undo'; u.textContent='Rückg.';
+    u.onclick=function(e){ e.stopPropagation(); undo(); };
+    host.appendChild(u);
+  });
+}
+/* Nach jeder Eingabe wird die Ziffer zurückgesetzt - man wählt jedes Mal neu. */
+function pickNumber(v){
+  if(solved) return;
+  eraser=false;
+  if(selCell>=0 && !fixed[selCell]){ place(selCell,v); }
+  else { pen=v; }
+  render();
+}
+function pickEraser(){
+  if(solved) return;
+  if(selCell>=0 && !fixed[selCell]){ place(selCell,0); }
+  else { eraser=true; pen=0; }
+  render();
+}
+function tapCell(i){
+  if(solved) return;
+  clearCoach();
+  if(fixed[i]){ selCell=i; closePad(); render(); return; }
+  if(eraser){ selCell=i; place(i,0); closePad(); render(); return; }
+  if(pen>0){ selCell=i; place(i,pen); closePad(); render(); return; }
+  selCell=i; render(); openPad(i);          /* schwebendes Zahlenfeld */
+}
+function place(i,v){
+  if(solved || fixed[i]) return;
+  pen=0; eraser=false;                       /* Auswahl zurücksetzen */
+  if(board[i]===v){ render(); return; }
+  undoStack.push({i:i, prev:board[i]});
+  board[i]=v;
+  render();
+  checkSolved();
+}
+
+/* ---------- Schwebendes Zahlenfeld ---------- */
+var padEl=document.getElementById('pad');
+function closePad(){ padEl.classList.remove('show'); padEl.innerHTML=''; }
+function openPad(i){
+  if(solved || fixed[i]) return;
+  var v, html='<div class="padgrid">';
+  for(v=1;v<=9;v++) html+='<div class="padbtn" data-v="'+v+'">'+v+'</div>';
+  html+='</div><div class="padrow"><div class="padwide" data-v="0">Radieren</div>'+
+        '<div class="padwide close" data-x="1">Zu</div></div>';
+  padEl.innerHTML=html; padEl.classList.add('show');
+
+  var cell=cellEls[i], bx=cell.parentNode;
+  var gx=gridEl.offsetLeft-gridEl.offsetWidth/2, gy=gridEl.offsetTop;
+  var cx=gx+bx.offsetLeft+cell.offsetLeft, cy=gy+bx.offsetTop+cell.offsetTop;
+  var pw=padEl.offsetWidth, ph=padEl.offsetHeight;
+  var px=Math.max(10, Math.min(1000-pw-10, cx+cell.offsetWidth/2-pw/2));
+  var py=cy+cell.offsetHeight+14, below=true;
+  if(py+ph>688){ py=cy-ph-14; below=false; }
+  if(py<8){ py=8; }
+  padEl.style.left=px+'px'; padEl.style.top=py+'px';
+  padEl.style.setProperty('--ax', (cx+cell.offsetWidth/2-px)+'px');
+  padEl.className='show '+(below?'below':'above');
+
+  Array.prototype.forEach.call(padEl.querySelectorAll('[data-v]'), function(b){
+    b.onclick=function(e){
+      e.stopPropagation();
+      place(i, parseInt(b.getAttribute('data-v'),10));
+      closePad();
+    };
+  });
+  padEl.querySelector('[data-x]').onclick=function(e){ e.stopPropagation(); closePad(); };
+}
+document.addEventListener('click', function(e){
+  if(padEl.classList.contains('show') && !padEl.contains(e.target) && !gridEl.contains(e.target)) closePad();
+});
+function undo(){
+  if(!undoStack.length || solved) return;
+  var u=undoStack.pop(); board[u.i]=u.prev; selCell=u.i; render();
+}
+function countOf(v){ var n=0; for(var i=0;i<81;i++) if(board[i]===v) n++; return n; }
+function render(){
+  var i;
+  var selVal = (selCell>=0)? board[selCell] : 0;
+  for(i=0;i<81;i++){
+    var el=cellEls[i], v=board[i];
+    var cls='cell';
+    if(fixed[i]) cls+=' given';
+    if(cfg.highlight && selCell>=0 && i!==selCell){
+      if((i%9)===(selCell%9) || ((i/9)|0)===((selCell/9)|0) || boxOf(i)===boxOf(selCell)) cls+=' peer';
+    }
+    if(cfg.sameNum && selVal && v===selVal && i!==selCell) cls+=' same';
+    if(i===selCell) cls+=' sel';
+    if(coachSet[i]) cls+=' coach';
+    if(coachHit[i]) cls+=' coachhit';
+    if(coachBad[i]) cls+=' coachbad';
+    if(v && !fixed[i]){
+      cls+=' user';
+      if(cfg.errors && v!==solution[i]) cls+=' wrong';
+    }
+    el.className=cls;
+    el.textContent = v? v : '';
+  }
+  var nums=document.querySelectorAll('.num');
+  for(i=0;i<nums.length;i++){
+    var val=parseInt(nums[i].textContent,10);
+    nums[i].className='num'+(pen===val && !eraser ? ' on':'')+(countOf(val)>=9 ? ' done':'');
+  }
+  var er=document.querySelectorAll('.eraser');
+  for(i=0;i<er.length;i++) er[i].className='eraser'+(eraser?' on':'');
+  paintPhoneBar();
+}
+function checkSolved(){
+  for(var i=0;i<81;i++) if(board[i]!==solution[i]) return;
+  solved=true; stopTimer(); konfettiAn();
+  var list=bestTimes(cfg.user,diffLevel);
+  var rank=0;
+  if(!gaveUp){
+    list.push({t:seconds, date:new Date().toLocaleDateString('de-DE')});
+    list.sort(function(a,b){ return a.t-b.t; });
+    list=list.slice(0,5);
+    lsSet(timesKey(cfg.user,diffLevel), list);
+    for(var j=0;j<list.length;j++) if(list[j].t===seconds){ rank=j+1; break; }
+  }
+  render();
+  dialog({
+    title:'Gelöst!',
+    html:'<div class="winteddy">'+teddySVG('jubel')+'</div>'+
+         '<p>Sauber, '+esc(cfg.user)+'!</p><p class="big">'+fmt(seconds)+'</p>'+
+         '<p>Stufe '+diffLevel+' &ndash; '+LV(diffLevel).name+'</p>'+
+         (rank? '<p>Neue Bestzeit &ndash; Platz '+rank+' in deiner Liste.</p>' : ''),
+    buttons:[
+      {label:'Noch eins', cls:'green', fn:function(){ startGame(diffLevel); }},
+      {label:'Menü', fn:toMenu}
+    ]
+  });
+}
+function giveUp(){
+  dialog({ title:'Aufgeben?', html:'<p>Die Lösung wird eingetragen, die Zeit zählt dann nicht.</p>',
+    buttons:[
+      {label:'Ja', cls:'red', fn:function(){
+        gaveUp=true;
+        for(var i=0;i<81;i++) board[i]=solution[i];
+        stopTimer(); solved=true; render();
+        document.getElementById('hint').textContent='Aufgegeben – die Lösung steht im Feld.';
+      }},
+      {label:'Weiterspielen', fn:function(){}}
+    ]});
+}
+/* ---------- Uhr ---------- */
+function fmt(s){
+  var h=Math.floor(s/3600), m=Math.floor((s%3600)/60), x=s%60;
+  return (h<10?'0':'')+h+':'+(m<10?'0':'')+m+':'+(x<10?'0':'')+x;
+}
+function startTimer(){
+  stopTimer();
+  document.getElementById('badge-time').textContent=fmt(seconds);
+  timerId=setInterval(function(){
+    seconds++; document.getElementById('badge-time').textContent=fmt(seconds);
+  },1000);
+}
+function stopTimer(){ if(timerId){ clearInterval(timerId); timerId=null; } }
+
+/* ==================================================================
+   Menü-Panels
+   ================================================================== */
+function esc(s){ return String(s).replace(/[&<>"]/g, function(c){
+  return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+
+function toMenu(){ stopTimer(); closePad(); closeBubble(); konfettiAus(); gameview.classList.add('hidden'); menuview.classList.remove('hidden'); showWelcome(); }
+function setPanel(html){ panel.innerHTML=html; }
+function pillHTML(id,label,cls){ return '<div class="pill '+(cls||'')+' sm" id="'+id+'">'+label+'</div>'; }
+
+function showWelcome(){
+  setPanel('<h2>Willkommen</h2><h3>'+esc(cfg.user)+'</h3>'+
+    '<p>Willkommen zu Teddydoku.</p>'+
+    '<p>Das ursprünglich aus Japan stammende Spiel ist mittlerweile auf der ganzen Welt beliebt.</p>'+
+    '<p>Nun ist dieses äußerst fesselnde Puzzle auch für dich hier – ganz ohne Musik und Klingeln.</p>');
+  highlightMenu(null);
+}
+function showDifficulty(){
+  var ticks=''; for(var t=1;t<=10;t++) ticks+='<span>'+t+'</span>';
+  setPanel('<h2>Schwierigkeitsgrad</h2><h3>Stufe 1 bis 10 einstellen</h3>'+
+    '<div class="lvlwrap">'+
+      '<input type="range" class="lvl" id="lvl" min="1" max="10" step="1" value="'+cfg.level+'">'+
+      '<div class="lvlticks">'+ticks+'</div>'+
+    '</div>'+
+    '<div class="lvlname" id="lvlname"></div>'+
+    '<p class="lvlinfo" id="lvlinfo"></p>'+
+    '<div class="stack">'+pillHTML('go','Spielen','green')+'</div>');
+  highlightMenu('b-play');
+  var sl=document.getElementById('lvl'), nm=document.getElementById('lvlname'), inf=document.getElementById('lvlinfo');
+  function paint(){
+    var n=parseInt(sl.value,10), L=LV(n);
+    nm.textContent='Stufe '+n+' – '+L.name;
+    nm.style.background=levelColor(n); nm.style.color=levelInk(n);
+    inf.innerHTML='etwa '+L.clues+' vorgegebene Ziffern';
+  }
+  sl.addEventListener('input',paint); sl.addEventListener('change',paint); paint();
+  document.getElementById('go').onclick=function(){
+    var n=parseInt(sl.value,10); cfg.level=n; saveCfg();
+    setPanel('<h2>Einen Moment</h2><h3>Das Rätsel wird erzeugt …</h3>');
+    setTimeout(function(){ startGame(n); }, 60);
+  };
+}
+function showUsers(){
+  var html='<h2>Aktuelle Benutzer</h2><h3>Bitte aus der Liste auswählen</h3><div class="userbox">'+
+    '<div class="userlist" id="ulist"></div><div class="userbtns">'+
+    pillHTML('u-new','Neu','hot')+pillHTML('u-del','Löschen','red')+pillHTML('u-ok','OK','hot')+
+    '</div></div>';
+  setPanel(html); highlightMenu('b-user');
+  var sel = cfg.user;
+  function paint(){
+    var l=document.getElementById('ulist'); l.innerHTML='';
+    users.forEach(function(u){
+      var d=document.createElement('div'); d.textContent=u;
+      if(u===sel) d.className='sel';
+      d.onclick=function(){ sel=u; paint(); };
+      l.appendChild(d);
+    });
+  }
+  paint();
+  document.getElementById('u-new').onclick=function(){
+    dialogInput('Neuer Benutzer','Name eingeben:', '', function(name){
+      name=(name||'').trim().substring(0,16);
+      if(!name) return;
+      if(users.indexOf(name)<0){ users.push(name); lsSet('sud.users',users); }
+      sel=name; cfg.user=name; saveCfg(); showUsers();
+    });
+  };
+  document.getElementById('u-del').onclick=function(){
+    if(users.length<=1){ dialog({title:'Geht nicht', html:'<p>Es muss mindestens ein Benutzer übrig bleiben.</p>', buttons:[{label:'OK'}]}); return; }
+    dialog({title:'Benutzer löschen', html:'<p>'+esc(sel)+' wirklich löschen? Die Zeiten gehen mit.</p>',
+      buttons:[{label:'Ja', cls:'red', fn:function(){
+        users=users.filter(function(u){ return u!==sel; });
+        lsSet('sud.users',users);
+        for(var n=1;n<=10;n++) lsSet(timesKey(sel,n),[]);
+        if(cfg.user===sel){ cfg.user=users[0]; saveCfg(); }
+        showUsers();
+      }},{label:'Nein'}]});
+  };
+  document.getElementById('u-ok').onclick=function(){ cfg.user=sel; saveCfg(); showWelcome(); };
+}
+function showRules(){
+  setPanel('<h2>Regeln</h2><h3>So geht Teddydoku</h3>'+
+    '<div class="scrollbox"><ul>'+
+    '<li>Trage die Ziffern 1 bis 9 so ein, dass jede Zeile, jede Spalte und jedes der neun 3&times;3-Kästchen jede Ziffer genau einmal enthält.</li>'+
+    '<li>Die schwarzen Ziffern sind vorgegeben und lassen sich nicht ändern; deine Eingaben stehen in Blau.</li>'+
+    '<li>Tippe auf ein leeres Feld – dann erscheint direkt daneben ein Zahlenfeld mit allen neun Ziffern.</li>'+
+    '<li>Alternativ eine Ziffer an den Rändern wählen und dann ins Feld tippen. Nach jeder Eingabe ist die Auswahl wieder frei – man wählt also jedes Mal neu.</li>'+
+    '<li><b>Radieren</b> löscht wieder.</li>'+
+    '<li><b>Frag Teddy</b> erklärt dir einen Trick, mit dem es weitergeht – in drei Stufen: erst die Technik, dann das genaue Feld, dann die Ziffer.</li>'+
+    '<li>Teddy kennt neun Tricks und wechselt sie durch: <i>nur eine Möglichkeit</i>, <i>die einzige Stelle</i>, <i>Zeigerpaar</i>, <i>Kästchen-Reduktion</i>, <i>Zwillinge</i>, <i>versteckte Zwillinge</i>, <i>Drillinge</i>, <i>X-Wing</i> und <i>XY-Flügel</i>. Kommt keiner davon zum Zug, zeigt er die <i>Widerspruchsprobe</i>. Ab Stufe 5 mischen sich die anspruchsvollen Tricks von Anfang an dazu.</li>'+
+    '<li><b>Rückg.</b> nimmt den letzten Eintrag zurück – so oft du willst.</li>'+
+    '<li>Jedes Rätsel hat genau eine Lösung; Raten ist nie nötig.</li>'+
+    '</ul></div>');
+  highlightMenu('b-rules');
+}
+function showOptions(){
+  setPanel('<h2>Spieloptionen</h2><h3>Bitte auswählen</h3>'+
+    '<div class="rowline"><span>Fehler anzeigen</span><span class="opts">'+
+      '<div class="pill sm '+(cfg.errors?'hot':'')+'" data-o="errors" data-v="1">Ein</div>'+
+      '<div class="pill sm '+(!cfg.errors?'hot':'')+'" data-o="errors" data-v="0">Aus</div></span></div>'+
+    '<div class="rowline"><span>Reihe hervorheben</span><span class="opts">'+
+      '<div class="pill sm '+(cfg.highlight?'hot':'')+'" data-o="highlight" data-v="1">Ein</div>'+
+      '<div class="pill sm '+(!cfg.highlight?'hot':'')+'" data-o="highlight" data-v="0">Aus</div></span></div>'+
+    '<div class="rowline"><span>Gleiche Ziffern</span><span class="opts">'+
+      '<div class="pill sm '+(cfg.sameNum?'hot':'')+'" data-o="sameNum" data-v="1">Ein</div>'+
+      '<div class="pill sm '+(!cfg.sameNum?'hot':'')+'" data-o="sameNum" data-v="0">Aus</div></span></div>'+
+    '<p style="font-size:15px;color:#cfe4ff;margin-top:16px">Musik und Klänge gibt es in dieser Fassung nicht.</p>');
+  highlightMenu('b-opts');
+  Array.prototype.forEach.call(panel.querySelectorAll('[data-o]'), function(b){
+    b.onclick=function(){
+      cfg[b.getAttribute('data-o')] = b.getAttribute('data-v')==='1';
+      saveCfg(); showOptions();
+      if(!gameview.classList.contains('hidden')) render();
+    };
+  });
+}
+function showTimes(){
+  var html='<h2>Zeiten</h2><h3>Beste Zeiten von '+esc(cfg.user)+'</h3><div class="scrollbox">'+
+           '<table class="times">';
+  var any=false;
+  for(var n=1;n<=10;n++){
+    var list=bestTimes(cfg.user,n);
+    if(list.length) any=true;
+    html+='<tr><td class="r" style="color:#ffd23a;font-weight:bold">'+n+'.</td>'+
+          '<td>'+LV(n).name+'</td>'+
+          '<td class="r">'+(list.length? fmt(list[0].t) : '&ndash;')+'</td>'+
+          '<td class="r" style="opacity:.7">'+(list.length>1? '('+list.length+' Zeiten)' : '')+'</td></tr>';
+  }
+  html+='</table></div>'+(any? '<div class="stack">'+pillHTML('t-clear','Liste leeren','red')+'</div>':'');
+  setPanel(html); highlightMenu('b-times');
+  var c=document.getElementById('t-clear');
+  if(c) c.onclick=function(){
+    for(var n=1;n<=10;n++) lsSet(timesKey(cfg.user,n),[]);
+    showTimes();
+  };
+}
+function showQuit(){
+  setPanel('<h2>Beenden</h2><h3>Bis zum nächsten Mal</h3>'+
+    '<p>Danke fürs Spielen, '+esc(cfg.user)+'.</p>'+
+    '<p>Du kannst das Fenster jetzt schließen – oder einfach weitermachen.</p>'+
+    '<div class="stack">'+pillHTML('q-back','Weiterspielen','green')+'</div>');
+  highlightMenu('b-quit');
+  document.getElementById('q-back').onclick=showWelcome;
+}
+function highlightMenu(id){
+  ['b-play','b-user','b-rules','b-opts','b-times','b-quit'].forEach(function(x){
+    document.getElementById(x).className='pill'+(x===id?' hot':'');
+  });
+}
+
+/* ==================================================================
+   Teddy - der Coach. Zeichnung als Inline-SVG: brauner Lockenhund
+   mit hellem Bart und Doktorhut.
+   ================================================================== */
+function teddyHead(o){
+  o = o || {};
+  var eyes = o.eyes || 'normal', mouth = o.mouth || 'neutral', svg = '';
+
+  svg += '<path d="M34 50 C19 54 13 72 15 87 C17 99 27 104 34 98 C29 84 28 66 34 54 Z" fill="#57402f"/>'+
+         '<path d="M86 50 C101 54 107 72 105 87 C103 99 93 104 86 98 C91 84 92 66 86 54 Z" fill="#57402f"/>'+
+         '<path d="M31 58 C22 64 19 76 21 86" stroke="#4a3527" stroke-width="3" fill="none" stroke-linecap="round" opacity=".7"/>'+
+         '<path d="M89 58 C98 64 101 76 99 86" stroke="#4a3527" stroke-width="3" fill="none" stroke-linecap="round" opacity=".7"/>'+
+         '<path d="M60 28 C79 28 91 41 92 57 C93 73 84 88 60 91 C36 88 27 73 28 57 C29 41 41 28 60 28 Z" fill="#6b4d36"/>'+
+         '<path d="M36 44 C44 33 58 30 68 34 C60 38 50 42 44 50 Z" fill="#7a5b42" opacity=".85"/>'+
+         '<path d="M84 52 C88 62 87 74 81 82 C84 70 84 60 80 52 Z" fill="#7a5b42" opacity=".7"/>'+
+         '<path d="M33 60 C31 70 33 80 39 86 C34 76 34 68 36 60 Z" fill="#5b4130" opacity=".8"/>'+
+         '<path d="M52 33 C60 31 70 33 76 38 C68 37 60 37 52 39 Z" fill="#5b4130" opacity=".6"/>'+
+         '<path d="M42 70 C46 86 74 86 78 70 C81 82 73 92 60 93 C47 92 39 82 42 70 Z" fill="#cdc5b6"/>'+
+         '<ellipse cx="60" cy="72" rx="13" ry="9.5" fill="#ddd6c9"/>';
+  if(mouth === 'tongue')
+    svg += '<path d="M54 79 C54 90 66 90 66 79 C64 84 56 84 54 79 Z" fill="#d98a8a"/>';
+  svg += '<path d="M53 67 C56 63.5 64 63.5 67 67 C68.4 70.4 64.4 73.6 60 73.6 C55.6 73.6 51.6 70.4 53 67 Z" fill="#2e2019"/>'+
+         '<ellipse cx="57.4" cy="66.8" rx="2" ry="1.2" fill="#5a4a41" opacity=".8"/>';
+  if(mouth === 'smile' || mouth === 'tongue')
+    svg += '<path d="M60 74 L60 77 M60 77 C55.5 83 50 82 48 78.5 M60 77 C64.5 83 70 82 72 78.5"'+
+           ' stroke="#3a2b21" stroke-width="2.1" fill="none" stroke-linecap="round"/>';
+  else
+    svg += '<path d="M60 74 L60 77.5 M60 77.5 C56.5 82 51.5 81.5 49.5 78.5 M60 77.5 C63.5 82 68.5 81.5 70.5 78.5"'+
+           ' stroke="#3a2b21" stroke-width="2.1" fill="none" stroke-linecap="round"/>';
+  if(eyes === 'closed'){
+    svg += '<path d="M42 57 C46 53 52 53 55 57 M65 57 C68 53 74 53 78 57" stroke="#291b13"'+
+           ' stroke-width="2.6" fill="none" stroke-linecap="round"/>';
+  } else if(eyes === 'lupe'){
+    svg += '<ellipse cx="47.5" cy="56.5" rx="4.1" ry="4.4" fill="#291b13"/>'+
+           '<ellipse cx="48.8" cy="55" rx="1.2" ry="1.1" fill="#fff" opacity=".65"/>'+
+           '<ellipse cx="74" cy="57" rx="6.6" ry="7" fill="#291b13"/>'+
+           '<ellipse cx="76" cy="54.6" rx="2" ry="1.8" fill="#fff" opacity=".7"/>';
+  } else {
+    svg += '<ellipse cx="47.5" cy="56.5" rx="4.1" ry="4.4" fill="#291b13"/>'+
+           '<ellipse cx="72.5" cy="56.5" rx="4.1" ry="4.4" fill="#291b13"/>'+
+           '<ellipse cx="48.8" cy="55" rx="1.2" ry="1.1" fill="#fff" opacity=".65"/>'+
+           '<ellipse cx="73.8" cy="55" rx="1.2" ry="1.1" fill="#fff" opacity=".65"/>';
+  }
+  svg += '<path d="M40 51 C45 47 53 47 56 51 C50 49.5 45 49.5 40 51 Z" fill="#5b4130"/>'+
+         '<path d="M64 51 C67 47 75 47 80 51 C75 49.5 70 49.5 64 51 Z" fill="#5b4130"/>';
+  var capT = o.capTilt ? ' transform="rotate('+o.capTilt+' 60 24)"' : '';
+  svg += '<g'+capT+'>'+
+    '<path d="M44 24 C50 15 70 15 76 24 L79 33 C68 27 52 27 41 33 Z" fill="#20222a"/>'+
+    '<polygon points="60,6 106,21 60,36 14,21" fill="#282b35" stroke="#171922" stroke-width="1.6" stroke-linejoin="round"/>'+
+    '<polygon points="60,6 106,21 60,26 14,21" fill="#31343f" opacity=".7"/>'+
+    '<circle cx="60" cy="21" r="3.6" fill="#c9a13c"/>'+
+    '<path d="M101 23 C103 32 99 38 97.5 43" stroke="#c9a13c" stroke-width="2.6" fill="none" stroke-linecap="round"/>'+
+    '<path d="M97.5 43 C95 47 96 51 99 51 C102 51 103 47 100.5 43 Z" fill="#c9a13c"/>'+
+    '</g>';
+  return svg;
+}
+function teddyLupe(){
+  return '<g transform="rotate(12 78 58)">'+
+    '<path d="M92 76 L112 100" stroke="#6d5136" stroke-width="9" stroke-linecap="round"/>'+
+    '<path d="M92 76 L112 100" stroke="#8a6942" stroke-width="5" stroke-linecap="round"/>'+
+    '<circle cx="76" cy="57" r="22" fill="#cfe8f6" opacity=".38"/>'+
+    '<circle cx="76" cy="57" r="22" fill="none" stroke="#33465c" stroke-width="5"/>'+
+    '<circle cx="76" cy="57" r="22" fill="none" stroke="#8fb4cd" stroke-width="1.6"/>'+
+    '<path d="M64 46 C68 42 74 40 79 41" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round" opacity=".65"/>'+
+    '</g>';
+}
+/* mood: 'normal' (Porträt), 'lupe' (beim Tipp), 'jubel' (gelöst) */
+function teddySVG(mood){
+  var inner;
+  if(mood === 'lupe')
+    inner = '<g transform="rotate(-5 60 64)">'+teddyHead({eyes:'lupe'})+'</g>'+teddyLupe();
+  else if(mood === 'jubel')
+    inner = '<g transform="rotate(-4 60 64)">'+teddyHead({eyes:'closed', mouth:'tongue', capTilt:-16})+'</g>';
+  else
+    inner = teddyHead({});
+  return '<svg viewBox="-8 -8 136 136" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">'+inner+'</svg>';
+}
+
+/* ---------- Tipps finden ----------
+   Alle anwendbaren Tricks werden gesammelt; Teddy nimmt reihum einen
+   anderen, damit nicht immer dieselbe Technik kommt.
+   Jeder Tipp hat drei Stufen: Technik -> Feld -> Ziffer.            */
+function peersOf(i){
+  var out=[], k, r=(i/9)|0, c=i%9;
+  for(k=0;k<9;k++){ out.push(r*9+k); out.push(k*9+c); }
+  return out.concat(unitCells('box',boxOf(i)));
+}
+function findError(){
+  var i;
+  for(i=0;i<81;i++) if(board[i] && !fixed[i] && board[i]!==solution[i]){
+    return { kind:'error', bad:true, unit:unitCells('box',boxOf(i)), target:[i], remove:i,
+      title:'Erst mal aufräumen',
+      s0:'Bevor wir weitersuchen: eine deiner Ziffern passt nicht ins Rätsel. Solange die drinsteht, führt jeder weitere Schluss in die Irre. Sie steht '+unitIn('box',boxOf(i))+'.',
+      s1:'Es geht um '+cellName(i)+'.',
+      s2:'Dort steht eine '+board[i]+' — die kann da nicht hin. Nimm sie weg, dann geht es sauber weiter.',
+      act:'Wegnehmen' };
+  }
+  return null;
+}
+function findNaked(){
+  var out=[], i, mask, v;
+  for(i=0;i<81;i++){
+    if(board[i]) continue;
+    mask=candMask(board,i);
+    if(popcount(mask)!==1) continue;
+    v=firstDigit(mask);
+    out.push({ kind:'naked', unit:peersOf(i), target:[i], place:{i:i,v:v},
+      title:'Trick: nur eine Möglichkeit',
+      s0:'Nimm dir ein leeres Feld vor und streiche alle Ziffern, die in seiner Zeile, seiner Spalte oder seinem Kästchen schon stehen. Bleibt genau eine übrig, gehört sie dorthin. So ein Feld liegt gerade '+unitIn('box',boxOf(i))+'.',
+      s1:'Es ist '+cellName(i)+'. Geh dort einmal die Zeile, die Spalte und das Kästchen durch — acht der neun Ziffern kommen darin schon vor.',
+      s2:'Übrig bleibt die '+v+'.',
+      act:'Eintragen' });
+    if(out.length>=6) break;
+  }
+  return out;
+}
+function findHidden(){
+  var out=[], kinds=['box','row','col'], o, t, u, v, k;
+  for(o=0;o<3;o++){
+    t=kinds[o];
+    for(u=0;u<9;u++){
+      var cells=unitCells(t,u);
+      for(v=1;v<=9;v++){
+        var bit=1<<v, spot=-1, cnt=0, taken=false;
+        for(k=0;k<9;k++){
+          var idx=cells[k];
+          if(board[idx]===v){ taken=true; break; }
+          if(!board[idx] && (candMask(board,idx)&bit)){ cnt++; spot=idx; }
+        }
+        if(taken || cnt!==1) continue;
+        out.push({ kind:'hidden', unit:cells, target:[spot], place:{i:spot,v:v},
+          title:'Trick: die einzige Stelle',
+          s0:'Nimm dir eine Einheit vor — ein Kästchen, eine Zeile oder eine Spalte — und frag für jede fehlende Ziffer: wo passt sie hier überhaupt noch hin? Bleibt nur ein Feld übrig, gehört sie genau dorthin. Schau dir '+unitName(t,u)+' an.',
+          s1:'Ein Feld dort ist besonders: '+cellName(spot)+'. Für genau eine der fehlenden Ziffern ist das der einzige Platz '+unitIn(t,u)+'.',
+          s2:'Es ist die '+v+'. In allen anderen freien Feldern dort ist sie schon durch ihre Zeile, Spalte oder ihr Kästchen blockiert.',
+          act:'Eintragen' });
+        if(out.length>=6) return out;
+      }
+    }
+  }
+  return out;
+}
+function findPointing(){
+  var out=[], u, v, k;
+  for(u=0;u<9;u++){
+    var cells=unitCells('box',u);
+    for(v=1;v<=9;v++){
+      var b2=1<<v, spots=[], has=false;
+      for(k=0;k<9;k++){
+        var ix=cells[k];
+        if(board[ix]===v){ has=true; break; }
+        if(!board[ix] && (candMask(board,ix)&b2)) spots.push(ix);
+      }
+      if(has || spots.length<2 || spots.length>3) continue;
+      var rs={}, cs={};
+      spots.forEach(function(x){ rs[(x/9)|0]=1; cs[x%9]=1; });
+      var rk=Object.keys(rs), ck=Object.keys(cs), lt=null, li=-1;
+      if(rk.length===1){ lt='row'; li=+rk[0]; } else if(ck.length===1){ lt='col'; li=+ck[0]; }
+      if(!lt) continue;
+      var elim=[];
+      unitCells(lt,li).forEach(function(x){
+        if(boxOf(x)===u) return;
+        if(!board[x] && (candMask(board,x)&b2)) elim.push(x);
+      });
+      if(!elim.length) continue;
+      out.push({ kind:'pointing', unit:cells.concat(elim), hi:spots, target:elim,
+        title:'Trick: Zeigerpaar',
+        s0:'Wenn eine Ziffer in einem Kästchen nur noch in einer einzigen Zeile (oder Spalte) unterkommt, dann liegt sie irgendwo in diesem Stück — und ist damit im Rest dieser Zeile gestorben. Schau dir '+unitName('box',u)+' an und darin die '+v+'.',
+        s1:'Die '+v+' kann dort nur in '+spots.length+' Feldern stehen — ich habe sie dunkler markiert. Was haben die gemeinsam?',
+        s2:cap(unitIn('box',u))+' passt die '+v+' nur in '+unitName(lt,li)+'. Also fällt die '+v+' in den übrigen '+elim.length+' freien Feldern dieser '+(lt==='row'?'Zeile':'Spalte')+' weg. Genau dort wird meist gleich etwas anderes eindeutig.',
+        act:null });
+      if(out.length>=4) return out;
+    }
+  }
+  return out;
+}
+function findPair(){
+  var out=[], kinds=['box','row','col'], o, t, u, k;
+  for(o=0;o<3;o++){
+    t=kinds[o];
+    for(u=0;u<9;u++){
+      var cells=unitCells(t,u);
+      for(var a=0;a<9;a++){
+        if(board[cells[a]]) continue;
+        var ma=candMask(board,cells[a]);
+        if(popcount(ma)!==2) continue;
+        for(var b=a+1;b<9;b++){
+          if(board[cells[b]] || candMask(board,cells[b])!==ma) continue;
+          var kill=[];
+          for(k=0;k<9;k++){
+            if(k===a||k===b) continue;
+            var x=cells[k];
+            if(!board[x] && (candMask(board,x)&ma)) kill.push(x);
+          }
+          if(!kill.length) continue;
+          var d1=firstDigit(ma), d2=firstDigit(ma & ~(1<<d1));
+          out.push({ kind:'pair', unit:cells, hi:[cells[a],cells[b]], target:kill,
+            title:'Trick: Zwillinge',
+            s0:'Zwei Felder derselben Einheit, in denen nur noch dieselben zwei Ziffern möglich sind, teilen diese beiden Ziffern unter sich auf — welche wohin, weiß man noch nicht, aber für alle anderen Felder der Einheit sind beide gestorben. So ein Paar steckt '+unitIn(t,u)+'.',
+            s1:'Es sind '+cellName(cells[a])+' und '+cellName(cells[b])+' — dunkler markiert.',
+            s2:'In beiden sind nur noch '+d1+' und '+d2+' möglich. Damit kannst du '+d1+' und '+d2+' in den übrigen '+kill.length+' freien Feldern streichen, die zu '+unitDat(t,u)+' gehören.',
+            act:null });
+          if(out.length>=4) return out;
+        }
+      }
+    }
+  }
+  return out;
+}
+function sees(i,j){
+  if(i===j) return false;
+  return ((i/9)|0)===((j/9)|0) || (i%9)===(j%9) || boxOf(i)===boxOf(j);
+}
+function maskDigits(m){ var d=[], v; for(v=1;v<=9;v++) if(m&(1<<v)) d.push(v); return d; }
+function listDe(a){ return a.length<2 ? ''+a[0] : a.slice(0,-1).join(', ')+' und '+a[a.length-1]; }
+function cellsDe(a){
+  var names=a.slice(0,3).map(cellName);
+  return listDe(names) + (a.length>3 ? ' und '+(a.length-3)+' weiteren' : '');
+}
+/* Kästchen-Reduktion: Ziffer einer Zeile/Spalte steckt komplett in einem Kästchen */
+function findClaiming(){
+  var out=[], kinds=['row','col'], o, t, u, v, k;
+  for(o=0;o<2;o++){
+    t=kinds[o];
+    for(u=0;u<9;u++){
+      var cells=unitCells(t,u);
+      for(v=1;v<=9;v++){
+        var bit=1<<v, spots=[], has=false;
+        for(k=0;k<9;k++){
+          var ix=cells[k];
+          if(board[ix]===v){ has=true; break; }
+          if(!board[ix] && (candMask(board,ix)&bit)) spots.push(ix);
+        }
+        if(has || spots.length<2 || spots.length>3) continue;
+        var bx=boxOf(spots[0]), same=true;
+        spots.forEach(function(x){ if(boxOf(x)!==bx) same=false; });
+        if(!same) continue;
+        var elim=[];
+        unitCells('box',bx).forEach(function(x){
+          if(spots.indexOf(x)>=0) return;
+          if(!board[x] && (candMask(board,x)&bit)) elim.push(x);
+        });
+        if(!elim.length) continue;
+        out.push({ kind:'claim', unit:cells.concat(unitCells('box',bx)), hi:spots, target:elim,
+          title:'Trick: Kästchen-Reduktion',
+          s0:'Das Zeigerpaar geht auch andersherum: passt eine Ziffer in einer Zeile nur noch in Felder, die alle im selben Kästchen liegen, dann ist sie für den Rest dieses Kästchens gestorben. Schau dir '+unitName(t,u)+' an und darin die '+v+'.',
+          s1:'Die '+v+' kann in '+unitName(t,u)+' nur noch in '+spots.length+' Feldern stehen — dunkler markiert. Sie liegen alle '+unitIn('box',bx)+'.',
+          s2:'Also steckt die '+v+' dieses Kästchens sicher in '+unitName(t,u)+'. In den übrigen '+elim.length+' freien Feldern des Kästchens kannst du sie streichen.',
+          act:null });
+        if(out.length>=3) return out;
+      }
+    }
+  }
+  return out;
+}
+/* Versteckte Zwillinge */
+function findHiddenPair(){
+  var out=[], kinds=['box','row','col'], o, t, u, a, b, k;
+  for(o=0;o<3;o++){
+    t=kinds[o];
+    for(u=0;u<9;u++){
+      var cells=unitCells(t,u), spots={};
+      for(a=1;a<=9;a++){
+        var bit=1<<a, list=[], taken=false;
+        for(k=0;k<9;k++){
+          var ix=cells[k];
+          if(board[ix]===a){ taken=true; break; }
+          if(!board[ix] && (candMask(board,ix)&bit)) list.push(ix);
+        }
+        spots[a] = taken ? null : list;
+      }
+      for(a=1;a<=9;a++){
+        if(!spots[a] || spots[a].length!==2) continue;
+        for(b=a+1;b<=9;b++){
+          if(!spots[b] || spots[b].length!==2) continue;
+          if(spots[a][0]!==spots[b][0] || spots[a][1]!==spots[b][1]) continue;
+          var pair=spots[a], extra=false;
+          pair.forEach(function(x){ if(candMask(board,x) & ~((1<<a)|(1<<b)) & 0x3FE) extra=true; });
+          if(!extra) continue;
+          out.push({ kind:'hpair', unit:cells, hi:pair, target:pair,
+            title:'Trick: versteckte Zwillinge',
+            s0:'Manchmal verstecken sich zwei Ziffern zu zweit: wenn zwei Ziffern in einer Einheit nur noch in denselben zwei Feldern vorkommen, gehören diese beiden Felder ihnen — alles andere, was dort noch möglich schien, fällt weg. Schau dir '+unitName(t,u)+' an.',
+            s1:'Es geht um '+cellName(pair[0])+' und '+cellName(pair[1])+' — dunkler markiert.',
+            s2:'Nur dort können die '+a+' und die '+b+' in '+unitName(t,u)+' noch stehen. Also teilen sich die beiden Felder diese zwei Ziffern, und alle anderen Kandidaten in diesen Feldern kannst du streichen.',
+            act:null });
+          if(out.length>=3) return out;
+        }
+      }
+    }
+  }
+  return out;
+}
+/* Drillinge */
+function findTriple(){
+  var out=[], kinds=['box','row','col'], o, t, u, a, b, c, k;
+  for(o=0;o<3;o++){
+    t=kinds[o];
+    for(u=0;u<9;u++){
+      var cells=unitCells(t,u), free=[];
+      for(k=0;k<9;k++) if(!board[cells[k]]) free.push(cells[k]);
+      for(a=0;a<free.length;a++) for(b=a+1;b<free.length;b++) for(c=b+1;c<free.length;c++){
+        var m=candMask(board,free[a])|candMask(board,free[b])|candMask(board,free[c]);
+        if(popcount(m)!==3) continue;
+        var trio=[free[a],free[b],free[c]], kill=[];
+        free.forEach(function(x){
+          if(trio.indexOf(x)>=0) return;
+          if(candMask(board,x)&m) kill.push(x);
+        });
+        if(!kill.length) continue;
+        var ds=maskDigits(m);
+        out.push({ kind:'triple', unit:cells, hi:trio, target:kill,
+          title:'Trick: Drillinge',
+          s0:'Dasselbe wie bei den Zwillingen, nur zu dritt: drei Felder einer Einheit, in denen zusammen nur drei verschiedene Ziffern möglich sind, reservieren diese drei für sich. Jedes der Felder darf dabei auch nur zwei davon haben. Schau dir '+unitName(t,u)+' an.',
+          s1:'Es sind '+cellName(trio[0])+', '+cellName(trio[1])+' und '+cellName(trio[2])+' — dunkler markiert.',
+          s2:'Zusammen kommen dort nur '+listDe(ds)+' vor. Diese drei Ziffern sind damit für die drei Felder reserviert und fallen in den übrigen '+kill.length+' freien Feldern der Einheit weg.',
+          act:null });
+        if(out.length>=2) return out;
+      }
+    }
+  }
+  return out;
+}
+/* X-Wing */
+function findXWing(){
+  var out=[], v, i, j, k;
+  function scan(byRow){
+    for(v=1;v<=9;v++){
+      var lines=[];
+      for(i=0;i<9;i++){
+        var cells=unitCells(byRow?'row':'col',i), spots=[], taken=false;
+        for(k=0;k<9;k++){
+          var ix=cells[k];
+          if(board[ix]===v){ taken=true; break; }
+          if(!board[ix] && (candMask(board,ix)&(1<<v))) spots.push(ix);
+        }
+        if(!taken && spots.length===2) lines.push({idx:i, spots:spots});
+      }
+      for(i=0;i<lines.length;i++) for(j=i+1;j<lines.length;j++){
+        var p=lines[i].spots, q=lines[j].spots;
+        var k1=byRow? p[0]%9 : (p[0]/9|0), k2=byRow? p[1]%9 : (p[1]/9|0);
+        var l1=byRow? q[0]%9 : (q[0]/9|0), l2=byRow? q[1]%9 : (q[1]/9|0);
+        if(k1!==l1 || k2!==l2) continue;
+        var elim=[];
+        [k1,k2].forEach(function(cIdx){
+          unitCells(byRow?'col':'row',cIdx).forEach(function(x){
+            if(p.indexOf(x)>=0 || q.indexOf(x)>=0) return;
+            if(!board[x] && (candMask(board,x)&(1<<v))) elim.push(x);
+          });
+        });
+        if(!elim.length) continue;
+        var lang = byRow? 'Zeilen' : 'Spalten', quer = byRow? 'Spalten' : 'Zeilen';
+        out.push({ kind:'xwing', unit:p.concat(q).concat(elim), hi:p.concat(q), target:elim,
+          title:'Trick: X-Wing',
+          s0:'Jetzt wird es sportlich. Suche eine Ziffer, die in zwei '+lang+' jeweils nur noch an zwei Stellen möglich ist — und zwar in denselben beiden '+quer+'. Die vier Felder bilden ein Rechteck. Es geht um die '+v+'.',
+          s1:'Das Rechteck steht in den '+lang+' '+(lines[i].idx+1)+' und '+(lines[j].idx+1)+', in den '+quer+' '+(k1+1)+' und '+(k2+1)+' — die vier Ecken sind dunkler markiert.',
+          s2:'Wie auch immer sich die '+v+' auf die Ecken verteilt: in jeder der beiden '+quer+' ist eine davon belegt. Also fällt die '+v+' in den übrigen '+elim.length+' Feldern dieser '+quer+' weg.',
+          act:null });
+        if(out.length>=2) return;
+      }
+    }
+  }
+  scan(true); if(out.length) return out;
+  scan(false); return out;
+}
+/* XY-Wing */
+function findXYWing(){
+  var out=[], i, j, k, v;
+  var two=[];
+  for(i=0;i<81;i++) if(!board[i] && popcount(candMask(board,i))===2) two.push(i);
+  for(i=0;i<two.length;i++){
+    var P=two[i], mp=candMask(board,P), dp=maskDigits(mp);
+    for(j=0;j<two.length;j++){
+      if(two[j]===P || !sees(P,two[j])) continue;
+      var X=two[j], mx=candMask(board,X), dx=maskDigits(mx);
+      if(!(mx & mp) || mx===mp) continue;
+      var aShared = dx.filter(function(d){ return dp.indexOf(d)>=0; });
+      if(aShared.length!==1) continue;
+      var a=aShared[0], c=dx[0]===a? dx[1] : dx[0];
+      var bOther = dp[0]===a? dp[1] : dp[0];
+      for(k=0;k<two.length;k++){
+        if(two[k]===P || two[k]===X || !sees(P,two[k])) continue;
+        var Y=two[k], my=candMask(board,Y);
+        if(my !== ((1<<bOther)|(1<<c))) continue;
+        var elim=[];
+        for(var q=0;q<81;q++){
+          if(board[q] || q===X || q===Y || q===P) continue;
+          if(sees(q,X) && sees(q,Y) && (candMask(board,q)&(1<<c))) elim.push(q);
+        }
+        if(!elim.length) continue;
+        out.push({ kind:'xywing', unit:[P,X,Y].concat(elim), hi:[P,X,Y], target:elim,
+          title:'Trick: XY-Flügel',
+          s0:'Drei Felder mit je nur zwei Möglichkeiten können zusammenarbeiten: ein Angelpunkt sieht zwei Partner, und egal wie sich der Angelpunkt entscheidet — eine bestimmte Ziffer landet immer in einem der Partner. Ich habe so ein Trio gefunden.',
+          s1:'Angelpunkt ist '+cellName(P)+' mit '+listDe(dp)+'. Die Partner sind '+cellName(X)+' und '+cellName(Y)+' — alle drei dunkler markiert.',
+          s2:'Steht im Angelpunkt die '+a+', wird '+cellName(X)+' zur '+c+'; steht dort die '+bOther+', wird '+cellName(Y)+' zur '+c+'. So oder so kommt die '+c+' in einem der Partner vor. Jedes Feld, das beide Partner sieht, verliert damit die '+c+' — hier '+cellsDe(elim)+'.',
+          act:null });
+        if(out.length>=2) return out;
+      }
+    }
+  }
+  return out;
+}
+/* Einfaches Weiterrechnen mit Einzelziffern - für die Widerspruchsprobe */
+function propagate(b){
+  var progress=true, i, v, k, u, t;
+  while(progress){
+    progress=false;
+    for(i=0;i<81;i++){
+      if(b[i]) continue;
+      var m=candMask(b,i);
+      if(m===0) return {ok:false, why:'cell', i:i};
+      if(popcount(m)===1){ b[i]=firstDigit(m); progress=true; }
+    }
+    var kinds=['box','row','col'];
+    for(t=0;t<3;t++) for(u=0;u<9;u++){
+      var cells=unitCells(kinds[t],u);
+      for(v=1;v<=9;v++){
+        var bit=1<<v, cnt=0, spot=-1, taken=false;
+        for(k=0;k<9;k++){
+          var ix=cells[k];
+          if(b[ix]===v){ taken=true; break; }
+          if(!b[ix] && (candMask(b,ix)&bit)){ cnt++; spot=ix; }
+        }
+        if(taken) continue;
+        if(cnt===0) return {ok:false, why:'unit', t:kinds[t], u:u, v:v};
+        if(cnt===1){ b[spot]=v; progress=true; }
+      }
+    }
+  }
+  return {ok:true};
+}
+/* Widerspruchsprobe: eine Möglichkeit probeweise setzen und den Widerspruch zeigen */
+function findForcing(){
+  var i, best=-1;
+  for(i=0;i<81;i++) if(!board[i] && popcount(candMask(board,i))===2){ best=i; break; }
+  if(best<0) for(i=0;i<81;i++) if(!board[i]){ best=i; break; }
+  if(best<0) return [];
+  var m=candMask(board,best), ds=maskDigits(m), richtig=solution[best];
+  var falsch=ds.filter(function(d){ return d!==richtig; })[0];
+  if(!falsch) return [];
+  var probe=board.slice(); probe[best]=falsch;
+  var res=propagate(probe);
+  var grund = res.ok ? '' :
+    (res.why==='cell' ? 'dann bleibt für '+cellName(res.i)+' überhaupt keine Ziffer mehr übrig'
+                      : 'dann findet die '+res.v+' '+unitIn(res.t,res.u)+' keinen Platz mehr');
+  return [{ kind:'force', unit:peersOf(best), target:[best], place:{i:best, v:richtig},
+    title:'Trick: Widerspruchsprobe',
+    s0:'Wenn keiner der Tricks greift, hilft Probieren mit System: nimm ein Feld mit nur zwei Möglichkeiten, setz eine davon probeweise ein und rechne mit den einfachen Tricks weiter. Läufst du in einen Widerspruch, war die Annahme falsch — und die andere Ziffer stimmt. So ein Feld liegt '+unitIn('box',boxOf(best))+'.',
+    s1:'Es ist '+cellName(best)+'. Dort sind nur noch '+listDe(ds)+' möglich.',
+    s2: (grund ? 'Setz probeweise die '+falsch+' ein und rechne weiter: '+grund+'. Die Annahme scheitert also — es muss die '+richtig+' sein.'
+               : 'Rechne beide Möglichkeiten durch: nur die '+richtig+' führt weiter.'),
+    act:'Eintragen' }];
+}
+
+var lastKind=null;
+var EINFACH   = ['hidden','naked','pointing','pair'];
+var FORTGESCHRITTEN = ['claim','hpair','triple','xwing','xywing'];
+function findHint(){
+  var e=findError(); if(e) return e;
+  var pots={
+    hidden:findHidden(), naked:findNaked(), pointing:findPointing(), pair:findPair(),
+    claim:findClaiming(), hpair:findHiddenPair(), triple:findTriple(),
+    xwing:findXWing(), xywing:findXYWing()
+  };
+  function da(list){ return list.filter(function(k){ return pots[k] && pots[k].length; }); }
+  var einfachDa=da(EINFACH), fortDa=da(FORTGESCHRITTEN);
+  /* Ab Stufe 5 mischen sich die anspruchsvollen Tricks dazu, sonst kommen sie
+     nur dann, wenn die einfachen nicht mehr greifen. */
+  var pool = (cfg.level>=5 || !einfachDa.length) ? einfachDa.concat(fortDa) : einfachDa;
+  if(pool.length){
+    var startIdx=pool.indexOf(lastKind), k, want;
+    for(k=1;k<=pool.length;k++){
+      want=pool[(startIdx+k+pool.length)%pool.length];
+      if(pots[want] && pots[want].length){
+        lastKind=want;
+        return pots[want][Math.floor(Math.random()*pots[want].length)];
+      }
+    }
+  }
+  var f=findForcing();
+  if(f.length){ lastKind='force'; return f[0]; }
+  for(var i=0;i<81;i++) if(!board[i]){
+    lastKind=null;
+    return { kind:'reveal', unit:unitCells('box',boxOf(i)), target:[i], place:{i:i,v:solution[i]},
+      title:'Ich verrate es dir',
+      s0:'Diesmal komme ich mit Erklären nicht weiter — dafür bräuchte es sehr lange Ketten. Ich zeige dir einfach ein Feld. Es liegt '+unitIn('box',boxOf(i))+'.',
+      s1:'Es ist '+cellName(i)+'.',
+      s2:'Dort gehört die '+solution[i]+' hin.',
+      act:'Eintragen' };
+  }
+  return null;
+}
+
+/* ---------- Konfetti ---------- */
+var confettiEl=document.getElementById('confetti');
+(function(){
+  var farben=['#e8412c','#f6a021','#2f8f30','#2079d8','#8b3fbf','#00a6a6','#ffd23a'];
+  var html='', i;
+  for(i=0;i<34;i++){
+    var links=Math.round(Math.random()*98);
+    var dauer=(4.2+Math.random()*5).toFixed(2);
+    var start=(-Math.random()*9).toFixed(2);
+    var breit=8+Math.round(Math.random()*6);
+    html+='<i style="left:'+links+'%; width:'+breit+'px; height:'+(5+Math.round(Math.random()*4))+'px;'+
+          ' background:'+farben[i%farben.length]+'; animation-duration:'+dauer+'s;'+
+          ' animation-delay:'+start+'s; opacity:'+(0.75+Math.random()*0.25).toFixed(2)+'"></i>';
+  }
+  confettiEl.innerHTML=html;
+})();
+function konfettiAn(){ confettiEl.classList.add('show'); }
+function konfettiAus(){ confettiEl.classList.remove('show'); }
+
+/* ---------- Teddys Sprechblase ---------- */
+var bubbleEl=document.getElementById('bubble');
+var hint=null, hintStep=0, coachSet={}, coachHit={}, coachBad={};
+function clearCoach(){ coachSet={}; coachHit={}; coachBad={}; }
+function closeBubble(){ bubbleEl.classList.remove('show'); bubbleEl.innerHTML=''; clearCoach(); render(); }
+function sayTeddy(title, html, buttons, mood){
+  bubbleEl.innerHTML='<div class="who">'+teddySVG(mood||'normal')+'<b>Teddy</b></div>'+
+    '<div class="say"><h4>'+title+'</h4>'+html+'<div class="btns"></div></div>';
+  bubbleEl.classList.add('show');
+  var host=bubbleEl.querySelector('.btns');
+  buttons.forEach(function(x){
+    var e=document.createElement('div'); e.className='pill '+(x.cls||''); e.textContent=x.label;
+    e.onclick=x.fn; host.appendChild(e);
+  });
+  positionBubble();
+}
+/* Blase notfalls an den oberen Rand verlegen, damit das markierte Feld frei bleibt */
+function positionBubble(){
+  if(!bubbleEl.classList.contains('show')) return;
+  var keys = Object.keys(coachHit).length ? Object.keys(coachHit) : Object.keys(coachSet);
+  bubbleEl.classList.remove('top');             /* zuerst die normale (untere) Lage messen */
+  if(!keys.length) return;
+  var top=Infinity, bottom=-Infinity, gefunden=false;
+  keys.forEach(function(k){
+    var el = cellEls[+k];
+    if(!el) return;
+    var r = el.getBoundingClientRect();
+    gefunden=true;
+    if(r.top<top) top=r.top;
+    if(r.bottom>bottom) bottom=r.bottom;
+  });
+  if(!gefunden) return;
+  var br = bubbleEl.getBoundingClientRect();
+  if(br.top < bottom + 8) bubbleEl.classList.add('top');   /* würde das Feld verdecken -> nach oben */
+}
+function askTeddy(){
+  closePad();
+  if(solved){ sayTeddy('Alles voll!','<p>Das Rätsel ist gelöst — da brauchst du mich nicht mehr.</p>',
+    [{label:'Danke', fn:closeBubble}], 'jubel'); return; }
+  hint=findHint(); hintStep=0; showHint();
+}
+function showHint(){
+  clearCoach();
+  if(!hint){ sayTeddy('Hm','<p>Ich finde gerade nichts zu tun.</p>',[{label:'Danke',fn:closeBubble}]); render(); return; }
+  hint.unit.forEach(function(x){ coachSet[x]=1; });
+
+  if(hintStep===0){                                   /* 1. Stufe: die Technik */
+    sayTeddy(hint.title, '<p>'+hint.s0+'</p>', [
+      {label:'Welches Feld?', cls:'hot', fn:function(){ hintStep=1; showHint(); }},
+      {label:'Danke', fn:closeBubble}
+    ], 'lupe');
+    render(); return;
+  }
+
+  (hint.hi||[]).forEach(function(x){ coachHit[x]=1; });
+  hint.target.forEach(function(x){ if(hint.bad) coachBad[x]=1; else coachHit[x]=1; });
+
+  if(hintStep===1){                                   /* 2. Stufe: das Feld, noch ohne Ziffer */
+    sayTeddy(hint.title, '<p>'+hint.s1+'</p>', [
+      {label:hint.act? 'Welche Ziffer?' : 'Was folgt daraus?', cls:'hot',
+       fn:function(){ hintStep=2; showHint(); }},
+      {label:'Zurück', fn:function(){ hintStep=0; showHint(); }},
+      {label:'Danke', fn:closeBubble}
+    ], 'lupe');
+    render(); return;
+  }
+
+  var btns=[];                                        /* 3. Stufe: die Ziffer bzw. der Schluss */
+  if(hint.act) btns.push({label:hint.act, cls:'green', fn:function(){
+    if(hint.place){ selCell=hint.place.i; place(hint.place.i, hint.place.v); }
+    else if(hint.remove!==undefined && hint.remove!==null){ selCell=hint.remove; place(hint.remove, 0); }
+    clearCoach(); render();
+    if(!solved) sayTeddy('Weiter geht’s','<p>Steht drin. Frag mich ruhig wieder, wenn du festhängst.</p>',
+      [{label:'Nächster Tipp', cls:'hot', fn:askTeddy},{label:'Danke', fn:closeBubble}]);
+    else closeBubble();
+  }});
+  btns.push({label:'Zurück', fn:function(){ hintStep=1; showHint(); }});
+  btns.push({label:'Nächster Tipp', fn:askTeddy});
+  btns.push({label:'Danke', fn:closeBubble});
+  sayTeddy(hint.title, '<p>'+hint.s2+'</p>', btns, 'lupe');
+  render();
+}
+
+/* ---------- Overlay-Dialoge ---------- */
+function closeOverlay(){ overlay.classList.remove('show'); overlay.innerHTML=''; }
+function dialog(o){
+  overlay.innerHTML='';
+  var p=document.createElement('div'); p.className='panel'; p.style.position='relative';
+  p.style.left='auto'; p.style.top='auto'; p.style.transform='none'; p.style.minHeight='0';
+  p.innerHTML='<h2>'+o.title+'</h2>'+o.html;
+  var st=document.createElement('div'); st.className='stack';
+  (o.buttons||[{label:'OK'}]).forEach(function(b){
+    var el=document.createElement('div'); el.className='pill '+(b.cls||''); el.textContent=b.label;
+    el.onclick=function(){ closeOverlay(); if(b.fn) b.fn(); };
+    st.appendChild(el);
+  });
+  p.appendChild(st); overlay.appendChild(p); overlay.classList.add('show');
+}
+function dialogInput(title, label, val, fn){
+  overlay.innerHTML='';
+  var p=document.createElement('div'); p.className='panel'; p.style.position='relative';
+  p.style.left='auto'; p.style.top='auto'; p.style.transform='none'; p.style.minHeight='0';
+  p.innerHTML='<h2>'+title+'</h2><p>'+label+'</p>';
+  var inp=document.createElement('input'); inp.className='name'; inp.type='text'; inp.maxLength=16; inp.value=val||'';
+  p.appendChild(inp);
+  var st=document.createElement('div'); st.className='stack';
+  var ok=document.createElement('div'); ok.className='pill hot'; ok.textContent='OK';
+  ok.onclick=function(){ var v=inp.value; closeOverlay(); fn(v); };
+  var no=document.createElement('div'); no.className='pill'; no.textContent='Abbrechen';
+  no.onclick=closeOverlay;
+  st.appendChild(ok); st.appendChild(no); p.appendChild(st);
+  overlay.appendChild(p); overlay.classList.add('show');
+  setTimeout(function(){ inp.focus(); inp.select(); }, 40);
+}
+
+/* ---------- Drucken ---------- */
+function printPuzzle(){
+  var g = puzzle, name = LV(diffLevel).name, lv = diffLevel;
+  if(!g){ var made=puzzleForLevel(cfg.level); g=made.puzzle; name=LV(cfg.level).name; lv=cfg.level; }
+  var html='<h1>Teddydoku &ndash; für Uli</h1><div class="meta">Stufe '+lv+' – '+name+
+           ' &middot; '+new Date().toLocaleDateString('de-DE')+'</div><table>';
+  for(var r=0;r<9;r++){
+    html+='<tr>';
+    for(var c=0;c<9;c++){ var v=g[r*9+c]; html+='<td>'+(v?v:'')+'</td>'; }
+    html+='</tr>';
+  }
+  html+='</table>';
+  document.getElementById('printarea').innerHTML=html;
+  window.print();
+}
+
+/* ---------- Zahlen-Tapete ---------- */
+(function(){
+  var w=document.getElementById('wallpaper'), i;
+  var spots=[[40,30,120],[150,110,70],[260,40,150],[380,120,64],[470,30,130],[600,90,80],
+             [700,26,150],[830,110,70],[920,40,120],[30,220,150],[120,340,80],[36,470,150],
+             [150,560,90],[300,600,120],[430,580,70],[560,620,140],[700,560,80],[820,600,130],
+             [930,300,150],[900,470,90],[820,360,64],[240,300,60],[560,240,60],[640,420,60]];
+  for(i=0;i<spots.length;i++){
+    var s=document.createElement('span');
+    s.textContent = 1+Math.floor(Math.random()*9);
+    s.style.left=spots[i][0]+'px'; s.style.top=spots[i][1]+'px';
+    s.style.fontSize=spots[i][2]+'px';
+    s.style.transform='rotate('+((i%5)-2)*3+'deg)';
+    w.appendChild(s);
+  }
+})();
+
+/* ---------- Bedienleiste unten ---------- */
+function buildPhoneBar(){
+  var nums=document.getElementById('pb-nums'), acts=document.getElementById('pb-acts'), v;
+  nums.innerHTML=''; acts.innerHTML='';
+  for(v=1;v<=9;v++){
+    var k=document.createElement('div');
+    k.className='k'; k.setAttribute('data-v',v); k.textContent=v;
+    k.onclick=(function(n){ return function(){ pickNumber(n); }; })(v);
+    nums.appendChild(k);
+  }
+  [['Radieren', pickEraser, 'eraser'],
+   ['Rückg.',   undo,       ''],
+   ['Teddy',    askTeddy,   'teddy'],
+   ['Menü',     toMenu,     '']].forEach(function(a){
+    var k=document.createElement('div');
+    k.className='k wide'+(a[2]==='teddy'?' teddy':'');
+    if(a[2]==='teddy') k.innerHTML=teddySVG('normal')+'Teddy'; else k.textContent=a[0];
+    if(a[2]==='eraser') k.setAttribute('data-eraser','1');
+    k.onclick=a[1];
+    acts.appendChild(k);
+  });
+}
+function paintPhoneBar(){
+  var ks=document.querySelectorAll('#pb-nums .k'), i;
+  for(i=0;i<ks.length;i++){
+    var v=parseInt(ks[i].getAttribute('data-v'),10);
+    ks[i].className='k'+(pen===v && !eraser ? ' on':'');
+  }
+  var er=document.querySelector('#pb-acts .k[data-eraser]');
+  if(er) er.className='k wide'+(eraser?' on':'');
+}
+
+/* ---------- Bühne einpassen ---------- */
+function fitStage(){
+  var vv=window.visualViewport;
+  var w=(vv? vv.width : window.innerWidth), h=(vv? vv.height : window.innerHeight);
+  var bar=document.getElementById('phonebar');
+  var bh=bar? bar.offsetHeight : 0;
+  var s=Math.min(w/640, (h-bh)/900);
+  stage.style.top=((h-bh)/2)+'px';
+  stage.style.transform='translate(-50%,-50%) scale('+s+')';
+  if(typeof bubbleEl!=='undefined' && bubbleEl) bubbleEl.style.setProperty('--bar-h', (bh+8)+'px');
+}
+function fitStageAndBubble(){ fitStage(); if(typeof positionBubble==='function') positionBubble(); }
+window.addEventListener('resize', fitStageAndBubble);
+window.addEventListener('orientationchange', function(){ setTimeout(fitStageAndBubble,250); });
+if(window.visualViewport) window.visualViewport.addEventListener('resize', fitStageAndBubble);
+
+/* ---------- Tastatur ---------- */
+document.addEventListener('keydown', function(e){
+  if(gameview.classList.contains('hidden')) return;
+  if(e.key>='1' && e.key<='9'){ pickNumber(parseInt(e.key,10)); e.preventDefault(); return; }
+  if(e.key==='Backspace'||e.key==='Delete'||e.key==='0'){ pickEraser(); e.preventDefault(); return; }
+  if(e.key==='z' && (e.ctrlKey||e.metaKey)){ undo(); e.preventDefault(); return; }
+  var d={ArrowLeft:-1, ArrowRight:1, ArrowUp:-9, ArrowDown:9}[e.key];
+  if(d!==undefined){
+    if(selCell<0) selCell=40;
+    else {
+      var n=selCell+d;
+      if(d===-1 && selCell%9===0) n=selCell;
+      if(d===1 && selCell%9===8) n=selCell;
+      if(n>=0 && n<81) selCell=n;
+    }
+    render(); e.preventDefault();
+  }
+});
+
+/* ---------- Knöpfe ---------- */
+document.getElementById('b-play').onclick=showDifficulty;
+document.getElementById('b-user').onclick=showUsers;
+document.getElementById('b-rules').onclick=showRules;
+document.getElementById('b-opts').onclick=showOptions;
+document.getElementById('b-times').onclick=showTimes;
+document.getElementById('b-quit').onclick=showQuit;
+document.getElementById('b-print').onclick=printPuzzle;
+document.getElementById('teddy-icon').innerHTML=teddySVG();
+document.getElementById('b-teddy').onclick=askTeddy;
+document.getElementById('b-menu').onclick=toMenu;
+document.getElementById('b-give').onclick=giveUp;
+
+/* ---------- Start ---------- */
+buildPhoneBar();
+fitStage();
+showWelcome();
+</script>
+</body>
+</html>

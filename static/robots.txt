@@ -1,4 +1,5 @@
 User-agent: *
 Allow: /
+Disallow: /teddy/
 
 Sitemap: https://pi-holz.de/sitemap.xml

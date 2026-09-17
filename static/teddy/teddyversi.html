@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta name="robots" content="noindex, nofollow">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+<title>Teddyversi</title>
+<style>
+:root{
+  --holz1:#7a2f18; --holz2:#4e1c0d; --holz3:#8f3a1e;
+  --leiste:#e2914a; --leiste2:#c9702f; --leiste3:#f3b478;
+  --brett:#1f6b3a; --brett1:#2a8049; --linie:#154a28;
+  --du:#3a2416; --du2:#5c3b26; --teddy:#efe4d0; --teddy2:#d9c9a6;
+  --zelle:52px;
+}
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+html,body{height:100%;}
+body{
+  margin:0; position:fixed; inset:0; overflow:hidden;
+  background:var(--holz2);
+  font-family:"Trebuchet MS","Segoe UI",Tahoma,Verdana,sans-serif;
+  color:#fff; user-select:none; -webkit-user-select:none;
+  -webkit-touch-callout:none; touch-action:manipulation; overscroll-behavior:none;
+}
+input, textarea{user-select:text; -webkit-user-select:text; font-size:16px;}
+#wrap{position:absolute; inset:0; display:flex; flex-direction:column;}
+
+/* ---------- Statuszeile ---------- */
+#status{
+  flex:0 0 auto; display:flex; align-items:center; gap:8px; padding:6px 10px;
+  background:linear-gradient(180deg,#6b3418,#54250f);
+  border-bottom:1px solid #34150a; font-size:14px; line-height:1.25;
+}
+#status.warn{background:linear-gradient(180deg,#8c3a1a,#6e2510); color:#ffe0b8;}
+#status.gut{background:linear-gradient(180deg,#1f6b2c,#14501f); color:#e6ffe6;}
+.chip{
+  display:flex; align-items:center; gap:6px; padding:3px 10px; border-radius:14px;
+  background:rgba(255,255,255,.10); border:1px solid rgba(255,255,255,.18);
+  font-size:13px; font-weight:bold; white-space:nowrap;
+}
+.chip.dran{background:#e2914a; color:#3d1505; border-color:#ffd7ac;}
+.chip .kugel{width:15px; height:15px; border-radius:50%; flex:0 0 auto; box-shadow:inset 0 -2px 3px rgba(0,0,0,.3), inset 0 1px 1px rgba(255,255,255,.4);}
+.chip .kugel.du{background:radial-gradient(circle at 35% 30%, var(--du2), var(--du) 72%);}
+.chip .kugel.teddy{background:radial-gradient(circle at 35% 30%, var(--teddy2), var(--teddy) 72%); box-shadow:inset 0 -2px 3px rgba(0,0,0,.18), 0 0 0 1px rgba(0,0,0,.18);}
+#statusTxt{flex:1 1 auto; text-align:center; font-size:13.5px;}
+
+/* ---------- Spielfeld ---------- */
+#boardframe{
+  flex:1 1 auto; min-height:0; display:flex; align-items:center; justify-content:center;
+  background-color:#1e2a45;
+  background-image:
+    radial-gradient(110% 80% at 50% -8%, rgba(160,190,255,.12), rgba(0,0,0,0) 60%),
+    radial-gradient(110% 80% at 50% 112%, rgba(0,0,0,.32), rgba(0,0,0,0) 62%);
+  padding:10px;
+}
+#board{
+  display:grid; grid-template-columns:repeat(8, var(--zelle)); grid-template-rows:repeat(8, var(--zelle));
+  gap:2px; background:var(--linie); padding:7px; border-radius:8px;
+  box-shadow:0 12px 30px rgba(0,0,0,.55), inset 0 0 0 3px #123a20;
+}
+.zelle{
+  position:relative; background:var(--brett); display:flex; align-items:center; justify-content:center;
+  cursor:pointer;
+}
+.zelle.legal::after{
+  content:""; width:24%; height:24%; border-radius:50%; background:rgba(255,255,255,.4);
+  box-shadow:0 0 6px rgba(255,255,255,.5);
+}
+.zelle.legal:active::after{background:rgba(255,255,255,.65);}
+.steinWrap{position:relative; width:82%; height:82%; perspective:400px;}
+.steinWrap.neu{animation:setzen .16s ease-out;}
+@keyframes setzen{from{transform:scale(.35); opacity:0;} to{transform:scale(1); opacity:1;}}
+.stein{
+  position:relative; width:100%; height:100%; border-radius:50%;
+  transform-style:preserve-3d; transition:transform .38s ease;
+}
+.stein.zeigtTeddy{transform:rotateY(180deg);}
+.stein .seite{
+  position:absolute; inset:0; border-radius:50%; backface-visibility:hidden;
+  box-shadow:0 3px 6px rgba(0,0,0,.4), inset 0 -3px 6px rgba(0,0,0,.22), inset 0 2px 3px rgba(255,255,255,.3);
+}
+.stein .seite.vorn{background:radial-gradient(circle at 35% 28%, var(--du2), var(--du) 72%);}
+.stein .seite.hinten{
+  background:radial-gradient(circle at 35% 28%, var(--teddy2), var(--teddy) 72%);
+  transform:rotateY(180deg); box-shadow:0 3px 6px rgba(0,0,0,.4), inset 0 -3px 5px rgba(0,0,0,.14), inset 0 2px 3px rgba(255,255,255,.5);
+}
+
+/* ---------- Symbolleiste ---------- */
+#bar{
+  flex:0 0 auto; display:flex; align-items:stretch; gap:3px;
+  padding:3px 3px calc(3px + env(safe-area-inset-bottom));
+  background:linear-gradient(180deg,var(--leiste3),var(--leiste) 55%,var(--leiste2));
+  border-top:2px solid #8c4a17;
+}
+.btn{
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  min-width:46px; padding:2px 7px; border:2px solid; border-color:#ffdcb8 #9a5320 #9a5320 #ffdcb8;
+  background:linear-gradient(180deg,#f6bd85,#dd8f45); color:#4a1d07; cursor:pointer;
+  font-size:11px; line-height:1.1; border-radius:4px; font-weight:bold; white-space:nowrap;
+  flex:1 1 0;
+}
+.btn:active{border-color:#9a5320 #ffdcb8 #ffdcb8 #9a5320; background:linear-gradient(180deg,#dd8f45,#f6bd85);}
+.btn[disabled]{opacity:.42; pointer-events:none;}
+.btn .ico{font-size:16px; line-height:1;}
+.btn.go{background:linear-gradient(180deg,#8fe08f,#3aa03a); color:#0b2f0b; border-color:#ccf5cc #1c6b1c #1c6b1c #ccf5cc; flex:1.6 1 0;}
+
+/* ---------- Dialoge (Bausteine wie in Teddikub, damit die Familie einheitlich aussieht) ---------- */
+#veil{position:absolute; inset:0; background:rgba(20,6,0,.66); display:none; z-index:40;
+  align-items:center; justify-content:center; padding:14px; overflow:auto;}
+#veil.on{display:flex;}
+.dlg{
+  background:linear-gradient(170deg,#fdf1e2,#eddcc4); color:#4a1d07; border-radius:12px;
+  border:3px solid #a75c22; box-shadow:0 14px 40px rgba(0,0,0,.6);
+  max-width:480px; width:100%; max-height:100%; overflow:auto; padding:16px 18px 18px;
+}
+.dlg h2{margin:0 0 8px; font-size:22px; color:#7a2f18;}
+.dlg h3{margin:14px 0 4px; font-size:15px; color:#7a2f18;}
+.dlg p,.dlg li{font-size:14px; line-height:1.5; margin:5px 0;}
+.dlg ul{margin:4px 0; padding-left:20px;}
+.row{display:flex; gap:8px; flex-wrap:wrap; margin-top:12px;}
+.row .btn{flex:1 1 auto; min-height:40px; font-size:14px;}
+.lvl{display:flex; flex-direction:column; gap:6px; margin-top:10px;}
+.lvl button{
+  display:flex; align-items:center; gap:10px; text-align:left; cursor:pointer;
+  border:2px solid #a75c22; border-radius:8px; padding:9px 12px; font-size:15px; font-weight:bold;
+  background:linear-gradient(180deg,#fff6ea,#e8d3b6); color:#4a1d07; font-family:inherit;
+}
+.lvl button.an{background:linear-gradient(180deg,#ffe7b8,#e39b3d); box-shadow:0 0 0 3px #ffd23a inset;}
+.lvl button:active{background:linear-gradient(180deg,#e8d3b6,#fff6ea);}
+.lvl b{flex:1 1 auto;}
+.lvl span{font-size:12px; font-weight:normal; opacity:.8; display:block;}
+table.sc{width:100%; border-collapse:collapse; margin-top:8px; font-size:14px;}
+table.sc th,table.sc td{padding:5px 6px; border-bottom:1px solid rgba(122,47,24,.2); text-align:left;}
+table.sc td.n{text-align:right; font-weight:bold;}
+table.sc tr.me{background:rgba(255,210,58,.3);}
+.opt{display:flex; align-items:center; justify-content:space-between; gap:10px; padding:7px 0; border-bottom:1px solid rgba(122,47,24,.18);}
+.opt label{font-size:14px;}
+.sw{
+  width:52px; height:28px; border-radius:14px; border:2px solid #a75c22; background:#d9c4a6;
+  position:relative; cursor:pointer; flex:0 0 auto;
+}
+.sw i{position:absolute; top:1px; left:1px; width:22px; height:22px; border-radius:50%;
+  background:#7a2f18; transition:left .14s;}
+.sw.on{background:#8fd08f;} .sw.on i{left:25px; background:#1c6b1c;}
+
+/* ---------- Startbild ---------- */
+#title{text-align:center; margin-bottom:10px;}
+#title .nm{font-size:40px; font-weight:bold; color:#7a2f18; letter-spacing:1px; line-height:1;
+  text-shadow:2px 2px 0 #ffdcb8, 4px 4px 0 rgba(0,0,0,.14);}
+#title svg{width:96px; height:100px; display:block; margin:0 auto 4px;}
+#title .sub{font-size:13px; opacity:.75; margin-top:4px;}
+
+/* ---------- Fingerbedienung ---------- */
+@media (pointer:coarse){
+  .btn{min-width:50px; min-height:50px; font-size:12px;}
+  .btn .ico{font-size:19px;}
+  .lvl button{padding:13px 14px; font-size:16px;}
+  .row .btn{min-height:50px; font-size:15px;}
+  .dlg p,.dlg li{font-size:15px;}
+  .sw{width:58px; height:32px; border-radius:16px;}
+  .sw i{width:26px; height:26px;} .sw.on i{left:27px;}
+  .chip{font-size:14px;}
+}
+@media (max-width:420px){
+  .chip .name{display:none;}
+  #statusTxt{font-size:12px;}
+}
+</style>
+</head>
+<body>
+<div id="wrap">
+  <div id="status">
+    <div class="chip" id="chipDu"><span class="kugel du"></span><span class="name">Du</span><span id="scoreDu">2</span></div>
+    <span id="statusTxt">Teddyversi</span>
+    <div class="chip" id="chipTeddy"><span class="kugel teddy"></span><span class="name" id="nameSpieler2">Teddy</span><span id="scoreTeddy">2</span></div>
+  </div>
+  <div id="boardframe"><div id="board"></div></div>
+  <div id="bar">
+    <button class="btn" id="bMenu"><span class="ico">&#9776;</span><span class="lbl">Menü</span></button>
+    <button class="btn" id="bHilfe"><span class="ico">?</span><span class="lbl">Regeln</span></button>
+    <div style="flex:1 1 auto;"></div>
+    <button class="btn go" id="bNeu"><span class="ico">&#8635;</span><span class="lbl">Neues Spiel</span></button>
+  </div>
+</div>
+<div id="veil"><div class="dlg" id="dlg"></div></div>
+<script>
+"use strict";
+
+/* ==================================================================
+   Teddyversi - Reversi/Othello mit Teddi als Mitspieler
+   Eine Datei, keine Bibliotheken, kein Netz.
+   Vorbild: das Brettspiel Reversi/Othello (siehe Wikipedia). Name,
+   Grafik und die Teddy-KI sind eigene Arbeit; die Spielregeln sind
+   die klassischen von Othello (8x8, einrahmen und umdrehen).
+   ================================================================== */
+
+/* ---------- Speichern mit Rueckfall in den Arbeitsspeicher ---------- */
+var memStore = {};
+function lsGet(k,d){
+  try{ var v=localStorage.getItem(k); if(v!==null) return JSON.parse(v); }catch(e){}
+  return (k in memStore) ? memStore[k] : d;
+}
+function lsSet(k,v){ memStore[k]=v; try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} }
+
+/* ---------- Einstellungen ---------- */
+var cfg = { v:1, stufe:1, modus:'ki', vibrate:true, sound:false, hinweise:true };
+var saved = lsGet('teddyversi.cfg', null);
+if (saved) for (var ck in saved) if (ck in cfg) cfg[ck] = saved[ck];
+function saveCfg(){ lsSet('teddyversi.cfg', cfg); }
+
+var STUFEN = [
+  { name:'Leicht',  budget:150,  tiefe:2,  zufall:true,
+    txt:'Teddy spielt schnell und lässt sich gern ins Eck locken.' },
+  { name:'Normal',  budget:400,  tiefe:5,  zufall:false,
+    txt:'Teddy denkt kurz nach und spielt ordentlich mit.' },
+  { name:'Schwer',  budget:900,  tiefe:8,  zufall:false,
+    txt:'Teddy rechnet mehrere Züge voraus und meidet gefährliche Felder.' },
+  { name:'Meister', budget:1800, tiefe:99, zufall:false,
+    txt:'Teddy rechnet, sobald das Brett übersichtlich wird, bis zum Schluss durch.' }
+];
+
+/* ---------- Ton und Vibration ---------- */
+var actx = null;
+function ton(f, d, typ){
+  if (!cfg.sound) return;
+  try{
+    if (!actx) actx = new (window.AudioContext || window.webkitAudioContext)();
+    var o = actx.createOscillator(), g = actx.createGain();
+    o.type = typ || 'triangle'; o.frequency.value = f;
+    g.gain.setValueAtTime(.0001, actx.currentTime);
+    g.gain.exponentialRampToValueAtTime(.16, actx.currentTime + .01);
+    g.gain.exponentialRampToValueAtTime(.0001, actx.currentTime + d);
+    o.connect(g); g.connect(actx.destination);
+    o.start(); o.stop(actx.currentTime + d + .02);
+  }catch(e){}
+}
+function summ(ms){ if (cfg.vibrate && navigator.vibrate) try{ navigator.vibrate(ms); }catch(e){} }
+
+/* ==================================================================
+   Teddi - abstrahiert (gleicher Bauteilsatz wie in Teddikub, hier als
+   eigenstaendige Kopie, weil jede Spieldatei fuer sich lauffaehig sein
+   muss).
+   ================================================================== */
+function lockenKranz(cx, cy, r, n){
+  var d = '', i, a, x, y, x2, y2;
+  var bogen = (r * Math.sin(Math.PI / n) * 1.04).toFixed(2);
+  for (i=0;i<n;i++){
+    a  = (i/n)*Math.PI*2 - Math.PI/2;
+    x  = cx + Math.cos(a)*r;  y  = cy + Math.sin(a)*r;
+    a  = ((i+1)/n)*Math.PI*2 - Math.PI/2;
+    x2 = cx + Math.cos(a)*r;  y2 = cy + Math.sin(a)*r;
+    if (i === 0) d = 'M' + x.toFixed(1) + ' ' + y.toFixed(1);
+    d += 'A' + bogen + ' ' + bogen + ' 0 0 1 ' + x2.toFixed(1) + ' ' + y2.toFixed(1);
+  }
+  return d + 'Z';
+}
+function teddiMarke(){
+  return '<svg viewBox="0 0 100 104" xmlns="http://www.w3.org/2000/svg">'+
+    '<path d="'+lockenKranz(19,57,15,7)+'" fill="#4b3421"/>'+
+    '<path d="'+lockenKranz(81,57,15,7)+'" fill="#4b3421"/>'+
+    '<path d="'+lockenKranz(50,44,29,11)+'" fill="#75523a"/>'+
+    '<path d="'+lockenKranz(50,73,21,9)+'" fill="#efe7da"/>'+
+    '<path d="M40 64 C44 59 56 59 60 64 C62 69 56 74 50 74 C44 74 38 69 40 64 Z" fill="#2b1d15"/>'+
+    '<path d="M50 74 L50 79 M50 79 C45 86 39 85 37 80 M50 79 C55 86 61 85 63 80"'+
+      ' stroke="#2b1d15" stroke-width="3.4" fill="none" stroke-linecap="round"/>'+
+    '<circle cx="36" cy="43" r="5.2" fill="#2b1d15"/>'+
+    '<circle cx="64" cy="43" r="5.2" fill="#2b1d15"/>'+
+    '</svg>';
+}
+function teddyKopf(o){
+  o = o || {};
+  var eyes = o.eyes || 'normal', mouth = o.mouth || 'neutral';
+  var s = '';
+  s += '<path d="M34 50 C19 54 13 72 15 87 C17 99 27 104 34 98 C29 84 28 66 34 54 Z" fill="#57402f"/>'+
+       '<path d="M86 50 C101 54 107 72 105 87 C103 99 93 104 86 98 C91 84 92 66 86 54 Z" fill="#57402f"/>'+
+       '<path d="M31 58 C22 64 19 76 21 86" stroke="#4a3527" stroke-width="3" fill="none" stroke-linecap="round" opacity=".7"/>'+
+       '<path d="M89 58 C98 64 101 76 99 86" stroke="#4a3527" stroke-width="3" fill="none" stroke-linecap="round" opacity=".7"/>';
+  s += '<path d="M60 28 C79 28 91 41 92 57 C93 73 84 88 60 91 C36 88 27 73 28 57 C29 41 41 28 60 28 Z" fill="#6b4d36"/>'+
+       '<path d="M36 44 C44 33 58 30 68 34 C60 38 50 42 44 50 Z" fill="#7a5b42" opacity=".85"/>'+
+       '<path d="M84 52 C88 62 87 74 81 82 C84 70 84 60 80 52 Z" fill="#7a5b42" opacity=".7"/>'+
+       '<path d="M33 60 C31 70 33 80 39 86 C34 76 34 68 36 60 Z" fill="#5b4130" opacity=".8"/>'+
+       '<path d="M52 33 C60 31 70 33 76 38 C68 37 60 37 52 39 Z" fill="#5b4130" opacity=".6"/>';
+  s += '<path d="M42 70 C46 86 74 86 78 70 C81 82 73 92 60 93 C47 92 39 82 42 70 Z" fill="#cdc5b6"/>'+
+       '<ellipse cx="60" cy="72" rx="13" ry="9.5" fill="#ddd6c9"/>';
+  if (mouth === 'tongue')
+    s += '<path d="M54 79 C54 90 66 90 66 79 C64 84 56 84 54 79 Z" fill="#d98a8a"/>';
+  s += '<path d="M53 67 C56 63.5 64 63.5 67 67 C68.4 70.4 64.4 73.6 60 73.6 C55.6 73.6 51.6 70.4 53 67 Z" fill="#2e2019"/>'+
+       '<ellipse cx="57.4" cy="66.8" rx="2" ry="1.2" fill="#5a4a41" opacity=".8"/>'+
+       '<path d="M60 74 L60 77 M60 77 C55.5 83 50 82 48 78.5 M60 77 C64.5 83 70 82 72 78.5"'+
+       ' stroke="#3a2b21" stroke-width="2.1" fill="none" stroke-linecap="round"/>';
+  if (eyes === 'closed')
+    s += '<path d="M42 57 C46 53 52 53 55 57 M65 57 C68 53 74 53 78 57" stroke="#291b13"'+
+         ' stroke-width="2.6" fill="none" stroke-linecap="round"/>';
+  else if (eyes === 'wide')
+    s += '<ellipse cx="47.5" cy="56" rx="5.4" ry="5.8" fill="#291b13"/>'+
+         '<ellipse cx="72.5" cy="56" rx="5.4" ry="5.8" fill="#291b13"/>'+
+         '<ellipse cx="49" cy="54" rx="1.6" ry="1.4" fill="#fff" opacity=".7"/>'+
+         '<ellipse cx="74" cy="54" rx="1.6" ry="1.4" fill="#fff" opacity=".7"/>';
+  else
+    s += '<ellipse cx="47.5" cy="56.5" rx="4.1" ry="4.4" fill="#291b13"/>'+
+         '<ellipse cx="72.5" cy="56.5" rx="4.1" ry="4.4" fill="#291b13"/>'+
+         '<ellipse cx="48.8" cy="55" rx="1.2" ry="1.1" fill="#fff" opacity=".65"/>'+
+         '<ellipse cx="73.8" cy="55" rx="1.2" ry="1.1" fill="#fff" opacity=".65"/>';
+  s += '<path d="M40 51 C45 47 53 47 56 51 C50 49.5 45 49.5 40 51 Z" fill="#5b4130"/>'+
+       '<path d="M64 51 C67 47 75 47 80 51 C75 49.5 70 49.5 64 51 Z" fill="#5b4130"/>';
+  return s;
+}
+function teddyKonfetti(){
+  var bits=[[10,18,'#e8412c',18],[104,40,'#2f8f30',-24],[22,96,'#2079d8',36],[100,96,'#f6a021',-12],
+            [42,8,'#8b3fbf',12],[76,2,'#00a6a6',-30],[2,58,'#f6a021',-40],[112,72,'#e8412c',22],
+            [30,120,'#2f8f30',28],[92,124,'#8b3fbf',-18],[118,52,'#2079d8',44],[0,96,'#e8412c',-34],
+            [58,124,'#f6a021',8],[16,4,'#2079d8',-16]];
+  var s='';
+  bits.forEach(function(b){
+    s += '<rect x="'+b[0]+'" y="'+b[1]+'" width="9" height="6" rx="1.5" fill="'+b[2]+
+         '" transform="rotate('+b[3]+' '+(b[0]+4)+' '+(b[1]+3)+')"/>';
+  });
+  s += '<circle cx="16" cy="40" r="3.4" fill="#ffd23a"/><circle cx="108" cy="18" r="3" fill="#e8412c"/>'+
+       '<circle cx="88" cy="118" r="3.2" fill="#2079d8"/>';
+  return s;
+}
+function svgWrap(inner){
+  return '<svg viewBox="-8 -8 136 136" xmlns="http://www.w3.org/2000/svg">'+inner+'</svg>';
+}
+function teddyJubel(){
+  return svgWrap(teddyKonfetti() +
+    '<g transform="rotate(-4 60 64)">'+teddyKopf({eyes:'closed', mouth:'tongue'})+'</g>');
+}
+function teddyRuhig(){ return svgWrap(teddyKopf({})); }
+function teddyStaunt(){ return svgWrap(teddyKopf({eyes:'wide'})); }
+
+/* ==================================================================
+   Spielregeln
+   ------------------------------------------------------------------
+   Brett: 64 Felder, flach in einem Array. 0 = leer, 1 = Du, 2 = Teddy.
+   Wer zieht, muss mindestens eine gegnerische Reihe einrahmen; sonst
+   muss er aussetzen. Setzen beide aus, ist die Partie zu Ende.
+   ================================================================== */
+var RICHTUNGEN = [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]];
+function feld(r,c){ return r*8+c; }
+function imBrett(r,c){ return r>=0 && r<8 && c>=0 && c<8; }
+function gegner(s){ return s===1 ? 2 : 1; }
+
+/* Alle Zuege fuer `spieler`, je mit den Feldern, die dabei umgedreht wuerden. */
+function zuegeMitFlips(brett, spieler){
+  var out = [], r, c;
+  for (r=0;r<8;r++) for (c=0;c<8;c++){
+    if (brett[feld(r,c)] !== 0) continue;
+    var flips = [];
+    for (var d=0; d<8; d++){
+      var dr = RICHTUNGEN[d][0], dc = RICHTUNGEN[d][1];
+      var rr = r+dr, cc = c+dc, linie = [];
+      while (imBrett(rr,cc) && brett[feld(rr,cc)] === gegner(spieler)){
+        linie.push(feld(rr,cc)); rr += dr; cc += dc;
+      }
+      if (linie.length && imBrett(rr,cc) && brett[feld(rr,cc)] === spieler) flips = flips.concat(linie);
+    }
+    if (flips.length) out.push({ r:r, c:c, idx:feld(r,c), flips:flips });
+  }
+  return out;
+}
+function zugAnwenden(brett, zug, spieler){
+  var nb = brett.slice();
+  nb[zug.idx] = spieler;
+  for (var i=0;i<zug.flips.length;i++) nb[zug.flips[i]] = spieler;
+  return nb;
+}
+function leereFelder(brett){
+  var n = 0; for (var i=0;i<64;i++) if (brett[i] === 0) n++; return n;
+}
+function zaehleSteine(brett){
+  var du = 0, teddy = 0;
+  for (var i=0;i<64;i++){ if (brett[i] === 1) du++; else if (brett[i] === 2) teddy++; }
+  return { du:du, teddy:teddy };
+}
+
+/* ==================================================================
+   Teddy - die Gegner-KI
+   ------------------------------------------------------------------
+   Negamax mit Alpha-Beta-Schnitt und schrittweiser Vertiefung: je
+   Zeitbudget wird die Suche eine Ebene tiefer wiederholt, bis die
+   Zeit um ist oder das Restspiel schon vollstaendig durchgerechnet
+   wurde (dann ist das Ergebnis exakt). Bewertet wird nach Position,
+   Beweglichkeit und - gegen Ende staerker gewichtet - Steinanzahl.
+   ================================================================== */
+var GEWICHT = [
+  120,-20, 20,  5,  5, 20,-20,120,
+  -20,-40, -5, -5, -5, -5,-40,-20,
+   20, -5, 15,  3,  3, 15, -5, 20,
+    5, -5,  3,  3,  3,  3, -5,  5,
+    5, -5,  3,  3,  3,  3, -5,  5,
+   20, -5, 15,  3,  3, 15, -5, 20,
+  -20,-40, -5, -5, -5, -5,-40,-20,
+  120,-20, 20,  5,  5, 20,-20,120
+];
+function bewerten(brett, spieler){
+  var geg = gegner(spieler), pos = 0, i;
+  for (i=0;i<64;i++){
+    if (brett[i] === spieler) pos += GEWICHT[i];
+    else if (brett[i] === geg) pos -= GEWICHT[i];
+  }
+  var meine = zuegeMitFlips(brett, spieler).length, seine = zuegeMitFlips(brett, geg).length;
+  var mobil = (meine+seine) ? 100 * (meine-seine) / (meine+seine) : 0;
+  var st = zaehleSteine(brett), summe = st.du + st.teddy;
+  var eigen = spieler===1 ? st.du : st.teddy, fremd = spieler===1 ? st.teddy : st.du;
+  var anteil = summe ? 100 * (eigen-fremd) / summe : 0;
+  var phase = (64 - leereFelder(brett)) / 64;      /* 0 zu Beginn, 1 am Ende */
+  return pos + mobil*(1-phase)*2 + anteil*phase*2;
+}
+function endWert(brett, spieler){
+  var st = zaehleSteine(brett);
+  var eigen = spieler===1 ? st.du : st.teddy, fremd = spieler===1 ? st.teddy : st.du;
+  if (eigen > fremd) return 100000 + (eigen-fremd);
+  if (eigen < fremd) return -100000 - (fremd-eigen);
+  return 0;
+}
+var _rvKnoten = 0;
+function negamax(brett, spieler, tiefe, alpha, beta, endeZeit){
+  if ((++_rvKnoten % 512 === 0) && Date.now() > endeZeit) return { wert:0, abgebrochen:true };
+  var zuege = zuegeMitFlips(brett, spieler);
+  if (!zuege.length){
+    var kann = zuegeMitFlips(brett, gegner(spieler));
+    if (!kann.length) return { wert: endWert(brett, spieler) };
+    if (tiefe <= 0) return { wert: bewerten(brett, spieler) };
+    var pass = negamax(brett, gegner(spieler), tiefe-1, -beta, -alpha, endeZeit);
+    return { wert: -pass.wert, abgebrochen: pass.abgebrochen };
+  }
+  if (tiefe <= 0) return { wert: bewerten(brett, spieler), zug: zuege[0] };
+  zuege.sort(function(a,b){ return GEWICHT[b.idx] - GEWICHT[a.idx]; });
+  var best = -Infinity, bestZug = zuege[0], abgebrochen = false;
+  for (var i=0;i<zuege.length;i++){
+    var nb = zugAnwenden(brett, zuege[i], spieler);
+    var erg = negamax(nb, gegner(spieler), tiefe-1, -beta, -alpha, endeZeit);
+    var wert = -erg.wert;
+    if (wert > best){ best = wert; bestZug = zuege[i]; }
+    if (best > alpha) alpha = best;
+    if (erg.abgebrochen) abgebrochen = true;
+    if (alpha >= beta || abgebrochen) break;
+  }
+  return { wert:best, zug:bestZug, abgebrochen:abgebrochen };
+}
+function teddyWahl(brett, stufe){
+  var zuege = zuegeMitFlips(brett, 2);
+  if (!zuege.length) return null;
+  if (zuege.length === 1) return zuege[0];
+  _rvKnoten = 0;
+  var endeZeit = Date.now() + stufe.budget;
+  var bestZug = zuege[0], tiefe = 1, leer = leereFelder(brett);
+  while (Date.now() < endeZeit && tiefe <= Math.min(stufe.tiefe, leer)){
+    var erg = negamax(brett, 2, tiefe, -Infinity, Infinity, endeZeit);
+    if (erg.abgebrochen) break;
+    if (erg.zug) bestZug = erg.zug;
+    tiefe++;
+    if (tiefe > leer) break;                        /* Rest schon vollstaendig geloest */
+  }
+  if (stufe.zufall){
+    var bewertet = zuege.map(function(z){
+      return { z:z, w:bewerten(zugAnwenden(brett, z, 2), 2) };
+    });
+    bewertet.sort(function(a,b){ return b.w - a.w; });
+    var kandidaten = bewertet.slice(0, Math.min(3, bewertet.length));
+    if (Math.random() < 0.4) bestZug = kandidaten[(Math.random()*kandidaten.length) | 0].z;
+  }
+  return bestZug;
+}
+
+/* ==================================================================
+   Spielstand
+   ================================================================== */
+var G = {
+  brett: null, dran: 1, laeuft: false, warten: false, spielNr: 0, modus: 'ki'
+};
+/* Ist an dieser Stelle die KI dran? Im Zweispielermodus nie - da sitzen zwei
+   Menschen abwechselnd am selben Geraet. */
+function istKI(spieler){ return G.modus !== 'zweit' && spieler === 2; }
+function spielerName(spieler){
+  if (spieler === 1) return 'Du';
+  return G.modus === 'zweit' ? 'Spieler 2' : 'Teddy';
+}
+function el(id){ return document.getElementById(id); }
+var $board = el('board'), $status = el('status'), $statusTxt = el('statusTxt'),
+    $veil = el('veil'), $dlg = el('dlg'), $frame = el('boardframe'),
+    $scoreDu = el('scoreDu'), $scoreTeddy = el('scoreTeddy'),
+    $chipDu = el('chipDu'), $chipTeddy = el('chipTeddy');
+
+/* ---------- Brettgroesse: bildfuellend, keine feste Groesse ---------- */
+function brettGroesse(){
+  var breite = $frame.clientWidth - 20, hoehe = $frame.clientHeight - 20;
+  var seite = Math.max(24, Math.min(breite, hoehe));
+  var zelle = Math.floor((seite - 14 - 14) / 8);   /* Rahmenpolster 7px je Seite, Fugen 2px */
+  zelle = Math.max(26, Math.min(70, zelle));
+  document.documentElement.style.setProperty('--zelle', zelle + 'px');
+}
+window.addEventListener('resize', brettGroesse);
+window.addEventListener('orientationchange', function(){ setTimeout(brettGroesse, 250); });
+if (window.visualViewport) window.visualViewport.addEventListener('resize', brettGroesse);
+
+/* ---------- Brett einmal aufbauen, danach nur noch veraendern ---------- */
+function brettAufbauen(){
+  var s = '', i;
+  for (i=0;i<64;i++) s += '<div class="zelle" data-idx="'+i+'"></div>';
+  $board.innerHTML = s;
+}
+function zelleVon(idx){ return $board.children[idx]; }
+
+/* Einen Stein in eine Zelle setzen (ohne Animation - fuer den Spielaufbau). */
+function steinSetzen(idx, spieler, animiert){
+  var z = zelleVon(idx);
+  z.innerHTML = '<div class="steinWrap'+(animiert ? ' neu' : '')+'"><div class="stein'+
+    (spieler === 2 ? ' zeigtTeddy' : '')+'"><div class="seite vorn"></div><div class="seite hinten"></div></div></div>';
+}
+/* Einen liegenden Stein umdrehen - der DOM-Knoten bleibt derselbe, nur die
+   Klasse wechselt, damit der Uebergang (die Dreh-Animation) auch laeuft. */
+function steinDrehen(idx, neuerSpieler){
+  var stein = zelleVon(idx).querySelector('.stein');
+  if (!stein) return;
+  if (neuerSpieler === 2) stein.classList.add('zeigtTeddy');
+  else stein.classList.remove('zeigtTeddy');
+}
+function legaleZuegeAnzeigen(zuege){
+  var i;
+  for (i=0;i<64;i++) zelleVon(i).classList.remove('legal');
+  for (i=0;i<zuege.length;i++) zelleVon(zuege[i].idx).classList.add('legal');
+}
+
+function neuesSpiel(){
+  saveCfg();
+  G.modus = cfg.modus;
+  el('nameSpieler2').textContent = spielerName(2);
+  G.brett = new Array(64); for (var i=0;i<64;i++) G.brett[i] = 0;
+  G.brett[feld(3,3)] = 2; G.brett[feld(3,4)] = 1;
+  G.brett[feld(4,3)] = 1; G.brett[feld(4,4)] = 2;
+  G.dran = 1; G.laeuft = true; G.warten = false; G.spielNr = (G.spielNr||0) + 1;
+  brettAufbauen();
+  steinSetzen(feld(3,3),2,false); steinSetzen(feld(3,4),1,false);
+  steinSetzen(feld(4,3),1,false); steinSetzen(feld(4,4),2,false);
+  meldung('');
+  aktualisieren();
+}
+
+function punkteAnzeigen(){
+  var st = zaehleSteine(G.brett);
+  $scoreDu.textContent = st.du; $scoreTeddy.textContent = st.teddy;
+  $chipDu.classList.toggle('dran', G.laeuft && G.dran === 1);
+  $chipTeddy.classList.toggle('dran', G.laeuft && G.dran === 2);
+}
+function statusText(){
+  if (!G.laeuft) return { t:'Teddyversi', k:'' };
+  if (G.warten) return { t:spielerName(G.dran) + ' überlegt …', k:'' };
+  if (G.dran === 1) return { t:'Du bist dran', k:'gut' };
+  return { t:spielerName(2) + ' ist dran', k:'gut' };
+}
+function renderStatus(){
+  if (G.meldung){ $statusTxt.textContent = G.meldung; $status.className = G.meldungArt || ''; return; }
+  var s = statusText();
+  $statusTxt.textContent = s.t; $status.className = s.k;
+}
+function meldung(txt, dauer, art){
+  G.meldung = txt || ''; G.meldungArt = art || '';
+  if (G.meldTimer) clearTimeout(G.meldTimer);
+  if (txt) G.meldTimer = setTimeout(function(){ G.meldung=''; renderStatus(); }, dauer || 2200);
+  renderStatus();
+}
+function aktualisieren(){
+  punkteAnzeigen(); renderStatus();
+  if (G.laeuft && !G.warten && !istKI(G.dran) && cfg.hinweise) legaleZuegeAnzeigen(zuegeMitFlips(G.brett, G.dran));
+  else legaleZuegeAnzeigen([]);
+}
+
+/* ---------- Einen Zug ausfuehren und anzeigen ---------- */
+function zugZeigen(zug, spieler, danach){
+  steinSetzen(zug.idx, spieler, true);
+  G.brett[zug.idx] = spieler;
+  for (var i=0;i<zug.flips.length;i++){
+    steinDrehen(zug.flips[i], spieler);
+    G.brett[zug.flips[i]] = spieler;
+  }
+  ton(spieler === 1 ? 420 : 340, .06);
+  summ(zug.flips.length ? [10, 10] : 10);
+  setTimeout(danach || function(){}, zug.flips.length ? 260 : 40);
+}
+
+/* ---------- Rundenlauf ---------- */
+function naechsterZug(){
+  var nr = G.spielNr;
+  legaleZuegeAnzeigen([]);
+  var naechster = gegner(G.dran);
+  var seineZuege = zuegeMitFlips(G.brett, naechster);
+  if (seineZuege.length){
+    G.dran = naechster;
+    if (istKI(G.dran)){
+      G.warten = true; aktualisieren();
+      setTimeout(function(){ teddyZug(nr); }, 550);
+    } else {
+      G.warten = false; aktualisieren();
+    }
+    return;
+  }
+  /* naechster kann nicht ziehen - hat der, der gerade dran war, ueberhaupt eine Fortsetzung? */
+  var meineZuege = zuegeMitFlips(G.brett, G.dran);
+  if (!meineZuege.length){ spielEnde(); return; }
+  var wer = naechster === 1 ? 'Du' : spielerName(naechster), verb = naechster === 1 ? 'musst' : 'muss';
+  meldung(wer + ' ' + verb + ' aussetzen.', 2000, 'warn');
+  aktualisieren();
+  if (istKI(G.dran)){
+    /* Teddy bleibt am Zug, weil Du aussetzen musst */
+    G.warten = true; aktualisieren();
+    setTimeout(function(){ teddyZug(nr); }, 900);
+  } else {
+    G.warten = false; aktualisieren();
+  }
+}
+function feldGetippt(idx){
+  if (!G.laeuft || G.warten || istKI(G.dran)) return;
+  var spieler = G.dran;
+  var zuege = zuegeMitFlips(G.brett, spieler), zug = null, i;
+  for (i=0;i<zuege.length;i++) if (zuege[i].idx === idx) zug = zuege[i];
+  if (!zug) return;
+  var nr = G.spielNr;
+  legaleZuegeAnzeigen([]);
+  zugZeigen(zug, spieler, function(){ if (nr === G.spielNr) naechsterZug(); });
+}
+function teddyZug(nr){
+  if (!G.laeuft || nr !== G.spielNr) return;
+  var stufe = STUFEN[cfg.stufe];
+  var zug = teddyWahl(G.brett, stufe);
+  if (!zug){ naechsterZug(); return; }         /* Sicherheitsnetz, sollte nicht vorkommen */
+  zugZeigen(zug, 2, function(){ if (nr === G.spielNr) naechsterZug(); });
+}
+
+/* ==================================================================
+   Bedienung - Touch zuerst
+   ================================================================== */
+var tapEvt = window.PointerEvent ? 'pointerdown' : 'mousedown';
+$board.addEventListener(tapEvt, function(e){
+  if (e.pointerType === 'mouse' && e.button !== 0) return;
+  var n = e.target;
+  while (n && n !== $board && !(n.classList && n.classList.contains('zelle'))) n = n.parentNode;
+  if (!n || n === $board) return;
+  feldGetippt(parseInt(n.getAttribute('data-idx'), 10));
+}, {passive:true});
+
+/* ==================================================================
+   Abrechnung
+   ================================================================== */
+function bilanzSchluessel(modus){ return modus === 'zweit' ? 'teddyversi.bilanzZweit' : 'teddyversi.bilanz'; }
+function bilanzLesen(modus){
+  modus = modus || G.modus;
+  if (modus === 'zweit') return lsGet(bilanzSchluessel(modus), { du:0, spieler2:0, unentschieden:0 });
+  var b = lsGet(bilanzSchluessel(modus), { du:0, teddy:0, unentschieden:0 });
+  /* Einmalige Umstellung: die Bilanz hiess anfangs nach dem Gegnernamen "bello". */
+  if (b.teddy === undefined){ b.teddy = b.bello || 0; delete b.bello; lsSet(bilanzSchluessel(modus), b); }
+  return b;
+}
+function spielEnde(){
+  G.laeuft = false; legaleZuegeAnzeigen([]);
+  var st = zaehleSteine(G.brett);
+  var bilanz = bilanzLesen();
+  var sieger = st.du > st.teddy ? 'du' : (st.teddy > st.du ? (G.modus === 'zweit' ? 'spieler2' : 'teddy') : 'unentschieden');
+  bilanz[sieger] = (bilanz[sieger] || 0) + 1;
+  lsSet(bilanzSchluessel(G.modus), bilanz);
+  aktualisieren();
+  setTimeout(function(){ zeigeErgebnis(st, sieger, bilanz); }, 250);
+}
+
+/* ==================================================================
+   Dialoge
+   ================================================================== */
+function auf(html){ $dlg.innerHTML = html; $veil.className = 'on'; $dlg.scrollTop = 0; }
+function zu(){ $veil.className = ''; }
+$veil.addEventListener('click', function(e){ if (e.target === $veil && G.laeuft) zu(); });
+$dlg.addEventListener('click', function(e){
+  var n = e.target;
+  while (n && n !== $dlg && !n.getAttribute('data-act')) n = n.parentNode;
+  if (!n || n === $dlg) return;
+  var a = n.getAttribute('data-act'), v = n.getAttribute('data-v');
+  ton(500,.05);
+  if (a === 'zu') zu();
+  else if (a === 'neu') zeigeStart(true);
+  else if (a === 'start'){ cfg.modus = 'ki'; if (v != null) cfg.stufe = parseInt(v,10); zu(); neuesSpiel(); }
+  else if (a === 'zweit'){ cfg.modus = 'zweit'; zu(); neuesSpiel(); }
+  else if (a === 'weiter') zu();
+  else if (a === 'hilfe') zeigeHilfe();
+  else if (a === 'opt') zeigeOptionen();
+  else if (a === 'menu') zeigeMenu();
+  else if (a === 'bilanz') zeigeBilanz();
+  else if (a === 'stufe'){ cfg.stufe = parseInt(v,10); saveCfg(); zeigeOptionen(); }
+  else if (a === 'sw'){
+    var f = n.getAttribute('data-f');
+    cfg[f] = !cfg[f]; saveCfg();
+    n.className = 'sw' + (cfg[f] ? ' on' : '');
+    if (f === 'sound' && cfg.sound) ton(660,.08);
+    if (f === 'hinweise') aktualisieren();
+  }
+  else if (a === 'reset'){
+    lsSet('teddyversi.bilanz', {du:0,teddy:0,unentschieden:0});
+    lsSet('teddyversi.bilanzZweit', {du:0,spieler2:0,unentschieden:0});
+    zeigeOptionen();
+  }
+});
+
+function stufenListe(aktionName){
+  var h = '<div class="lvl">';
+  for (var i=0;i<STUFEN.length;i++)
+    h += '<button data-act="'+aktionName+'" data-v="'+i+'" class="'+(cfg.stufe===i?'an':'')+'">'+
+         '<b>'+STUFEN[i].name+'<span>'+STUFEN[i].txt+'</span></b></button>';
+  h += '</div>';
+  return h;
+}
+function zeigeStart(nurNeu){
+  var h = '<div id="title"><div>'+teddiMarke()+'</div><div class="nm">Teddyversi</div></div>';
+  h += '<h3>Gegen Teddy</h3>' + stufenListe('start');
+  h += '<div class="row"><button class="btn" data-act="zweit" style="flex:1 1 100%;">'+
+       '<span class="ico">&#128101;</span>Zu zweit spielen (ohne Teddy)</button></div>';
+  h += '<div class="row">'+
+       '<button class="btn" data-act="opt"><span class="ico">&#9881;</span>Mehr</button>'+
+       '<button class="btn" data-act="hilfe"><span class="ico">?</span>Regeln</button>';
+  if (G.laeuft && !nurNeu) h += '<button class="btn" data-act="zu"><span class="ico">&#10005;</span>Zurück</button>';
+  h += '</div>';
+  auf(h);
+}
+function zeigeMenu(){
+  var h = '<h2>Menü</h2><div class="lvl">'+
+    (G.laeuft ? '<button data-act="zu"><b>Weiterspielen</b></button>' : '') +
+    '<button data-act="neu"><b>Neues Spiel</b></button>'+
+    '<button data-act="bilanz"><b>Bilanz</b></button>'+
+    '<button data-act="hilfe"><b>Regeln und Bedienung</b></button>'+
+    '<button data-act="opt"><b>Einstellungen</b></button>'+
+    '</div>';
+  auf(h);
+}
+function zeigeOptionen(){
+  var h = '<h2>Einstellungen</h2><h3>Schwierigkeit</h3>' + stufenListe('stufe');
+  h += '<div class="opt"><label>Mögliche Felder anzeigen</label><div class="sw'+(cfg.hinweise?' on':'')+'" data-act="sw" data-f="hinweise"><i></i></div></div>';
+  h += '<div class="opt"><label>Ton</label><div class="sw'+(cfg.sound?' on':'')+'" data-act="sw" data-f="sound"><i></i></div></div>';
+  h += '<div class="opt"><label>Vibration</label><div class="sw'+(cfg.vibrate?' on':'')+'" data-act="sw" data-f="vibrate"><i></i></div></div>';
+  h += '<p style="margin-top:10px;font-size:13px;opacity:.8;">Die Schwierigkeit gilt ab dem nächsten neuen Spiel.</p>';
+  h += '<div class="row"><button class="btn" data-act="reset">Bilanz löschen</button>'+
+       '<button class="btn" data-act="'+(G.laeuft?'zu':'neu')+'">Fertig</button></div>';
+  auf(h);
+}
+function zeigeBilanz(){
+  var bk = bilanzLesen('ki'), bz = bilanzLesen('zweit');
+  var h = '<h2>Bilanz</h2><h3>Gegen Teddy</h3><table class="sc">'+
+    '<tr class="me"><td>Du</td><td class="n">'+bk.du+'</td></tr>'+
+    '<tr><td>Teddy</td><td class="n">'+bk.teddy+'</td></tr>'+
+    '<tr><td>Unentschieden</td><td class="n">'+bk.unentschieden+'</td></tr></table>';
+  h += '<h3>Zu zweit</h3><table class="sc">'+
+    '<tr class="me"><td>Du</td><td class="n">'+bz.du+'</td></tr>'+
+    '<tr><td>Spieler 2</td><td class="n">'+(bz.spieler2||0)+'</td></tr>'+
+    '<tr><td>Unentschieden</td><td class="n">'+bz.unentschieden+'</td></tr></table>';
+  h += '<div class="row"><button class="btn" data-act="'+(G.laeuft?'zu':'neu')+'">Zurück</button></div>';
+  auf(h);
+}
+function zeigeErgebnis(st, sieger, bilanz){
+  var duHat = sieger === 'du', zweit = G.modus === 'zweit';
+  var bild = duHat ? teddyJubel() : (sieger === 'unentschieden' ? teddyStaunt() : teddyRuhig());
+  var titel = duHat ? 'Gewonnen!' : (sieger === 'unentschieden' ? 'Unentschieden' : spielerName(2) + ' gewinnt');
+  var h = '<div style="text-align:center;margin-bottom:6px;">'+
+          '<div style="width:110px;margin:0 auto;">'+bild+'</div>'+
+          '<h2 style="margin:2px 0 0;">'+titel+'</h2>'+
+          '<p style="margin:0;opacity:.75;font-size:13px;">'+(zweit ? 'Zu zweit' : STUFEN[cfg.stufe].name)+'</p></div>';
+  h += '<table class="sc">'+
+       '<tr class="me"><td>Du</td><td class="n" style="font-size:19px;">'+st.du+'</td></tr>'+
+       '<tr><td>'+spielerName(2)+'</td><td class="n" style="font-size:19px;">'+st.teddy+'</td></tr></table>';
+  h += '<p style="font-size:13px;opacity:.75;margin-top:8px;">Bilanz: Du '+bilanz.du+' &middot; '+spielerName(2)+' '+
+       (zweit ? (bilanz.spieler2||0) : bilanz.teddy)+' &middot; Unentschieden '+bilanz.unentschieden+'</p>';
+  h += '<div class="row"><button class="btn go" data-act="'+(zweit ? 'zweit' : 'start')+'" data-v="'+cfg.stufe+'">'+
+       '<span class="ico">&#9654;</span>Nochmal</button>'+
+       '<button class="btn" data-act="neu">'+(zweit ? 'Zurück' : 'Stufe wechseln')+'</button></div>';
+  auf(h);
+  ton(duHat ? 720 : 240, duHat ? .1 : .2, duHat ? 'triangle' : 'square');
+}
+function zeigeHilfe(){
+  var h = '<h2>Teddyversi - Regeln</h2>'+
+  '<h3>Ziel</h3><p>Am Ende gewinnt, wer die meisten Steine seiner Farbe auf dem Brett hat.</p>'+
+  '<h3>Ziehen</h3><ul>'+
+  '<li>Du setzt nur auf ein <b>leeres Feld</b>, auf dem dein Stein mindestens eine gerade Reihe '+
+  'gegnerischer Steine einschließt (waagerecht, senkrecht oder diagonal). Solche Felder zeigen '+
+  'einen gelben Punkt, wenn du die Hinweise in den Einstellungen eingeschaltet lässt.</li>'+
+  '<li>Alle so eingeschlossenen gegnerischen Steine drehen sich um und gehören dir.</li>'+
+  '<li>Gibt es für dich kein solches Feld, <b>setzt du aus</b> und Teddy ist wieder dran.</li>'+
+  '<li>Können beide nicht mehr ziehen - oder ist das Brett voll - ist die Partie zu Ende.</li></ul>'+
+  '<h3>Bedienung</h3><p>Ein Feld mit gelbem Punkt antippen, fertig. Es gibt keine Ablage und '+
+  'keinen Bestätigen-Knopf: der Zug gilt sofort.</p>'+
+  '<h3>Zu zweit</h3><p>Im Startbild <b>Zu zweit spielen</b> wählen - dann tippen abwechselnd zwei Menschen auf demselben Gerät, ganz ohne Teddy. Die Bilanz führt beide Modi getrennt.</p>'+
+  '<h3>Schwierigkeit</h3><p>Vier Stufen von <b>Leicht</b> bis <b>Meister</b> - Teddy denkt dabei '+
+  'unterschiedlich lange nach und plant unterschiedlich weit voraus. Auf den oberen Stufen spielt '+
+  'sie gegen Ende der Partie das Restspiel vollständig durch.</p>'+
+  '<p style="opacity:.7;font-size:13px;margin-top:14px;">Vorbild ist das Brettspiel Reversi/Othello. '+
+  'Teddyversi ist eine eigene Fassung mit eigenem Namen, eigener Grafik und eigener Gegner-KI.</p>'+
+  '<div class="row"><button class="btn" data-act="'+(G.laeuft?'zu':'neu')+'">Zurück</button></div>';
+  auf(h);
+}
+
+/* ==================================================================
+   Knoepfe und Start
+   ================================================================== */
+el('bMenu').onclick = function(){ zeigeMenu(); };
+el('bHilfe').onclick = function(){ zeigeHilfe(); };
+el('bNeu').onclick = function(){ zeigeStart(true); };
+
+brettAufbauen();
+G.brett = new Array(64); for (var i0=0;i0<64;i0++) G.brett[i0] = 0;
+G.brett[feld(3,3)] = 2; G.brett[feld(3,4)] = 1; G.brett[feld(4,3)] = 1; G.brett[feld(4,4)] = 2;
+steinSetzen(feld(3,3),2,false); steinSetzen(feld(3,4),1,false);
+steinSetzen(feld(4,3),1,false); steinSetzen(feld(4,4),2,false);
+punkteAnzeigen();
+zeigeStart(false);
+brettGroesse();
+setTimeout(brettGroesse, 80);
+</script>
+</body>
+</html>

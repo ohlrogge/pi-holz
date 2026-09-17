@@ -1,0 +1,2582 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta name="robots" content="noindex, nofollow">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+<title>Teddikub</title>
+<style>
+:root{
+  --holz1:#7a2f18; --holz2:#4e1c0d; --holz3:#8f3a1e;
+  --leiste:#e2914a; --leiste2:#c9702f; --leiste3:#f3b478;
+  --stein:#f4ece2; --stein2:#e0d4c4; --steinrand:#b9a894;
+  --gruen:#2f9b3f; --rot:#d02a2a;
+  --f0:#1b1b1b; --f1:#e07b17; --f2:#16803c; --f3:#cf2020;
+  --tile:38px; --gap:2px;
+}
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+html,body{height:100%;}
+body{
+  margin:0; position:fixed; inset:0; overflow:hidden;
+  background:var(--holz2);
+  font-family:"Trebuchet MS","Segoe UI",Tahoma,Verdana,sans-serif;
+  color:#fff; user-select:none; -webkit-user-select:none;
+  -webkit-touch-callout:none; touch-action:manipulation; overscroll-behavior:none;
+}
+input, textarea{user-select:text; -webkit-user-select:text; font-size:16px;}
+#wrap{position:absolute; inset:0; display:flex; flex-direction:column;}
+
+/* ---------- Symbolleiste, unten bei der Hand ---------- */
+#bar{
+  flex:0 0 auto; display:flex; align-items:stretch; gap:3px;
+  padding:3px 3px calc(3px + env(safe-area-inset-bottom));
+  background:linear-gradient(180deg,var(--leiste3),var(--leiste) 55%,var(--leiste2));
+  border-top:2px solid #8c4a17;
+}
+.btn{
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  min-width:46px; padding:2px 7px; border:2px solid; border-color:#ffdcb8 #9a5320 #9a5320 #ffdcb8;
+  background:linear-gradient(180deg,#f6bd85,#dd8f45); color:#4a1d07; cursor:pointer;
+  font-size:11px; line-height:1.1; border-radius:4px; font-weight:bold; white-space:nowrap;
+}
+.btn:active{border-color:#9a5320 #ffdcb8 #ffdcb8 #9a5320; background:linear-gradient(180deg,#dd8f45,#f6bd85);}
+.btn[disabled]{opacity:.42; pointer-events:none;}
+.btn .ico{font-size:16px; line-height:1;}
+.btn.wide{min-width:64px;}
+.btn.go{background:linear-gradient(180deg,#8fe08f,#3aa03a); color:#0b2f0b; border-color:#ccf5cc #1c6b1c #1c6b1c #ccf5cc;}
+.btn.aktiv{background:linear-gradient(180deg,#ffe7b8,#e39b3d); box-shadow:inset 0 2px 6px rgba(122,47,24,.55);}
+.btn.aktiv .ico,.btn.aktiv .lbl{color:#5a2109;}
+#spacer{flex:1 1 auto;}
+#stack{
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  min-width:46px; padding:2px 6px; border-radius:4px; background:#fff6ea; color:#4a1d07;
+  border:2px solid #9a5320; font-weight:bold; font-size:15px;
+}
+#stack small{font-size:9px; font-weight:normal; display:block;}
+
+/* ---------- Gegner ---------- */
+#foes{
+  flex:0 0 auto; display:flex; gap:6px; padding:4px 6px; align-items:center;
+  background:linear-gradient(180deg,#5d2412,#4a1c0d);
+  border-bottom:1px solid #2e1108; overflow:hidden;
+}
+.foe{
+  display:flex; align-items:center; gap:5px; padding:2px 7px; border-radius:12px;
+  background:rgba(255,255,255,.09); border:1px solid rgba(255,255,255,.16);
+  font-size:12px; min-width:0;
+}
+.foe.turn{background:#e2914a; color:#3d1505; border-color:#ffd7ac; font-weight:bold;}
+.foe .cnt{background:#fff6ea; color:#4a1d07; border-radius:8px; padding:0 6px; font-weight:bold; font-size:12px;}
+.foe .pts{opacity:.85;}
+.foe .bars{display:flex; gap:1px; align-items:flex-end; min-width:0; flex-wrap:nowrap; overflow:hidden;}
+.foe .bars i{width:4px; height:13px; background:#f0e4d4; border:1px solid #8c6b4a; border-radius:1px; flex:0 0 auto;}
+#msg{margin-left:auto; font-size:12px; opacity:.9; padding-right:4px; text-align:right; max-width:46%;}
+
+/* ---------- Tisch ---------- */
+/* Die Tischoberflaeche ist waehlbar (Einstellungen -> Spielfeld).
+   Jede Oberflaeche ist eine Klasse .feld-xxx - so passt sie auf das Spielfeld
+   und auf die kleinen Proben im Dialog gleichermassen. Alles reines CSS. */
+#tableframe{
+  flex:1 1 auto; min-height:0; position:relative; overflow:auto;
+  box-shadow: inset 0 0 0 2px rgba(0,0,0,.30), inset 0 0 44px rgba(0,0,0,.38);
+}
+/* Filz, gruen - der klassische Spieltisch. Feines Kreuzgewebe statt Streifen. */
+.feld-filz{
+  --satzrand:#9be3a6;
+  background-color:#25603f;
+  background-image:
+    radial-gradient(120% 85% at 50% -5%, rgba(255,255,255,.11), rgba(0,0,0,0) 60%),
+    radial-gradient(110% 80% at 50% 112%, rgba(0,0,0,.30), rgba(0,0,0,0) 62%),
+    repeating-linear-gradient(45deg,  rgba(255,255,255,.028) 0 1px, rgba(0,0,0,0) 1px 3px),
+    repeating-linear-gradient(-45deg, rgba(0,0,0,.05) 0 1px, rgba(0,0,0,0) 1px 3px);
+}
+/* Filz, petrol */
+.feld-petrol{
+  --satzrand:#8fe0d0;
+  background-color:#1f4d5a;
+  background-image:
+    radial-gradient(120% 85% at 50% -5%, rgba(255,255,255,.10), rgba(0,0,0,0) 60%),
+    radial-gradient(110% 80% at 50% 112%, rgba(0,0,0,.32), rgba(0,0,0,0) 62%),
+    repeating-linear-gradient(45deg,  rgba(255,255,255,.026) 0 1px, rgba(0,0,0,0) 1px 3px),
+    repeating-linear-gradient(-45deg, rgba(0,0,0,.05) 0 1px, rgba(0,0,0,0) 1px 3px);
+}
+/* Eiche, honigfarben - heller als das dunkle Holz, Maserung laengs */
+.feld-eiche{
+  background-color:#9a6a3c;
+  background-image:
+    radial-gradient(120% 80% at 50% -10%, rgba(255,240,215,.16), rgba(0,0,0,0) 60%),
+    repeating-linear-gradient(2deg, rgba(90,50,20,.10) 0 2px, rgba(0,0,0,0) 2px 9px),
+    repeating-linear-gradient(-1deg, rgba(255,230,190,.06) 0 5px, rgba(0,0,0,0) 5px 31px),
+    repeating-linear-gradient(1deg, rgba(70,40,15,.08) 0 11px, rgba(0,0,0,0) 11px 83px),
+    linear-gradient(170deg, #a8773f 0%, #946338 50%, #7e5230 100%);
+}
+/* Schiefer, ruhig - nur weiche Wolken, keine Linien */
+.feld-schiefer{
+  background-color:#3d4447;
+  background-image:
+    radial-gradient(60% 45% at 25% 30%, rgba(255,255,255,.05), rgba(0,0,0,0) 70%),
+    radial-gradient(55% 50% at 78% 70%, rgba(0,0,0,.16), rgba(0,0,0,0) 72%),
+    radial-gradient(45% 35% at 70% 18%, rgba(255,255,255,.035), rgba(0,0,0,0) 70%),
+    linear-gradient(165deg, #454d51 0%, #3b4245 55%, #33393c 100%);
+}
+/* Kork - warm, mit unregelmaessig verstreuten Koernern. Drei Kacheln mit
+   teilerfremden Groessen (37x41, 53x47, 29x31), damit kein Raster sichtbar wird. */
+.feld-kork{
+  background-color:#a8794a;
+  background-image:
+    radial-gradient(circle at 12.0px 6.2px, rgba(72,40,14,0.40) 1.7px, rgba(0,0,0,0) 2.4px),
+    radial-gradient(circle at 13.5px 2.4px, rgba(72,40,14,0.38) 1.5px, rgba(0,0,0,0) 2.2px),
+    radial-gradient(circle at 2.6px 3.7px, rgba(255,226,182,0.20) 1.4px, rgba(0,0,0,0) 2.1px),
+    radial-gradient(circle at 8.3px 25.7px, rgba(255,226,182,0.24) 2.1px, rgba(0,0,0,0) 2.8px),
+    radial-gradient(circle at 36.1px 1.9px, rgba(72,40,14,0.33) 2.0px, rgba(0,0,0,0) 2.7px),
+    radial-gradient(circle at 4.4px 12.6px, rgba(72,40,14,0.40) 1.9px, rgba(0,0,0,0) 2.6px),
+    radial-gradient(circle at 23.6px 15.3px, rgba(72,40,14,0.31) 1.6px, rgba(0,0,0,0) 2.3px),
+    radial-gradient(circle at 7.6px 27.9px, rgba(72,40,14,0.41) 1.4px, rgba(0,0,0,0) 2.1px),
+    radial-gradient(circle at 16.8px 12.3px, rgba(255,226,182,0.21) 1.9px, rgba(0,0,0,0) 2.6px),
+    radial-gradient(circle at 30.4px 24.7px, rgba(255,226,182,0.22) 2.0px, rgba(0,0,0,0) 2.7px),
+    radial-gradient(circle at 51.9px 5.5px, rgba(255,226,182,0.20) 1.4px, rgba(0,0,0,0) 2.1px),
+    radial-gradient(circle at 25.9px 1.8px, rgba(255,226,182,0.26) 1.7px, rgba(0,0,0,0) 2.4px),
+    radial-gradient(circle at 46.4px 14.7px, rgba(255,226,182,0.26) 1.8px, rgba(0,0,0,0) 2.5px),
+    radial-gradient(circle at 24.2px 39.5px, rgba(72,40,14,0.42) 2.1px, rgba(0,0,0,0) 2.8px),
+    radial-gradient(circle at 3.2px 33.0px, rgba(255,226,182,0.30) 1.7px, rgba(0,0,0,0) 2.4px),
+    radial-gradient(circle at 15.1px 18.1px, rgba(72,40,14,0.38) 1.7px, rgba(0,0,0,0) 2.4px),
+    radial-gradient(circle at 8.9px 5.5px, rgba(255,226,182,0.20) 0.9px, rgba(0,0,0,0) 1.6px),
+    radial-gradient(circle at 13.1px 18.4px, rgba(72,40,14,0.38) 2.0px, rgba(0,0,0,0) 2.7px),
+    radial-gradient(circle at 29.1px 41.5px, rgba(255,226,182,0.22) 1.9px, rgba(0,0,0,0) 2.6px),
+    radial-gradient(circle at 22.0px 16.9px, rgba(255,226,182,0.20) 2.0px, rgba(0,0,0,0) 2.7px),
+    radial-gradient(circle at 5.1px 7.2px, rgba(72,40,14,0.41) 1.1px, rgba(0,0,0,0) 1.8px),
+    radial-gradient(circle at 7.6px 0.1px, rgba(72,40,14,0.40) 1.4px, rgba(0,0,0,0) 2.1px),
+    radial-gradient(circle at 27.6px 21.4px, rgba(255,226,182,0.27) 1.5px, rgba(0,0,0,0) 2.2px),
+    radial-gradient(circle at 1.6px 27.9px, rgba(255,226,182,0.29) 1.9px, rgba(0,0,0,0) 2.6px),
+    radial-gradient(circle at 11.4px 12.4px, rgba(255,226,182,0.19) 0.9px, rgba(0,0,0,0) 1.6px),
+    radial-gradient(circle at 2.0px 6.5px, rgba(72,40,14,0.31) 1.0px, rgba(0,0,0,0) 1.7px),
+    radial-gradient(120% 85% at 50% -5%, rgba(255,240,215,.14), rgba(0,0,0,0) 60%),
+    linear-gradient(165deg, #b4844f 0%, #a27244 55%, #8f6139 100%);
+  background-size:37px 41px, 37px 41px, 37px 41px, 37px 41px, 37px 41px, 37px 41px, 37px 41px, 37px 41px, 37px 41px, 53px 47px, 53px 47px, 53px 47px, 53px 47px, 53px 47px, 53px 47px, 53px 47px, 53px 47px, 53px 47px, 53px 47px, 53px 47px, 29px 31px, 29px 31px, 29px 31px, 29px 31px, 29px 31px, 29px 31px, auto, auto;
+}
+/* Nachtblau - schlicht, fast flaechig */
+.feld-nacht{
+  background-color:#1e2a45;
+  background-image:
+    radial-gradient(110% 80% at 50% -8%, rgba(160,190,255,.12), rgba(0,0,0,0) 60%),
+    radial-gradient(110% 80% at 50% 112%, rgba(0,0,0,.32), rgba(0,0,0,0) 62%);
+}
+/* Holz, dunkel - wie am Anfang */
+.feld-holz{
+  background-image:
+    radial-gradient(120% 80% at 50% -10%, rgba(255,255,255,.10), rgba(0,0,0,0) 60%),
+    repeating-linear-gradient(94deg, rgba(0,0,0,.10) 0 3px, rgba(255,255,255,.035) 3px 7px),
+    linear-gradient(160deg,var(--holz3),var(--holz1) 45%,var(--holz2));
+}
+/* Proben im Einstellungsdialog */
+.felder{display:grid; grid-template-columns:repeat(auto-fill,minmax(92px,1fr)); gap:8px; margin:6px 0 10px;}
+.felder button{
+  display:flex; flex-direction:column; align-items:stretch; gap:4px; cursor:pointer;
+  border:2px solid #c9a57e; border-radius:8px; padding:3px 3px 5px; background:#fff6ea;
+  font:inherit; font-size:12px; font-weight:bold; color:#4a1d07;
+}
+.felder button.an{border-color:#7a2f18; box-shadow:0 0 0 3px #ffd23a;}
+.felder .probe{height:46px; border-radius:5px; box-shadow:inset 0 0 12px rgba(0,0,0,.35);}
+#table{position:relative; min-height:100%; min-width:100%;}
+.set{
+  display:flex; gap:var(--gap); padding:3px; border-radius:6px;
+  border:2px solid var(--satzrand, var(--gruen)); background:rgba(0,0,0,.16);
+}
+.set.bad{border-color:var(--rot); background:rgba(180,0,0,.22);}
+.set.drop{outline:3px dashed #ffd23a; outline-offset:2px;}
+#hint{
+  position:absolute; left:50%; top:46%; transform:translate(-50%,-50%);
+  color:rgba(255,255,255,.34); font-size:15px; text-align:center; pointer-events:none;
+  line-height:1.5; padding:0 16px; max-width:90%;
+}
+
+/* ---------- Steine ---------- */
+.t{
+  position:relative; width:var(--tile); height:calc(var(--tile)*1.34);
+  border-radius:calc(var(--tile)*.14); cursor:pointer; flex:0 0 auto;
+  touch-action:none;
+  background:linear-gradient(158deg,#fffaf3 0%,var(--stein) 42%,var(--stein2) 100%);
+  border:1px solid var(--steinrand);
+  box-shadow:inset 0 1px 0 #fff, inset 0 -2px 3px rgba(0,0,0,.14), 0 2px 3px rgba(0,0,0,.35);
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  font-weight:bold; overflow:hidden;
+}
+.t::after{
+  content:""; position:absolute; left:8%; right:8%; top:6%; height:52%;
+  background:repeating-linear-gradient(180deg, rgba(0,0,0,.05) 0 1px, rgba(0,0,0,0) 1px 4px);
+  pointer-events:none;
+}
+.t .num{font-size:calc(var(--tile)*.62); line-height:.95; margin-top:calc(var(--tile)*-.06);}
+.t .dot{width:calc(var(--tile)*.15); height:calc(var(--tile)*.15); border-radius:50%; margin-top:calc(var(--tile)*.08);}
+.t.c0 .num,.t.c0 .dot{color:var(--f0); background-color:currentColor;}
+.t.c1 .num,.t.c1 .dot{color:var(--f1); background-color:currentColor;}
+.t.c2 .num,.t.c2 .dot{color:var(--f2); background-color:currentColor;}
+.t.c3 .num,.t.c3 .dot{color:var(--f3); background-color:currentColor;}
+.t .num{background-color:transparent !important;}
+.t.sel{outline:3px solid #ffd23a; outline-offset:-1px; transform:translateY(-3px);}
+#hand .t{transition:transform .09s ease-out;}
+#hand .t.greif{
+  outline:3px solid #ffd23a; outline-offset:-1px; z-index:4;
+  transform:translateY(-5px) scale(1.05); box-shadow:0 7px 14px rgba(0,0,0,.45);
+}
+body.ordne, body.ordne #hand .t{cursor:grabbing;}
+body.ordne{-webkit-user-select:none; user-select:none;}
+.t.jk{background:linear-gradient(158deg,#fffdf6 0%,#ffeec6 55%,#f3d79a 100%); border-color:#c9a13c;
+  box-shadow:inset 0 1px 0 #fff, inset 0 0 0 1px rgba(201,161,60,.55), 0 2px 3px rgba(0,0,0,.35);}
+.t.jk svg{width:96%; height:96%; display:block; margin-top:-2%;}
+.t.jk::after{display:none;}
+.t .als{
+  position:absolute; left:0; right:0; bottom:0; text-align:center;
+  font-size:calc(var(--tile)*.32); line-height:1.25; font-weight:bold;
+  background:rgba(255,255,255,.82); border-top:1px solid rgba(201,161,60,.5);
+}
+
+/* ---------- Statuszeile: steht immer da ---------- */
+#status{
+  flex:0 0 auto; display:flex; align-items:center; justify-content:center;
+  padding:4px 10px; min-height:26px; text-align:center;
+  background:linear-gradient(180deg,#6b3418,#54250f);
+  border-bottom:1px solid #34150a; font-size:14px; line-height:1.25;
+}
+#status.warn{background:linear-gradient(180deg,#8c3a1a,#6e2510); color:#ffe0b8;}
+#status.gut{background:linear-gradient(180deg,#1f6b2c,#14501f); color:#e6ffe6;}
+#statusTxt{display:block;}
+
+/* ---------- Hand ---------- */
+#handbar{
+  flex:0 0 auto; display:flex; align-items:center; gap:5px; padding:5px 6px;
+  background:linear-gradient(180deg,#f7c795,#e2914a 45%,#d07f36);
+  border-top:2px solid #8c4a17;
+}
+#handCnt{
+  flex:0 0 auto; background:#fff6ea; color:#4a1d07; border:2px solid #9a5320; border-radius:4px;
+  padding:2px 6px; font-weight:bold; font-size:13px; min-width:30px; text-align:center;
+}
+#hand{display:flex; gap:var(--gap); flex-wrap:wrap; flex:1 1 auto; align-content:center;
+  min-height:calc(var(--tile)*1.34);}
+#handbar.ziel{box-shadow:inset 0 0 0 3px #ffd23a;}
+
+/* ---------- Ablegefelder ---------- */
+/* Saetze liegen auf einem Raster fest - sie fliessen nicht wie Text. */
+.satzbox{position:absolute; display:flex; align-items:center;}
+.satzbox.wandert{opacity:.22;}
+.griff{
+  flex:0 0 auto; width:calc(var(--tile)*.56); height:calc(var(--tile)*1.34 + 10px); margin-right:2px;
+  border-radius:6px; cursor:grab; touch-action:none;
+  background:
+    radial-gradient(circle, rgba(255,226,190,.62) 1.7px, rgba(0,0,0,0) 2.2px) center/9px 9px,
+    rgba(0,0,0,.2);
+  background-clip:content-box, border-box; padding:calc(var(--tile)*.2) 3px;
+}
+.griff:active{background-color:rgba(0,0,0,.34);}
+.set.teilt .t.hoch{margin:0 3px;}
+#platz{
+  position:absolute; pointer-events:none; border:3px dashed #ffd23a; border-radius:8px;
+  background:rgba(255,210,58,.16); box-sizing:border-box;
+}
+#geist.satz{transform:none; background:transparent; padding:0; box-shadow:none;}
+#geist.satz .set{box-shadow:0 12px 26px rgba(0,0,0,.55); background:rgba(22,28,34,.62);}
+.drop{
+  display:flex; flex:0 0 auto; align-items:center; justify-content:center;
+  width:calc(var(--tile)*.8); height:calc(var(--tile)*1.34); margin-left:4px;
+  border:3px dashed rgba(255,210,58,.75); border-radius:6px; color:#ffd23a;
+  font-size:calc(var(--tile)*.6); line-height:1; font-weight:bold;
+  background:rgba(255,210,58,.13); cursor:pointer;
+  visibility:hidden;                 /* Platz bleibt reserviert */
+}
+.legen .satzbox:not(.zu) .drop{visibility:visible;}
+.satzbox.ziel .drop{background:rgba(255,210,58,.4); border-style:solid;}
+#neuSatz{
+  position:absolute; display:flex; align-items:center; justify-content:center; cursor:pointer;
+  height:calc(var(--tile)*1.34 + 10px); padding:0 12px; box-sizing:border-box;
+  border:3px dashed rgba(255,210,58,.75); border-radius:8px; color:#ffd23a;
+  background:rgba(255,210,58,.13); font-size:13px; font-weight:bold; text-align:center;
+}
+#neuSatz.ziel{background:rgba(255,210,58,.4); border-style:solid;}
+.satzbox.ziel .set{outline:3px solid #ffd23a; outline-offset:2px;}
+.satzbox.nein .set{outline:3px solid #e0463a; outline-offset:2px;}
+.set.arbeit{border-style:dashed;}
+/* Solange man noch nicht raus ist, sind fremde Saetze zu. */
+.legen .satzbox.zu .set{opacity:.42; border-color:#8a7a68; filter:saturate(.5);}
+
+/* ---------- gehobene Steine bleiben sichtbar, wo sie herkommen ---------- */
+.t.hoch{
+  outline:3px solid #ffd23a; outline-offset:-1px; z-index:3;
+  transform:translateY(-6px); box-shadow:0 7px 12px rgba(0,0,0,.45);
+}
+.t.hoch::before{
+  content:""; position:absolute; inset:0; border-radius:inherit;
+  background:rgba(255,210,58,.18); pointer-events:none;
+}
+body.ordne .t.hoch{opacity:.32;}
+
+/* ---------- Der frisch gezogene Stein, einmal gross ---------- */
+#gezogen{
+  position:fixed; inset:0; z-index:55; display:none; pointer-events:none;
+  align-items:center; justify-content:center; background:rgba(20,6,0,.66);
+}
+#gezogen.an{display:flex;}
+#gezogen .karte{
+  --tile:104px; display:flex; flex-direction:column; align-items:center; gap:16px;
+  animation:auftauchen .2s ease-out;
+}
+#gezogen .karte b{
+  font-size:16px; color:#ffe6c6; font-weight:bold; letter-spacing:1px;
+  background:rgba(0,0,0,.5); border-radius:14px; padding:5px 18px;
+}
+#gezogen .t{box-shadow:0 16px 34px rgba(0,0,0,.6), inset 0 1px 0 #fff;}
+@keyframes auftauchen{from{opacity:0; transform:scale(.6);} to{opacity:1; transform:scale(1);}}
+/* und danach in der Hand kurz markiert, damit man ihn wiederfindet */
+.t.frisch{outline:3px solid #4fbf5f; outline-offset:-1px;}
+.t.frisch::after{
+  content:""; position:absolute; inset:0; border-radius:inherit;
+  background:rgba(79,191,95,.16); pointer-events:none;
+}
+
+/* ---------- Geist am Finger ---------- */
+#geist{
+  position:fixed; left:0; top:0; z-index:60; pointer-events:none; display:none;
+  gap:var(--gap); padding:3px; border-radius:6px; background:rgba(255,210,58,.22);
+  box-shadow:0 10px 22px rgba(0,0,0,.5); transform:translate(-50%,-60%);
+}
+#geist.an{display:flex;}
+
+/* ---------- Dialoge ---------- */
+#veil{position:absolute; inset:0; background:rgba(20,6,0,.66); display:none; z-index:40;
+  align-items:center; justify-content:center; padding:14px; overflow:auto;}
+#veil.on{display:flex;}
+.dlg{
+  background:linear-gradient(170deg,#fdf1e2,#eddcc4); color:#4a1d07; border-radius:12px;
+  border:3px solid #a75c22; box-shadow:0 14px 40px rgba(0,0,0,.6);
+  max-width:520px; width:100%; max-height:100%; overflow:auto; padding:16px 18px 18px;
+}
+.dlg h2{margin:0 0 8px; font-size:22px; color:#7a2f18;}
+.dlg h3{margin:14px 0 4px; font-size:15px; color:#7a2f18;}
+.dlg p,.dlg li{font-size:14px; line-height:1.5; margin:5px 0;}
+.dlg ul{margin:4px 0; padding-left:20px;}
+.row{display:flex; gap:8px; flex-wrap:wrap; margin-top:12px;}
+.row .btn{flex:1 1 auto; min-height:40px; font-size:14px;}
+.lvl{display:flex; flex-direction:column; gap:6px; margin-top:10px;}
+.lvl button{
+  display:flex; align-items:center; gap:10px; text-align:left; cursor:pointer;
+  border:2px solid #a75c22; border-radius:8px; padding:9px 12px; font-size:15px; font-weight:bold;
+  background:linear-gradient(180deg,#fff6ea,#e8d3b6); color:#4a1d07; font-family:inherit;
+}
+.lvl button:active{background:linear-gradient(180deg,#e8d3b6,#fff6ea);}
+.lvl b{flex:1 1 auto;}
+.lvl span{font-size:12px; font-weight:normal; opacity:.8;}
+.lvl em{font-style:normal; background:#7a2f18; color:#ffe4c4; border-radius:10px; padding:2px 9px; font-size:13px;}
+.reg{margin:14px 0 4px;}
+.reg .kopf{display:flex; align-items:baseline; justify-content:space-between; gap:8px;}
+.reg .kopf b{font-size:15px; color:#7a2f18;}
+.reg .kopf em{
+  font-style:normal; font-weight:bold; font-size:16px; color:#4a1d07;
+  background:#ffe9c9; border:2px solid #a75c22; border-radius:12px; padding:1px 12px; white-space:nowrap;
+}
+.reg .txt{font-size:13px; line-height:1.4; opacity:.82; margin:2px 0 0; min-height:32px;}
+.reg .skala{display:flex; justify-content:space-between; font-size:11px; opacity:.6; margin-top:-4px;}
+input[type=range]{
+  -webkit-appearance:none; appearance:none; width:100%; height:32px; background:transparent;
+  margin:2px 0 0; display:block;
+}
+input[type=range]:focus{outline:none;}
+input[type=range]::-webkit-slider-runnable-track{
+  height:12px; border-radius:6px; border:1px solid #8c4a17;
+  background:linear-gradient(90deg,#f3d0a6,#c9702f);
+}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none; appearance:none; width:30px; height:30px; margin-top:-10px; border-radius:50%;
+  background:linear-gradient(180deg,#fff6ea,#dd8f45); border:2px solid #7a2f18;
+  box-shadow:0 2px 4px rgba(0,0,0,.35); cursor:pointer;
+}
+input[type=range]::-moz-range-track{
+  height:12px; border-radius:6px; border:1px solid #8c4a17;
+  background:linear-gradient(90deg,#f3d0a6,#c9702f);
+}
+input[type=range]::-moz-range-thumb{
+  width:28px; height:28px; border-radius:50%;
+  background:linear-gradient(180deg,#fff6ea,#dd8f45); border:2px solid #7a2f18; cursor:pointer;
+}
+.namen{display:flex; flex-wrap:wrap; gap:8px; margin:4px 0 10px;}
+.namen label{display:flex; flex-direction:column; gap:2px; flex:1 1 120px; font-size:12px; opacity:.85;}
+.namen input{
+  font-family:inherit; font-size:15px; font-weight:bold; color:#4a1d07;
+  background:#fff6ea; border:2px solid #a75c22; border-radius:6px; padding:7px 9px; width:100%;
+  min-height:40px;
+}
+.namen input:focus{outline:none; border-color:#7a2f18; background:#fffdf6;}
+.opt{display:flex; align-items:center; justify-content:space-between; gap:10px; padding:7px 0; border-bottom:1px solid rgba(122,47,24,.18);}
+.opt label{font-size:14px;}
+.sw{
+  width:52px; height:28px; border-radius:14px; border:2px solid #a75c22; background:#d9c4a6;
+  position:relative; cursor:pointer; flex:0 0 auto;
+}
+.sw i{position:absolute; top:1px; left:1px; width:22px; height:22px; border-radius:50%;
+  background:#7a2f18; transition:left .14s;}
+.sw.on{background:#8fd08f;} .sw.on i{left:25px; background:#1c6b1c;}
+table.sc{width:100%; border-collapse:collapse; margin-top:8px; font-size:14px;}
+table.sc th,table.sc td{padding:5px 6px; border-bottom:1px solid rgba(122,47,24,.2); text-align:left;}
+table.sc td.n{text-align:right; font-weight:bold;}
+table.sc tr.me{background:rgba(255,210,58,.3);}
+.big{font-size:17px; font-weight:bold;}
+
+/* ---------- Startbild ---------- */
+#title{text-align:center; margin-bottom:10px;}
+#title .nm{font-size:44px; font-weight:bold; color:#7a2f18; letter-spacing:2px; line-height:1;
+  text-shadow:2px 2px 0 #ffdcb8, 4px 4px 0 rgba(0,0,0,.14);}
+#title svg{width:76px; height:76px; display:block; margin:0 auto -4px;}
+#title .mk svg{width:104px; height:108px;}
+
+/* ---------- Schmale Schirme: Symbolleiste auf Symbole eindampfen ---------- */
+@media (max-width:560px){
+  #bar{gap:2px; padding:2px 2px calc(2px + env(safe-area-inset-bottom)); flex-wrap:nowrap;}
+  .btn{min-width:42px; padding:2px 3px;}
+  .btn .lbl{display:none;}
+  .btn .ico{font-size:20px;}
+  #bPlay{min-width:54px; font-size:12px;}
+  #stack{min-width:30px; font-size:14px; padding:2px 2px;}
+  #stack small{display:none;}
+  #foes{padding:3px 4px; gap:4px;}
+  .foe .bars{display:none;}
+  #status{font-size:12.5px; padding:3px 6px; min-height:22px;}
+}
+
+/* ---------- Fingerbedienung ---------- */
+@media (pointer:coarse){
+  .btn{min-width:50px; min-height:48px; font-size:12px;}
+  .btn .ico{font-size:19px;}
+  #stack{min-width:54px; font-size:17px;}
+  .foe{font-size:13px; padding:4px 9px;}
+  .lvl button{padding:13px 14px; font-size:16px;}
+  .row .btn{min-height:50px; font-size:15px;}
+  .dlg p,.dlg li{font-size:15px;}
+  .sw{width:58px; height:32px; border-radius:16px;}
+  .sw i{width:26px; height:26px;} .sw.on i{left:27px;}
+  input[type=range]{height:40px;}
+  input[type=range]::-webkit-slider-thumb{width:36px; height:36px; margin-top:-13px;}
+  input[type=range]::-moz-range-thumb{width:34px; height:34px;}
+}
+
+/* ---------- Schmal UND Finger: die Leiste teilt sich den Platz auf ---------- */
+@media (max-width:560px){
+  #spacer{display:none;}
+  #bar .btn{min-width:0; flex:1 1 0; min-height:48px;}
+  #bPlay{flex:2.1 1 0; min-width:0; font-size:12px;}
+  #stack{flex:0 0 auto; min-width:28px; padding:2px 3px;}
+}
+</style>
+</head>
+<body>
+<div id="wrap">
+  <div id="foes"></div>
+  <div id="status"><span id="statusTxt"></span></div>
+  <div id="tableframe"><div id="table"></div><div id="hint"></div></div>
+  <div id="handbar"><span id="handCnt">0</span><div id="hand"></div></div>
+  <div id="bar">
+    <button class="btn" id="bMenu"><span class="ico">&#9776;</span><span class="lbl">Menü</span></button>
+    <button class="btn" id="bSortN"><span class="ico">123</span><span class="lbl">Reihe</span></button>
+    <button class="btn" id="bSortC"><span class="ico">&#9679;&#9679;&#9679;</span><span class="lbl">Farbe</span></button>
+    <button class="btn" id="bSortM"><span class="ico">&#8596;</span><span class="lbl">Manuell</span></button>
+    <button class="btn" id="bOrdnen"><span class="ico">&#9638;</span><span class="lbl">Ordnen</span></button>
+    <div id="spacer"></div>
+    <button class="btn" id="bUndo"><span class="ico">&#8630;</span><span class="lbl">Zurück</span></button>
+    <button class="btn" id="bReset"><span class="ico">&#10007;</span><span class="lbl">Abbr.</span></button>
+    <div id="stack"><span id="stackN">0</span><small>Stapel</small></div>
+    <button class="btn wide go" id="bPlay"><span class="ico">&#9654;</span><span id="playTxt">Ziehen</span></button>
+  </div>
+</div>
+<div id="geist"></div>
+<div id="gezogen"></div>
+<div id="veil"><div class="dlg" id="dlg"></div></div>
+<script>
+"use strict";
+
+/* ==================================================================
+   Teddikub - ein Legespiel mit Zahlensteinen
+   Eine Datei, keine Bibliotheken, kein Netz.
+   Vorbild ist das Familienspiel mit Zahlenplaettchen; Name, Grafik
+   und Regelfeinheiten sind eigene Arbeit.
+   ================================================================== */
+
+/* ---------- Speichern mit Rueckfall in den Arbeitsspeicher ---------- */
+var memStore = {};
+function lsGet(k,d){
+  try{ var v=localStorage.getItem(k); if(v!==null) return JSON.parse(v); }catch(e){}
+  return (k in memStore) ? memStore[k] : d;
+}
+function lsSet(k,v){ memStore[k]=v; try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} }
+
+/* ---------- Einstellungen ---------- */
+var cfg = { v:2, minOut:30, ki:2, foes:2, vibrate:true, sortMode:'n', feld:'nacht', feldV:1,
+            namen:['Du','Bello','Luna','Nero'] };
+var NAMEN_STD = ['Du','Bello','Luna','Nero'];
+var savedCfg = lsGet('teddi.cfg', null);
+if (savedCfg){
+  for (var ck in savedCfg) if (ck in cfg) cfg[ck] = savedCfg[ck];
+  if (!(cfg.namen instanceof Array) || cfg.namen.length !== 4) cfg.namen = NAMEN_STD.slice();
+  /* Einmalig: Amelie hat sich fuer Nachtblau entschieden (11.09.2026). */
+  if (savedCfg.feldV !== 1){ cfg.feld = 'nacht'; cfg.feldV = 1; }
+  if (savedCfg.v !== 2){
+    /* Einmalige Umstellung: aus der alten Stufe 0..3 werden zwei Werte. */
+    var altStufe = savedCfg.level || 1;
+    cfg.minOut = [27,30,33,36][altStufe] || 30;
+    cfg.ki = altStufe + 1;
+    cfg.v = 2;
+  }
+}
+function saveCfg(){ lsSet('teddi.cfg', cfg); }
+
+/* Die zwei Achsen der Schwierigkeit. */
+var MIN_KLEIN = 15, MIN_GROSS = 50;
+var KI_NAMEN = ['', 'Anfänger', 'Fortgeschritten', 'Stark', 'Meister', 'Großmeister'];
+var KI_TEXTE = ['',
+  'legen höchstens einen Satz je Zug und hängen nichts an',
+  'legen alles, was aus ihrer Hand geht, und hängen an',
+  'bauen dazu den ganzen Tisch um',
+  'bauen um und rechnen jeden Zug länger durch',
+  'rechnen am längsten, nutzen jede Teilung und bauen bei Bedarf zweimal um'];
+function begrenze(x, a, b){ return x < a ? a : (x > b ? b : x); }
+var FELDER = [
+  { id:'nacht',    name:'Nachtblau' },
+  { id:'filz',     name:'Filz grün' },
+  { id:'petrol',   name:'Filz petrol' },
+  { id:'eiche',    name:'Eiche' },
+  { id:'kork',     name:'Kork' },
+  { id:'schiefer', name:'Schiefer' },
+  { id:'holz',     name:'Holz dunkel' }
+];
+function feldAnwenden(){
+  var ok = false, i;
+  for (i=0;i<FELDER.length;i++) if (FELDER[i].id === cfg.feld) ok = true;
+  if (!ok) cfg.feld = 'nacht';
+  var fr = document.getElementById('tableframe');
+  for (i=0;i<FELDER.length;i++) fr.classList.remove('feld-' + FELDER[i].id);
+  fr.classList.add('feld-' + cfg.feld);
+}
+function spielerName(i){
+  var n = (cfg.namen && cfg.namen[i] || '').toString().trim();
+  return n ? n.slice(0,14) : NAMEN_STD[i];
+}
+function stufenKurz(){ return cfg.minOut + ' Punkte · ' + KI_NAMEN[cfg.ki]; }
+
+var FARBEN = ['#1b1b1b','#e07b17','#16803c','#cf2020'];
+var FARBNAMEN = ['Schwarz','Orange','Gruen','Rot'];
+
+/* ==================================================================
+   Teddy - abstrahiert. Kopf(gross) fuer Dialoge, Marke(klein) fuer Steine.
+   ================================================================== */
+
+/* Der Jokerstein: sehr wenige Formen, damit er bei 34 px noch liest. */
+function lockenKranz(cx, cy, r, n){
+  /* Ein Kreis, dessen Rand aus n nach aussen gewoelbten Boegen besteht -
+     das ist die Abkuerzung fuer "lockiges Fell". */
+  var d = '', i, a, x, y, x2, y2;
+  var bogen = (r * Math.sin(Math.PI / n) * 1.04).toFixed(2);
+  for (i=0;i<n;i++){
+    a  = (i/n)*Math.PI*2 - Math.PI/2;
+    x  = cx + Math.cos(a)*r;  y  = cy + Math.sin(a)*r;
+    a  = ((i+1)/n)*Math.PI*2 - Math.PI/2;
+    x2 = cx + Math.cos(a)*r;  y2 = cy + Math.sin(a)*r;
+    if (i === 0) d = 'M' + x.toFixed(1) + ' ' + y.toFixed(1);
+    d += 'A' + bogen + ' ' + bogen + ' 0 0 1 ' + x2.toFixed(1) + ' ' + y2.toFixed(1);
+  }
+  return d + 'Z';
+}
+function teddiMarke(){
+  /* Teddi als flache Marke: lockiger Kopf, lockige Schlappohren,
+     helles Bartfeld, Nase, zwei Augen. Wenige Formen, damit er auf einem
+     30 px breiten Stein noch als Hund lesbar bleibt. */
+  return '<svg viewBox="0 0 100 104" xmlns="http://www.w3.org/2000/svg">'+
+    '<path d="'+lockenKranz(19,57,15,7)+'" fill="#4b3421"/>'+
+    '<path d="'+lockenKranz(81,57,15,7)+'" fill="#4b3421"/>'+
+    '<path d="'+lockenKranz(50,44,29,11)+'" fill="#75523a"/>'+
+    '<path d="'+lockenKranz(50,73,21,9)+'" fill="#efe7da"/>'+
+    '<path d="M40 64 C44 59 56 59 60 64 C62 69 56 74 50 74 C44 74 38 69 40 64 Z" fill="#2b1d15"/>'+
+    '<path d="M50 74 L50 79 M50 79 C45 86 39 85 37 80 M50 79 C55 86 61 85 63 80"'+
+      ' stroke="#2b1d15" stroke-width="3.4" fill="none" stroke-linecap="round"/>'+
+    '<circle cx="36" cy="43" r="5.2" fill="#2b1d15"/>'+
+    '<circle cx="64" cy="43" r="5.2" fill="#2b1d15"/>'+
+    '</svg>';
+}
+
+/* Der grosse Teddy - Bauteilsatz aus teddy-varianten.html, ohne Doktorhut. */
+function teddyKopf(o){
+  o = o || {};
+  var eyes = o.eyes || 'normal', mouth = o.mouth || 'neutral';
+  var s = '';
+  s += '<path d="M34 50 C19 54 13 72 15 87 C17 99 27 104 34 98 C29 84 28 66 34 54 Z" fill="#57402f"/>'+
+       '<path d="M86 50 C101 54 107 72 105 87 C103 99 93 104 86 98 C91 84 92 66 86 54 Z" fill="#57402f"/>'+
+       '<path d="M31 58 C22 64 19 76 21 86" stroke="#4a3527" stroke-width="3" fill="none" stroke-linecap="round" opacity=".7"/>'+
+       '<path d="M89 58 C98 64 101 76 99 86" stroke="#4a3527" stroke-width="3" fill="none" stroke-linecap="round" opacity=".7"/>';
+  s += '<path d="M60 28 C79 28 91 41 92 57 C93 73 84 88 60 91 C36 88 27 73 28 57 C29 41 41 28 60 28 Z" fill="#6b4d36"/>'+
+       '<path d="M36 44 C44 33 58 30 68 34 C60 38 50 42 44 50 Z" fill="#7a5b42" opacity=".85"/>'+
+       '<path d="M84 52 C88 62 87 74 81 82 C84 70 84 60 80 52 Z" fill="#7a5b42" opacity=".7"/>'+
+       '<path d="M33 60 C31 70 33 80 39 86 C34 76 34 68 36 60 Z" fill="#5b4130" opacity=".8"/>'+
+       '<path d="M52 33 C60 31 70 33 76 38 C68 37 60 37 52 39 Z" fill="#5b4130" opacity=".6"/>';
+  s += '<path d="M42 70 C46 86 74 86 78 70 C81 82 73 92 60 93 C47 92 39 82 42 70 Z" fill="#cdc5b6"/>'+
+       '<ellipse cx="60" cy="72" rx="13" ry="9.5" fill="#ddd6c9"/>';
+  if (mouth === 'tongue')
+    s += '<path d="M54 79 C54 90 66 90 66 79 C64 84 56 84 54 79 Z" fill="#d98a8a"/>';
+  s += '<path d="M53 67 C56 63.5 64 63.5 67 67 C68.4 70.4 64.4 73.6 60 73.6 C55.6 73.6 51.6 70.4 53 67 Z" fill="#2e2019"/>'+
+       '<ellipse cx="57.4" cy="66.8" rx="2" ry="1.2" fill="#5a4a41" opacity=".8"/>'+
+       '<path d="M60 74 L60 77 M60 77 C55.5 83 50 82 48 78.5 M60 77 C64.5 83 70 82 72 78.5"'+
+       ' stroke="#3a2b21" stroke-width="2.1" fill="none" stroke-linecap="round"/>';
+  if (eyes === 'closed')
+    s += '<path d="M42 57 C46 53 52 53 55 57 M65 57 C68 53 74 53 78 57" stroke="#291b13"'+
+         ' stroke-width="2.6" fill="none" stroke-linecap="round"/>';
+  else if (eyes === 'wide')
+    s += '<ellipse cx="47.5" cy="56" rx="5.4" ry="5.8" fill="#291b13"/>'+
+         '<ellipse cx="72.5" cy="56" rx="5.4" ry="5.8" fill="#291b13"/>'+
+         '<ellipse cx="49" cy="54" rx="1.6" ry="1.4" fill="#fff" opacity=".7"/>'+
+         '<ellipse cx="74" cy="54" rx="1.6" ry="1.4" fill="#fff" opacity=".7"/>';
+  else
+    s += '<ellipse cx="47.5" cy="56.5" rx="4.1" ry="4.4" fill="#291b13"/>'+
+         '<ellipse cx="72.5" cy="56.5" rx="4.1" ry="4.4" fill="#291b13"/>'+
+         '<ellipse cx="48.8" cy="55" rx="1.2" ry="1.1" fill="#fff" opacity=".65"/>'+
+         '<ellipse cx="73.8" cy="55" rx="1.2" ry="1.1" fill="#fff" opacity=".65"/>';
+  s += '<path d="M40 51 C45 47 53 47 56 51 C50 49.5 45 49.5 40 51 Z" fill="#5b4130"/>'+
+       '<path d="M64 51 C67 47 75 47 80 51 C75 49.5 70 49.5 64 51 Z" fill="#5b4130"/>';
+  return s;
+}
+function teddyKonfetti(){
+  var bits=[[10,18,'#e8412c',18],[104,40,'#2f8f30',-24],[22,96,'#2079d8',36],[100,96,'#f6a021',-12],
+            [42,8,'#8b3fbf',12],[76,2,'#00a6a6',-30],[2,58,'#f6a021',-40],[112,72,'#e8412c',22],
+            [30,120,'#2f8f30',28],[92,124,'#8b3fbf',-18],[118,52,'#2079d8',44],[0,96,'#e8412c',-34],
+            [58,124,'#f6a021',8],[16,4,'#2079d8',-16]];
+  var s='';
+  bits.forEach(function(b){
+    s += '<rect x="'+b[0]+'" y="'+b[1]+'" width="9" height="6" rx="1.5" fill="'+b[2]+
+         '" transform="rotate('+b[3]+' '+(b[0]+4)+' '+(b[1]+3)+')"/>';
+  });
+  s += '<circle cx="16" cy="40" r="3.4" fill="#ffd23a"/><circle cx="108" cy="18" r="3" fill="#e8412c"/>'+
+       '<circle cx="88" cy="118" r="3.2" fill="#2079d8"/>';
+  return s;
+}
+function svgWrap(inner){
+  return '<svg viewBox="-8 -8 136 136" xmlns="http://www.w3.org/2000/svg">'+inner+'</svg>';
+}
+/* Teddy jubelt - fuer die Ergebnisseite. */
+function teddyJubel(){
+  return svgWrap(teddyKonfetti() +
+    '<g transform="rotate(-4 60 64)">'+teddyKopf({eyes:'closed', mouth:'tongue'})+'</g>');
+}
+function teddyRuhig(){ return svgWrap(teddyKopf({})); }
+
+/* ==================================================================
+   Steine, Saetze, Regeln
+   ------------------------------------------------------------------
+   Stein:  {id, c:0..3, n:1..13, j:false}   Joker: {id, j:true}
+   Satz:   {id, tiles:[...]}  - nach der Pruefung zusaetzlich
+           .ok, .kind ('g'=Gruppe, 'r'=Reihe), .order, .vals, .pts
+   Reihen laufen im Kreis: nach 13 geht es bei 1 weiter.
+   ================================================================== */
+
+var nextId = 1;
+function mkTile(c,n){ return {id:nextId++, c:c, n:n, j:false}; }
+function mkJoker(){ return {id:nextId++, c:null, n:null, j:true}; }
+
+function neuerVorrat(){
+  var a = [], c, n, k;
+  for (k=0;k<2;k++) for (c=0;c<4;c++) for (n=1;n<=13;n++) a.push(mkTile(c,n));
+  a.push(mkJoker()); a.push(mkJoker());
+  return mischen(a);
+}
+function mischen(a){
+  for (var i=a.length-1;i>0;i--){ var j=(Math.random()*(i+1))|0, t=a[i]; a[i]=a[j]; a[j]=t; }
+  return a;
+}
+/* zyklischer Nachfolger / Fensterprobe */
+function inWindow(n, start, len){
+  var d = n - start; if (d < 0) d += 13;
+  return d < len;
+}
+function stepN(start, k){ var n = ((start - 1 + k) % 13); if (n < 0) n += 13; return n + 1; }
+
+/* ---------- Satzpruefung ---------- */
+function checkSet(tiles){
+  var res = { ok:false, kind:null, order:tiles.slice(), vals:null, pts:0, why:'' };
+  var L = tiles.length;
+  if (L < 3){ res.why = 'Ein Satz braucht mindestens drei Steine.'; return res; }
+  if (L > 13){ res.why = 'Mehr als dreizehn Steine gehen nicht.'; return res; }
+  var reals = [], jok = 0, i;
+  for (i=0;i<L;i++){ if (tiles[i].j) jok++; else reals.push(tiles[i]); }
+  if (jok === 0 && reals.length === 0) return res;
+  if (jok > reals.length){ res.why = 'Es duerfen nie mehr Teddis als echte Steine in einem Satz sein.'; return res; }
+
+  /* --- Gruppe: gleiche Zahl, verschiedene Farben --- */
+  var groupOk = L <= 4 && reals.length > 0;
+  if (groupOk){
+    var num = reals[0].n, seen = {};
+    for (i=0;i<reals.length;i++){
+      if (reals[i].n !== num || seen[reals[i].c]) { groupOk = false; break; }
+      seen[reals[i].c] = 1;
+    }
+    if (groupOk){
+      var frei = [], c;
+      for (c=0;c<4;c++) if (!seen[c]) frei.push(c);
+      if (frei.length >= jok){
+        var ord = reals.slice().sort(function(a,b){ return a.c-b.c; });
+        var vals = [], f = 0, out = [];
+        for (i=0;i<reals.length;i++){ out.push(ord[i]); vals.push({c:ord[i].c, n:num}); }
+        for (i=0;i<L;i++) if (tiles[i].j){ out.push(tiles[i]); vals.push({c:frei[f++], n:num}); }
+        res.ok = true; res.kind = 'g'; res.order = out; res.vals = vals; res.pts = num * L;
+        return res;
+      }
+    }
+  }
+
+  /* --- Reihe: gleiche Farbe, fortlaufend, im Kreis --- */
+  if (reals.length > 0){
+    var col = reals[0].c, nums = {}, good = true;
+    for (i=0;i<reals.length;i++){
+      if (reals[i].c !== col || nums[reals[i].n]) { good = false; break; }
+      nums[reals[i].n] = reals[i];
+    }
+    if (good){
+      var best = null, s;
+      for (s=1;s<=13;s++){
+        var fits = true;
+        for (i=0;i<reals.length;i++) if (!inWindow(reals[i].n, s, L)) { fits = false; break; }
+        if (!fits) continue;
+        /* Anordnung aufbauen */
+        var o2 = [], v2 = [], jl = [], k, want, randJ = 0, sum = 0;
+        for (i=0;i<L;i++) if (tiles[i].j) jl.push(tiles[i]);
+        var jn = 0;
+        for (k=0;k<L;k++){
+          want = stepN(s, k);
+          if (nums[want]) { o2.push(nums[want]); }
+          else {
+            if (jn >= jl.length) { o2 = null; break; }
+            o2.push(jl[jn++]);
+            if (k === 0 || k === L-1) randJ++;
+          }
+          v2.push({c:col, n:want}); sum += want;
+        }
+        if (!o2 || jn !== jl.length) continue;
+        var cand = { s:s, order:o2, vals:v2, pts:sum, randJ:randJ };
+        /* Teddi lieber innen als am Rand, sonst die punktreichere Lage */
+        if (!best || cand.randJ < best.randJ ||
+            (cand.randJ === best.randJ && cand.pts > best.pts)) best = cand;
+      }
+      if (best){
+        res.ok = true; res.kind = 'r'; res.order = best.order; res.vals = best.vals; res.pts = best.pts;
+        return res;
+      }
+    }
+  }
+  res.why = res.why || 'Das ist weder eine Gruppe gleicher Zahlen noch eine fortlaufende Reihe.';
+  return res;
+}
+function setPunkte(tiles){ var r = checkSet(tiles); return r.ok ? r.pts : 0; }
+
+/* Handwert fuer die Schlussabrechnung: Teddi zaehlt 25. */
+function handWert(tiles){
+  var s = 0;
+  for (var i=0;i<tiles.length;i++) s += tiles[i].j ? 25 : tiles[i].n;
+  return s;
+}
+
+/* ==================================================================
+   Der Rechner fuer die Gegner
+   ------------------------------------------------------------------
+   Gearbeitet wird auf Zaehl-Feldern statt auf Steinen:
+     idx = farbe*13 + (zahl-1),  dazu die Anzahl der Teddis.
+   ================================================================== */
+
+function idxOf(c,n){ return c*13 + (n-1); }
+function idxCol(i){ return (i/13)|0; }
+function idxNum(i){ return i%13 + 1; }
+
+/* Alle Saetze, die Sorte `a` enthalten und aus (cnt, jok) baubar sind.
+   Rueckgabe je Satz: {need:[idx,...], jok:k, len:L}  */
+function setsWith(a, cnt, jok){
+  var out = [], col = idxCol(a), num = idxNum(a), i, k, L, s, sub;
+
+  /* Gruppen: gleiche Zahl, andere Farben */
+  var andere = [];
+  for (i=0;i<4;i++) if (i !== col && cnt[idxOf(i,num)] > 0) andere.push(i);
+  for (sub=0; sub < (1<<andere.length); sub++){
+    var pick = [];
+    for (k=0;k<andere.length;k++) if (sub & (1<<k)) pick.push(andere[k]);
+    for (var jj=0; jj<=jok && jj<=2; jj++){
+      L = 1 + pick.length + jj;
+      if (L < 3 || L > 4) continue;
+      if (jj > 1 + pick.length) continue;
+      if (pick.length + 1 + jj > 4) continue;
+      var need = [a];
+      for (k=0;k<pick.length;k++) need.push(idxOf(pick[k],num));
+      out.push({need:need, jok:jj, len:L});
+    }
+  }
+
+  /* Reihen in der Farbe col, im Kreis, die `num` enthalten.
+     Teddis stehen nie am Rand einer Reihe - das waere immer die kuerzere
+     Reihe plus ein verschwendeter Teddi und blaeht die Suche nur auf. */
+  var gesehen = {};
+  for (L=3; L<=13; L++){
+    for (var off=0; off<L; off++){
+      s = stepN(num, -off);
+      if (cnt[idxOf(col, s)] < 1) continue;
+      if (cnt[idxOf(col, stepN(s, L-1))] < 1) continue;
+      var nd = [], nj = 0, drin = false;
+      for (k=0;k<L;k++){
+        var w = idxOf(col, stepN(s,k));
+        if (cnt[w] > 0){ nd.push(w); if (w === a) drin = true; }
+        else nj++;
+      }
+      if (nj > jok || nj > L - nj || !drin) continue;
+      var sig = nd.join('.') + '/' + nj;
+      if (gesehen[sig]) continue;
+      gesehen[sig] = 1;
+      out.push({need:nd, jok:nj, len:L});
+    }
+  }
+  return out;
+}
+
+/* ---------- Der Umbau-Rechner ---------- */
+var LOSE = { score:-1e9, sets:null };
+
+function rechne(tischSorten, tischJok, handSorten, handJok, msLimit, wUsed){
+  if (wUsed === undefined) wUsed = 100;
+  var tc = tischSorten.slice(), hc = handSorten.slice();
+  var jT = tischJok, jH = handJok;
+  var memo = {}, ende = Date.now() + msLimit, abgebrochen = false, knoten = 0;
+  /* Zustand als kurze Zeichenkette: je Sorte ein Zeichen, dazu die Teddis.
+     Wird bei jedem Zug mitgefuehrt statt jedesmal neu gebaut. */
+  var zust = new Array(54), alle = new Array(52), ii;
+  for (ii=0;ii<52;ii++){ alle[ii] = tc[ii] + hc[ii]; zust[ii] = 65 + tc[ii]*3 + hc[ii]; }
+  zust[52] = 65 + jT; zust[53] = 65 + jH;
+  function setz(i){ zust[i] = 65 + tc[i]*3 + hc[i]; alle[i] = tc[i] + hc[i]; }
+  function key(){ return String.fromCharCode.apply(null, zust); }
+
+  function nimm(st){
+    var hUsed = 0, hPts = 0, i, x, jk = st.jok;
+    var log = { t:[], h:[], jt:0, jh:0 };
+    for (i=0;i<st.need.length;i++){
+      x = st.need[i];
+      if (tc[x] > 0){ tc[x]--; setz(x); log.t.push(x); }
+      else if (hc[x] > 0){ hc[x]--; setz(x); log.h.push(x); hUsed++; hPts += idxNum(x); }
+      else { zurueck(log); return null; }
+    }
+    while (jk > 0){
+      if (jT > 0){ jT--; zust[52] = 65 + jT; log.jt++; }
+      else if (jH > 0){ jH--; zust[53] = 65 + jH; log.jh++; hUsed++; hPts += 12; }
+      else { zurueck(log); return null; }
+      jk--;
+    }
+    log.hUsed = hUsed; log.hPts = hPts;
+    return log;
+  }
+  function zurueck(log){
+    var i;
+    for (i=0;i<log.t.length;i++){ tc[log.t[i]]++; setz(log.t[i]); }
+    for (i=0;i<log.h.length;i++){ hc[log.h[i]]++; setz(log.h[i]); }
+    jT += log.jt; jH += log.jh;
+    zust[52] = 65 + jT; zust[53] = 65 + jH;
+  }
+
+  function rec(){
+    if (++knoten % 256 === 0 && Date.now() > ende){ abgebrochen = true; }
+    if (abgebrochen) return LOSE;
+    var k = key();
+    if (memo[k]) return memo[k];
+    var i, anchor = -1, pflicht = false, mussJok = false;
+    for (i=0;i<52;i++) if (tc[i] > 0){ anchor = i; pflicht = true; break; }
+    if (anchor < 0 && jT > 0){
+      for (i=0;i<52;i++) if (hc[i] > 0){ anchor = i; break; }
+      if (anchor < 0) return (memo[k] = LOSE);
+      mussJok = true;
+    }
+    if (anchor < 0){
+      for (i=0;i<52;i++) if (hc[i] > 0){ anchor = i; break; }
+      if (anchor < 0) return (memo[k] = { score:0, sets:[] });
+    }
+    var kand = setsWith(anchor, alle, jT + jH), best = LOSE;
+
+    /* ohne diesen Stein weiter - nur erlaubt, wenn er von der Hand kommt */
+    if (!pflicht){
+      hc[anchor]--; setz(anchor);
+      var r0 = rec();
+      hc[anchor]++; setz(anchor);
+      if (r0.score > best.score) best = { score:r0.score, sets:r0.sets };
+    }
+    for (var q=0; q<kand.length; q++){
+      if (abgebrochen) break;
+      if (mussJok && kand[q].jok < 1) continue;
+      var log = nimm(kand[q]);
+      if (!log) continue;
+      var r = rec();
+      if (r.score > -1e8){
+        var sc = r.score + wUsed*log.hUsed + log.hPts;
+        if (sc > best.score) best = { score:sc, sets:[kand[q]].concat(r.sets) };
+      }
+      zurueck(log);
+    }
+    if (jH > 0 && !pflicht && !mussJok && best.score < 0){
+      /* uebrige Teddis in der Hand duerfen liegen bleiben */
+      best = { score:0, sets:[] };
+    }
+    return (memo[k] = best);
+  }
+
+  var erg = rec();
+  return { ok: !abgebrochen && erg.score > -1e8, score: erg.score, sets: erg.sets || [], abgebrochen: abgebrochen };
+}
+
+/* ==================================================================
+   Spielstand
+   ================================================================== */
+var G = {
+  deck: [], spieler: [], dran: 0, saetze: [],
+  gehoben: [],            /* ids der aufgehobenen Steine, in Aufhebe-Reihenfolge */
+  laeuft: false, minOut: 30, kiStufe: 2,
+  undo: [], zugStart: null, runde: 0, warten: false
+};
+var setId = 1;
+
+function el(id){ return document.getElementById(id); }
+var $table = el('table'), $hand = el('hand'), $handbar = el('handbar'),
+    $foes = el('foes'), $hint = el('hint'), $veil = el('veil'), $dlg = el('dlg'),
+    $status = el('status'), $statusTxt = el('statusTxt'), $geist = el('geist'),
+    $frame = el('tableframe');
+
+/* Teddikub ist still - kein Ton, nur die Vibration, wenn sie an ist. */
+function summ(ms){ if (cfg.vibrate && navigator.vibrate) try{ navigator.vibrate(ms); }catch(e){} }
+
+/* ==================================================================
+   Aufheben und Hinlegen
+   ------------------------------------------------------------------
+   Es gibt keine Ablage mehr. Aufgehobene Steine bleiben sichtbar da
+   liegen, wo sie herkommen, nur eben angehoben. Erst beim Hinlegen
+   wandern sie. So sieht man jederzeit, woraus man gerade baut, und
+   kann aus mehreren Saetzen gleichzeitig Steine ziehen.
+   ================================================================== */
+function istHoch(id){ return G.gehoben.indexOf(id) >= 0; }
+function hochSteine(){
+  var raus = [], i, t;
+  for (i=0;i<G.gehoben.length;i++){ t = tileById(G.gehoben[i]); if (t) raus.push(t); }
+  return raus;
+}
+/* Was von einem Satz gerade wirklich liegt - ohne die aufgehobenen Steine. */
+function satzRest(st){
+  var raus = [], i;
+  for (i=0;i<st.tiles.length;i++) if (!istHoch(st.tiles[i].id)) raus.push(st.tiles[i]);
+  return raus;
+}
+function handRest(){
+  var h = G.spieler[0].hand, raus = [], i;
+  for (i=0;i<h.length;i++) if (!istHoch(h[i].id)) raus.push(h[i]);
+  return raus;
+}
+function legenAktiv(){ return G.gehoben.length > 0; }
+/* Vor dem Rauskommen zaehlen nur eigene Saetze. An fremde darf man dann
+   gar nicht erst anlegen - das wird gesperrt, nicht hinterher geruegt.
+   Saetze, die man in diesem Zug selbst gelegt hat, bleiben offen. */
+function darfAnlegen(st){
+  if (G.spieler[0].aus) return true;
+  for (var i=0;i<st.tiles.length;i++) if (!warInHand(st.tiles[i])) return false;
+  return true;
+}
+
+/* ==================================================================
+   Tischraster
+   ------------------------------------------------------------------
+   Saetze liegen frei auf dem Tisch, eingerastet in ein Raster:
+   eine Spalte = eine Steinbreite, eine Zeile = eine Satzhoehe.
+   Ein Satz belegt in seiner Zeile die Spalten [x, x+breite).
+   Nichts verschiebt sich von allein - ausser ein Satz waechst in
+   seinen Nachbarn hinein; dann weicht der Nachbar zum naechsten
+   freien Platz aus.
+   ================================================================== */
+var RAND = 10, LUFT = 2;
+function rasterMass(){
+  var T = G.tile || 40;
+  var u = T + 2, v = Math.round(T*1.34) + 10 + 14;
+  var breite = $frame.clientWidth || 800;
+  return { T:T, u:u, v:v, spalten: Math.max(5, Math.floor((breite - 2*RAND) / u)) };
+}
+/* Griff + Steine + Ablegefeld + Luft, in Spalten */
+function satzBreite(st){ return (typeof st === 'number' ? st : st.tiles.length) + 2; }
+function boxPixel(n, m){ return n*(m.T+2) + Math.round(1.36*m.T) + 14; }
+function satzById(id){
+  for (var i=0;i<G.saetze.length;i++) if (G.saetze[i].id === id) return G.saetze[i];
+  return null;
+}
+function belegt(x, y, w, ohneId, m){
+  if (x < 0 || y < 0) return true;
+  if (x + w > m.spalten && !(x === 0 && w > m.spalten)) return true;
+  for (var i=0;i<G.saetze.length;i++){
+    var o = G.saetze[i];
+    if (o.id === ohneId || o.x == null || o.y !== y) continue;
+    if (x < o.x + satzBreite(o) && o.x < x + w) return true;
+  }
+  return false;
+}
+function tiefsteZeile(){
+  var y = -1;
+  for (var i=0;i<G.saetze.length;i++) if (G.saetze[i].y != null && G.saetze[i].y > y) y = G.saetze[i].y;
+  return y;
+}
+/* Naechster freier Platz zu (x0,y0): erst dieselbe Zeile, dann die Nachbarzeilen.
+   `frei` ist optional - ohne gilt der aktuelle Tisch. */
+function naechsterPlatz(x0, y0, w, ohneId, m, frei){
+  frei = frei || function(x, y){ return !belegt(x, y, w, ohneId, m); };
+  var grenze = Math.max(tiefsteZeile(), y0) + 2;
+  for (var d=0; d<=grenze; d++){
+    var reihen = d === 0 ? [y0] : [y0 + d, y0 - d], best = null;
+    for (var r=0;r<reihen.length;r++){
+      var y = reihen[r]; if (y < 0) continue;
+      for (var x=0; x<=Math.max(0, m.spalten - w); x++)
+        if (frei(x, y, w)){
+          var dist = Math.abs(x - x0);
+          if (!best || dist < best.d) best = { x:x, y:y, d:dist };
+        }
+    }
+    if (best) return { x:best.x, y:best.y };
+  }
+  return { x:0, y:grenze + 1 };
+}
+/* Erster freier Platz in Lesereihenfolge, mit LUFT Spalten Abstand zu beiden
+   Nachbarn. Ein Satz waechst beim Anlegen nach rechts - die Luft rechts vom
+   Vordermann gehoert dem Vordermann, die Luft rechts von uns uns selbst. */
+function ersterPlatz(w, m, frei){
+  frei = frei || function(x, y, ww){ return !belegt(x, y, ww, null, m); };
+  for (var y=0; y<400; y++)
+    for (var x=0; x<=Math.max(0, m.spalten - w); x++){
+      var a = Math.max(0, x - LUFT), b = Math.min(m.spalten, x + w + LUFT);
+      if (frei(a, y, b - a) && frei(x, y, w)) return { x:x, y:y };
+    }
+  return { x:0, y:tiefsteZeile() + 1 };
+}
+/* Jeder Satz bekommt einen gueltigen, ueberlappungsfreien Platz.
+   Wer zuletzt angefasst wurde (G.fixSaetze), behaelt seinen. Wer weichen
+   muss, rueckt in seiner Zeile nach rechts; nur wenn dort kein Platz mehr
+   ist, zieht er um - und zwar auf wirklich freien Platz, nie auf den eines
+   Satzes, der erst spaeter an der Reihe ist. Das verhindert Kettenspruenge. */
+function tischOrdnen(){
+  var m = rasterMass(), vor = G.fixSaetze || [];
+  var plan = G.saetze.map(function(o){ return { o:o, x:o.x, y:o.y, w:satzBreite(o) }; });
+  plan.sort(function(a,b){
+    var pa = vor.indexOf(a.o.id), pb = vor.indexOf(b.o.id);
+    if (pa < 0) pa = 999; if (pb < 0) pb = 999;
+    if (pa !== pb) return pa - pb;
+    if (a.x == null) return b.x == null ? 0 : 1;
+    if (b.x == null) return -1;
+    return (a.y - b.y) || (a.x - b.x);
+  });
+  var fertig = [], warten = plan.filter(function(p){ return p.x != null; });
+  function stoesst(liste, x, y, w, id){
+    for (var i=0;i<liste.length;i++){
+      var b = liste[i];
+      if (b.o.id !== id && b.y === y && x < b.x + b.w && b.x < x + w) return true;
+    }
+    return false;
+  }
+  function imFeld(x, y, w){ return x >= 0 && y >= 0 && (x + w <= m.spalten || (x === 0 && w > m.spalten)); }
+  plan.forEach(function(p){
+    warten = warten.filter(function(b){ return b !== p; });
+    var id = p.o.id, w = p.w, q = null, x;
+    var nurFertig = function(xx, yy, ww){ return imFeld(xx, yy, ww) && !stoesst(fertig, xx, yy, ww, id); };
+    var ganzFrei  = function(xx, yy, ww){ return nurFertig(xx, yy, ww) && !stoesst(warten, xx, yy, ww, id); };
+    if (p.x != null){
+      if (nurFertig(p.x, p.y, w)) q = { x:p.x, y:p.y };
+      else {
+        for (x = p.x + 1; x + w <= m.spalten; x++)
+          if (nurFertig(x, p.y, w)){ q = { x:x, y:p.y }; break; }
+        if (!q) q = naechsterPlatz(p.x, p.y, w, id, m, ganzFrei);
+      }
+    } else q = ersterPlatz(w, m, ganzFrei);
+    p.o.x = q.x; p.o.y = q.y; p.x = q.x; p.y = q.y;
+    fertig.push(p);
+  });
+  G.fixSaetze = [];
+}
+/* Knopf "Ordnen": alle Saetze gerade ins Raster legen. Die Lesereihenfolge
+   (oben nach unten, links nach rechts) bleibt erhalten, damit man seine Saetze
+   wiederfindet - nur die Luecken verschwinden und jeder bekommt LUFT. */
+function tischAufraeumen(){
+  if (!amZug() || !G.saetze.length) return;
+  var m = rasterMass();
+  var reihe = G.saetze.slice().sort(function(a,b){ return (a.y - b.y) || (a.x - b.x); });
+  G.saetze.forEach(function(o){ o.x = null; o.y = null; });
+  reihe.forEach(function(o){ var q = ersterPlatz(satzBreite(o), m); o.x = q.x; o.y = q.y; });
+  G.fixSaetze = [];
+  summ(10); renderAll();
+}
+
+/* Bildschirmpunkt -> Rasterfeld */
+function rasterVon(cx, cy, runden){
+  var m = rasterMass(), r = $table.getBoundingClientRect();
+  var fx = (cx - r.left - RAND) / m.u, fy = (cy - r.top - RAND) / m.v;
+  var f = runden ? Math.round : Math.floor;
+  return { x: Math.max(0, f(fx)), y: Math.max(0, f(fy)) };
+}
+/* Nach einem Umbau durch einen Gegner: jeder neue Satz erbt den Platz des
+   alten, mit dem er die meisten Steine teilt. So bleibt der Tisch ruhig. */
+function erbePositionen(alt, neu){
+  var vergeben = {};
+  neu.forEach(function(ns){
+    var ids = {}, best = null, bestN = 0;
+    ns.tiles.forEach(function(t){ ids[t.id] = 1; });
+    alt.forEach(function(os){
+      if (vergeben[os.id] || os.x == null) return;
+      var n = 0; os.tiles.forEach(function(t){ if (ids[t.id]) n++; });
+      if (n > bestN){ bestN = n; best = os; }
+    });
+    if (best){ vergeben[best.id] = 1; ns.id = best.id; ns.x = best.x; ns.y = best.y; }
+  });
+}
+
+/* ==================================================================
+   Automatisch teilen
+   ------------------------------------------------------------------
+   Nimmt man Steine aus der Mitte einer Kette, zerfaellt sie von selbst
+   in die Stuecke links und rechts davon - immer, auch wenn ein Stueck
+   dann zu kurz ist. Das ist dann rot und muss repariert werden, bevor der
+   Zug gilt. Gruppen gleicher Zahlen haben keine Mitte und bleiben ganz.
+   Geteilt wird an den Stellen, an denen die Steine sichtbar liegen.
+   ================================================================== */
+function istKette(tiles){
+  var c = null, n = null, verschieden = false, echte = 0;
+  for (var i=0;i<tiles.length;i++){
+    var t = tiles[i];
+    if (t.j) continue;
+    echte++;
+    if (c === null){ c = t.c; n = t.n; continue; }
+    if (t.c !== c) return false;          /* verschiedene Farben: eine Gruppe */
+    if (t.n !== n) verschieden = true;
+  }
+  return echte >= 2 && verschieden;
+}
+function teilstuecke(tiles, weg){
+  if (!istKette(tiles)) return null;
+  var stuecke = [], akt = [], i;
+  for (i=0;i<tiles.length;i++){
+    if (weg[tiles[i].id]){ if (akt.length){ stuecke.push(akt); akt = []; } }
+    else akt.push(tiles[i]);
+  }
+  if (akt.length) stuecke.push(akt);
+  return stuecke.length < 2 ? null : stuecke;
+}
+/* Passt eine Steinmenge nicht mehr als ein Satz, zerfaellt sie vielleicht sauber
+   in mehrere. Das rechnet derselbe Zerleger aus, den auch die Gegner benutzen:
+   alle Steine muessen aufgehen, nichts darf uebrig bleiben.
+   Beispiel: an 9-10-11-12-13-1 noch eine 11 anlegen
+             -> 9-10-11 und 11-12-13-1. */
+function zerlegen(tiles){
+  if (tiles.length < 6) return null;          /* zwei Saetze brauchen sechs Steine */
+  var so = zuSorten(tiles), leer = new Array(52), i;
+  for (i=0;i<52;i++) leer[i] = 0;
+  var r = rechne(so.c, so.j, leer, 0, 200, 0);
+  if (!r.ok || !r.sets || r.sets.length < 2) return null;
+  var m = materialisieren(r.sets, tiles, []);
+  if (!m) return null;
+  for (i=0;i<tiles.length;i++) if (!m.benutzt[tiles[i].id]) return null;
+  return m.sets;
+}
+/* Einen Satz, der so nicht aufgeht, in seine gueltigen Stuecke zerlegen.
+   Die Stuecke reihen sich rechts an den urspruenglichen Platz an. */
+function nachTeilen(st, liste, vorrang){
+  if (checkSet(st.tiles).ok) return false;
+  var teile = zerlegen(st.tiles);
+  if (!teile) return false;
+  /* Die Stuecke in der Reihenfolge lassen, in der die Steine vorher lagen -
+     sonst springt das hintere Stueck nach vorn. */
+  var pos = {};
+  st.tiles.forEach(function(t, i){ pos[t.id] = i; });
+  teile.sort(function(a, b){
+    var pa = 1e9, pb = 1e9;
+    a.forEach(function(t){ if (pos[t.id] < pa) pa = pos[t.id]; });
+    b.forEach(function(t){ if (pos[t.id] < pb) pb = pos[t.id]; });
+    return pa - pb;
+  });
+  st.tiles = teile[0]; if (vorrang) vorrang.push(st.id);
+  var x = st.x, k, nach = liste.indexOf(st) + 1;
+  for (k=1;k<teile.length;k++){
+    x = x == null ? null : x + satzBreite(teile[k-1].length);
+    var stueck = { id:setId++, tiles:teile[k], x:x, y:st.y };
+    liste.splice(nach++, 0, stueck); if (vorrang) vorrang.push(stueck.id);
+  }
+  return true;
+}
+function stueckeGut(stuecke){
+  for (var i=0;i<stuecke.length;i++) if (!checkSet(stuecke[i]).ok) return false;
+  return true;
+}
+function hochMap(){
+  var m = {};
+  for (var i=0;i<G.gehoben.length;i++) m[G.gehoben[i]] = 1;
+  return m;
+}
+
+/* ==================================================================
+   Zeichnen
+   ================================================================== */
+function tileHtml(t, extra, als){
+  var cls = 't' + (t.j ? ' jk' : ' c' + t.c) + (istHoch(t.id) ? ' hoch' : '') +
+            (G.frischId === t.id ? ' frisch' : '') + (extra || '');
+  if (t.j){
+    var marke = als ? '<span class="als" style="color:'+FARBEN[als.c]+'">'+als.n+'</span>' : '';
+    return '<div class="'+cls+'" data-id="'+t.id+'">'+teddiMarke()+marke+'</div>';
+  }
+  return '<div class="'+cls+'" data-id="'+t.id+'"><span class="num">'+t.n+'</span><span class="dot"></span></div>';
+}
+function renderHand(){
+  var h = G.spieler[0].hand, s = '', i;
+  for (i=0;i<h.length;i++) s += tileHtml(h[i], '');
+  $hand.innerHTML = s;
+  el('handCnt').textContent = handRest().length;
+}
+function renderTable(){
+  saetzeOrdnen();
+  tischOrdnen();
+  var m = rasterMass(), hoch = hochMap(), s = '', i, k, rechts = 0, unten = -1;
+  for (i=0;i<G.saetze.length;i++){
+    var st = G.saetze[i], rest = satzRest(st);
+    var inArbeit = rest.length !== st.tiles.length;
+    var teile = inArbeit ? teilstuecke(st.tiles, hoch) : null;
+    var r = checkSet(rest), vals = {};
+    /* Joker-Werte: aus dem Rest, oder - wenn der Satz gleich zerfaellt - je Stueck */
+    if (teile) teile.forEach(function(tl){
+      var rr = checkSet(tl);
+      if (rr.ok && rr.vals) for (var q=0;q<rr.order.length;q++) vals[rr.order[q].id] = rr.vals[q];
+    });
+    else if (r.ok && r.vals) for (k=0;k<r.order.length;k++) vals[r.order[k].id] = r.vals[k];
+    var gut = teile ? stueckeGut(teile) : r.ok;
+    var offen = darfAnlegen(st);
+    var kl = 'set' + (rest.length === 0 ? '' : (gut ? '' : ' bad')) +
+             (inArbeit ? ' arbeit' : '') + (teile ? ' teilt' : '');
+    var ord = st.tiles;
+    s += '<div class="satzbox'+(offen ? '' : ' zu')+'" data-set="'+st.id+'" style="left:'+
+         (RAND + st.x*m.u)+'px;top:'+(RAND + st.y*m.v)+'px">';
+    s += '<div class="griff" data-set="'+st.id+'"></div>';
+    s += '<div class="'+kl+'" data-set="'+st.id+'">';
+    for (k=0;k<ord.length;k++) s += tileHtml(ord[k], '', ord[k].j ? vals[ord[k].id] : null);
+    s += '</div>';
+    s += '<div class="drop" data-set="'+st.id+'">+</div>';
+    s += '</div>';
+    rechts = Math.max(rechts, st.x + satzBreite(st)); unten = Math.max(unten, st.y);
+  }
+  G.neuPlatz = null;
+  if (legenAktiv()){
+    var wn = satzBreite(Math.max(3, G.gehoben.length));
+    G.neuPlatz = ersterPlatz(wn, m);
+    s += '<div id="neuSatz" style="left:'+(RAND + G.neuPlatz.x*m.u)+'px;top:'+(RAND + G.neuPlatz.y*m.v)+
+         'px;width:'+boxPixel(Math.max(3, G.gehoben.length), m)+'px">+ neuer Satz</div>';
+    rechts = Math.max(rechts, G.neuPlatz.x + wn); unten = Math.max(unten, G.neuPlatz.y);
+  }
+  $table.innerHTML = s;
+  $table.style.width  = Math.max($frame.clientWidth,  2*RAND + rechts*m.u) + 'px';
+  $table.style.height = Math.max($frame.clientHeight, 2*RAND + (unten + 3)*m.v) + 'px';
+  $hint.style.display = (G.saetze.length || legenAktiv()) ? 'none' : '';
+  $frame.classList.toggle('legen', legenAktiv());
+}
+function renderFoes(){
+  var s = '', i;
+  for (i=1;i<G.spieler.length;i++){
+    var p = G.spieler[i], bars = '', k;
+    for (k=0;k<Math.min(p.hand.length,16);k++) bars += '<i></i>';
+    s += '<div class="foe'+(G.dran===i?' turn':'')+'"><span>'+p.name+'</span>'+
+         '<span class="pts">'+(p.punkte>0?'+':'')+p.punkte+'</span>'+
+         '<span class="cnt">'+p.hand.length+'</span><span class="bars">'+bars+'</span></div>';
+  }
+  $foes.innerHTML = s;
+}
+
+/* ---------- Die Zeile, die immer stehen bleibt ---------- */
+function statusText(){
+  if (!G.laeuft) return { t:'Teddikub', k:'' };
+  if (G.dran !== 0) return { t: G.spieler[G.dran] ? G.spieler[G.dran].name + ' ist dran …' : 'Bitte warten …', k:'' };
+  var hoch = G.gehoben.length;
+  if (hoch){
+    var hm = hochMap(), teilt = false;
+    for (var q=0;q<G.saetze.length;q++) if (teilstuecke(G.saetze[q].tiles, hm)) teilt = true;
+    return { t: hoch + (hoch === 1 ? ' Stein aufgehoben' : ' Steine aufgehoben') +
+                (teilt ? ' · der Satz wird geteilt' : '') +
+                ' – jetzt auf ein + tippen oder auf den Tisch', k:'gut' };
+  }
+  var gelegt = zugGelegt().length;
+  if (!G.spieler[0].aus){
+    if (gelegt){
+      var e = ersteAuslagePunkte();
+      if (!e.rein) return { t:'Beim ersten Mal nur eigene Steine – noch nicht anlegen oder umbauen', k:'warn' };
+      return { t:'Auslage ' + e.pts + ' von ' + G.minOut + ' Punkten',
+               k: e.pts >= G.minOut ? 'gut' : 'warn' };
+    }
+    return { t:'Du bist dran · zum Rauskommen brauchst du ' + G.minOut + ' Punkte', k:'' };
+  }
+  if (gelegt) return { t:'Du bist dran · ' + gelegt + (gelegt === 1 ? ' Stein gelegt' : ' Steine gelegt'), k:'gut' };
+  return { t:'Du bist dran', k:'' };
+}
+function renderStatus(){
+  if (G.ziehHinweis){ $statusTxt.textContent = G.ziehHinweis.t; $status.className = G.ziehHinweis.k; return; }
+  if (G.meldung){ $statusTxt.textContent = G.meldung; $status.className = G.meldungArt || 'warn'; return; }
+  var st = statusText();
+  $statusTxt.textContent = st.t;
+  $status.className = st.k;
+}
+function meldung(txt, dauer, art){
+  G.meldung = txt || ''; G.meldungArt = art || 'warn';
+  if (G.meldTimer) clearTimeout(G.meldTimer);
+  if (txt) G.meldTimer = setTimeout(function(){ G.meldung = ''; renderStatus(); }, dauer || 3600);
+  renderStatus();
+}
+function renderAll(){ fitTiles(); renderTable(); renderHand(); renderFoes(); renderStatus(); knoepfe(); }
+
+function knoepfe(){
+  var meins = G.dran === 0 && !G.warten && G.laeuft;
+  var gelegt = zugGelegt().length;
+  el('bPlay').disabled = !meins;
+  el('bUndo').disabled = !meins || !G.undo.length;
+  el('bReset').disabled = !meins || (!G.undo.length && !G.gehoben.length);
+  el('bSortN').disabled = !meins; el('bSortC').disabled = !meins; el('bSortM').disabled = !meins;
+  el('bOrdnen').disabled = !meins || !G.saetze.length;
+  el('bSortN').classList.toggle('aktiv', cfg.sortMode === 'n');
+  el('bSortC').classList.toggle('aktiv', cfg.sortMode === 'c');
+  el('bSortM').classList.toggle('aktiv', cfg.sortMode === 'm');
+  el('playTxt').textContent = (gelegt || G.gehoben.length) ? 'Spielen' : 'Ziehen';
+  el('stackN').textContent = G.deck.length;
+}
+
+/* ---------- Der frisch gezogene Stein ---------- */
+function zeigeGezogen(t, danach){
+  var box = el('gezogen');
+  box.innerHTML = '<div class="karte"><b>Du ziehst</b>' + tileHtml(t, '') + '</div>';
+  box.className = 'an';
+  setTimeout(function(){
+    box.className = ''; box.innerHTML = '';
+    G.frischId = t.id;
+    if (G.frischTimer) clearTimeout(G.frischTimer);
+    G.frischTimer = setTimeout(function(){ G.frischId = null; renderHand(); }, 2600);
+    if (danach) danach();
+  }, 1050);
+}
+
+/* ---------- Steingroesse ---------- */
+function fitTiles(){
+  var w = document.documentElement.clientWidth;
+  var h = document.documentElement.clientHeight;
+  var karten = G.spieler.length ? G.spieler[0].hand.length : 14;
+  /* Auf schmalen Schirmen darf die Hand umbrechen - lieber zwei Reihen mit
+     Steinen, die man treffen kann, als eine Reihe mit Briefmarken. */
+  var jeReihe = w < 560 ? 8 : (w < 760 ? 13 : 19);
+  var n = Math.max(8, Math.min(karten, jeReihe));
+  var t = Math.floor((w - 58) / n) - 3;
+  t = Math.min(t, Math.floor(h / 11));
+  t = Math.max(w < 560 ? 30 : 26, Math.min(54, t));
+  G.tile = t;
+  document.documentElement.style.setProperty('--tile', t + 'px');
+}
+function neuMessen(){ if (greif) return; fitTiles(); renderTable(); }
+window.addEventListener('resize', neuMessen);
+window.addEventListener('orientationchange', function(){ setTimeout(neuMessen, 250); });
+if (window.visualViewport) window.visualViewport.addEventListener('resize', neuMessen);
+
+/* ==================================================================
+   Zughilfen
+   ================================================================== */
+function tileById(id){
+  var i, k;
+  for (i=0;i<G.spieler[0].hand.length;i++) if (G.spieler[0].hand[i].id === id) return G.spieler[0].hand[i];
+  for (i=0;i<G.saetze.length;i++) for (k=0;k<G.saetze[i].tiles.length;k++)
+    if (G.saetze[i].tiles[k].id === id) return G.saetze[i].tiles[k];
+  return null;
+}
+function schnapp(){
+  return {
+    hand: G.spieler[0].hand.slice(),
+    gehoben: G.gehoben.slice(),
+    saetze: G.saetze.map(function(s){ return { id:s.id, tiles:s.tiles.slice(), x:s.x, y:s.y }; })
+  };
+}
+/* Plaetze auf dem Tisch sind Kosmetik: beim Zuruecknehmen bleibt jeder Satz,
+   den es noch gibt, dort liegen, wo man ihn zuletzt hingeschoben hat. */
+function stelleHer(s){
+  var jetzt = {};
+  G.saetze.forEach(function(o){ jetzt[o.id] = o; });
+  G.spieler[0].hand = s.hand.slice();
+  G.gehoben = (s.gehoben || []).slice();
+  G.saetze = s.saetze.map(function(o){
+    var j = jetzt[o.id];
+    return { id:o.id, tiles:o.tiles.slice(), x: j ? j.x : o.x, y: j ? j.y : o.y };
+  });
+}
+function merken(){ G.undo.push(schnapp()); if (G.undo.length > 90) G.undo.shift(); }
+
+/* Steine, die in diesem Zug von der Hand auf den Tisch gewandert sind */
+function zugGelegt(){
+  if (!G.zugStart) return [];
+  var vorher = {}, i, k;
+  for (i=0;i<G.zugStart.hand.length;i++) vorher[G.zugStart.hand[i].id] = 1;
+  var raus = [];
+  for (i=0;i<G.saetze.length;i++) for (k=0;k<G.saetze[i].tiles.length;k++)
+    if (vorher[G.saetze[i].tiles[k].id] && !istHoch(G.saetze[i].tiles[k].id)) raus.push(G.saetze[i].tiles[k]);
+  return raus;
+}
+function alleSaetzeGut(){
+  var hm = hochMap();
+  for (var i=0;i<G.saetze.length;i++){
+    var rest = satzRest(G.saetze[i]);
+    if (!rest.length || checkSet(rest).ok) continue;
+    var tl = teilstuecke(G.saetze[i].tiles, hm);
+    if (!tl || !stueckeGut(tl)) return false;
+  }
+  return true;
+}
+/* Punkte der Saetze, die in diesem Zug ganz neu entstanden sind */
+function ersteAuslagePunkte(){
+  var alt = {}, i;
+  for (i=0;i<G.zugStart.saetze.length;i++){
+    var ids = G.zugStart.saetze[i].tiles.map(function(t){ return t.id; }).sort().join(',');
+    alt[ids] = 1;
+  }
+  var summe = 0, fremd = false;
+  for (i=0;i<G.saetze.length;i++){
+    var rest = satzRest(G.saetze[i]);
+    if (!rest.length) continue;
+    var key = rest.map(function(t){ return t.id; }).sort().join(',');
+    if (alt[key]) continue;
+    var r = checkSet(rest);
+    if (!r.ok) return { pts:0, rein:false };
+    for (var k=0;k<rest.length;k++){
+      var id = rest[k].id, warHand = false, q;
+      for (q=0;q<G.zugStart.hand.length;q++) if (G.zugStart.hand[q].id === id) warHand = true;
+      if (!warHand) fremd = true;
+    }
+    summe += r.pts;
+  }
+  return { pts:summe, rein:!fremd };
+}
+function saetzeAufraeumen(){
+  G.saetze = G.saetze.filter(function(s){ return s.tiles.length > 0; });
+}
+/* Die gepruefte Reihenfolge festschreiben, damit die Steine nicht springen,
+   sobald man einen davon aufhebt. */
+function saetzeOrdnen(){
+  for (var i=0;i<G.saetze.length;i++){
+    var r = checkSet(G.saetze[i].tiles);
+    if (r.ok) G.saetze[i].tiles = r.order;
+  }
+}
+function warInHand(t){
+  if (!G.zugStart) return true;
+  for (var i=0;i<G.zugStart.hand.length;i++) if (G.zugStart.hand[i].id === t.id) return true;
+  return false;
+}
+function amZug(){ return G.laeuft && G.dran === 0 && !G.warten; }
+
+/* ==================================================================
+   Bedienung
+   ================================================================== */
+
+/* ---------- Aufheben ---------- */
+function heben(id){
+  var i = G.gehoben.indexOf(id);
+  if (i >= 0) G.gehoben.splice(i, 1);
+  else {
+    if (!G.spieler[0].aus && !warInHand(tileById(id) || {})){
+      meldung('Erst rauskommen – dann darfst du den Tisch umbauen.', 3400);
+      summ(30); return false;
+    }
+    G.gehoben.push(id);
+  }
+renderAll(); return true;
+}
+
+/* ---------- Hinlegen ---------- */
+function hinlegen(ziel, sid, pos){
+  var steine = hochSteine();
+  if (!steine.length) return false;
+  if (ziel === 'satz'){
+    var zs = null, w;
+    for (w=0;w<G.saetze.length;w++) if (G.saetze[w].id === sid) zs = G.saetze[w];
+    if (zs && !darfAnlegen(zs)){ nichtAnlegen(); return false; }
+  }
+  if (ziel === 'hand'){
+    for (var q=0;q<steine.length;q++) if (!warInHand(steine[q])){
+      meldung(steine[q].j ? 'Teddi darf nicht auf die Hand – er muss auf den Tisch.'
+                          : 'Steine vom Tisch können nicht auf die Hand.', 3600);
+      summ(30); return false;
+    }
+  }
+  merken();
+  var m = rasterMass(), neuPlatz = G.neuPlatz;
+  var behalten = {}, vorrang = [];
+  steine.forEach(function(t){ behalten[t.id] = 1; });
+  /* aus allen Quellen loesen - und wo aus der Mitte genommen wurde, teilen */
+  G.spieler[0].hand = G.spieler[0].hand.filter(function(t){ return !behalten[t.id]; });
+  var liste = [];
+  G.saetze.forEach(function(st){
+    var teile = (ziel === 'satz' && st.id === sid) ? null : teilstuecke(st.tiles, behalten);
+    if (!teile){
+      st.tiles = st.tiles.filter(function(t){ return !behalten[t.id]; });
+      liste.push(st); return;
+    }
+    st.tiles = teile[0]; liste.push(st); vorrang.push(st.id);
+    var x = st.x;
+    for (var k=1;k<teile.length;k++){
+      x = x == null ? null : x + satzBreite(teile[k-1].length);
+      var stueck = { id:setId++, tiles:teile[k], x:x, y:st.y };
+      liste.push(stueck); vorrang.push(stueck.id);
+    }
+  });
+  G.saetze = liste;
+  saetzeAufraeumen();
+  if (ziel === 'neu'){
+    var w = satzBreite(steine.length);
+    var platz = pos ? naechsterPlatz(pos.x, pos.y, w, null, m) : neuPlatz;
+    var ns = { id:setId++, tiles:steine, x: platz ? platz.x : null, y: platz ? platz.y : null };
+    G.saetze.push(ns); vorrang.unshift(ns.id);
+    nachTeilen(ns, G.saetze, vorrang);
+  } else if (ziel === 'satz'){
+    var st = satzById(sid);
+    if (!st){ G.saetze.push({ id:setId++, tiles:steine }); }
+    else {
+      st.tiles = st.tiles.concat(steine); vorrang.unshift(st.id);
+      nachTeilen(st, G.saetze, vorrang);
+    }
+  } else {
+    G.spieler[0].hand = G.spieler[0].hand.concat(steine);
+    if (cfg.sortMode !== 'm') sortHand(cfg.sortMode);
+    handReiheSichern();
+  }
+  G.gehoben = [];
+  G.fixSaetze = vorrang;
+  saetzeOrdnen();
+  summ(12); renderAll();
+  return true;
+}
+
+function nichtAnlegen(){
+  meldung('Zum Rauskommen brauchst du ' + G.minOut + ' Punkte aus eigenen Sätzen – '+
+          'an fremde Sätze darfst du erst danach anlegen.', 4600);
+  summ(30);
+}
+
+/* ---------- Tippen ---------- */
+function tippen(e){
+  if (!amZug()) return;
+  var node = e.target, ziel = null;
+  while (node && node !== document.body){
+    if (node.classList){
+      if (node.classList.contains('t')){ ziel = { was:'stein', node:node }; break; }
+      if (node.id === 'neuSatz'){ ziel = { was:'neu' }; break; }
+      if (node.id === 'platz') { node = node.parentNode; continue; }
+      if (node.classList.contains('satzbox')){ ziel = { was:'satz', node:node }; break; }
+      if (node.id === 'tableframe' || node.id === 'table'){ ziel = { was:'flaeche' }; break; }
+      if (node.id === 'hand' || node.id === 'handbar'){ ziel = { was:'hand' }; break; }
+    }
+    node = node.parentNode;
+  }
+  if (!ziel) return;
+  if (e.cancelable) e.preventDefault();
+
+  if (ziel.was === 'stein'){
+    var id = parseInt(ziel.node.getAttribute('data-id'), 10);
+    return heben(id);
+  }
+  if (ziel.was === 'satz'){
+    if (ziel.node.classList.contains('zu')){ if (G.gehoben.length) nichtAnlegen(); return; }
+    return hinlegen('satz', parseInt(ziel.node.getAttribute('data-set'),10));
+  }
+  if (ziel.was === 'neu' || ziel.was === 'flaeche'){
+    if (!G.gehoben.length){
+      if (ziel.was === 'flaeche') meldung('Erst Steine antippen, dann hierher legen.', 3000);
+      return;
+    }
+    if (ziel.was === 'flaeche' && e.clientX != null)
+      return hinlegen('neu', null, rasterVon(e.clientX, e.clientY, false));
+    return hinlegen('neu');
+  }
+  if (ziel.was === 'hand'){
+    if (!G.gehoben.length) return;
+    return hinlegen('hand');
+  }
+}
+
+/* ==================================================================
+   Ziehen und Fallenlassen
+   ------------------------------------------------------------------
+   Ein Stein laesst sich auch direkt an seinen Platz ziehen. Ist er
+   Teil der aufgehobenen Steine, wandert die ganze Auswahl mit.
+   Ein Zug innerhalb der eigenen Hand ordnet nur um.
+   ================================================================== */
+var tapEvt  = window.PointerEvent ? 'pointerdown' : 'mousedown';
+var moveEvt = window.PointerEvent ? 'pointermove' : 'mousemove';
+var upEvt   = window.PointerEvent ? 'pointerup'   : 'mouseup';
+var greif = null;
+
+function zeigerXY(e){
+  if (e.touches && e.touches[0])               return { x:e.touches[0].clientX, y:e.touches[0].clientY };
+  if (e.changedTouches && e.changedTouches[0]) return { x:e.changedTouches[0].clientX, y:e.changedTouches[0].clientY };
+  return { x:e.clientX, y:e.clientY };
+}
+function steinNode(node){
+  while (node && node !== document.body && !(node.classList && node.classList.contains('t')))
+    node = node.parentNode;
+  return (node && node.classList && node.classList.contains('t')) ? node : null;
+}
+function inHand(node){ return node && node.parentNode === $hand; }
+
+function griffNode(node){
+  while (node && node !== document.body && !(node.classList && node.classList.contains('griff')))
+    node = node.parentNode;
+  return (node && node.classList && node.classList.contains('griff')) ? node : null;
+}
+function greifStart(e){
+  if (!amZug()) return;
+  if (e.pointerType === 'mouse' && e.button != null && e.button !== 0) return;
+  var gr = griffNode(e.target);
+  if (gr){
+    var box = gr.parentNode, rb = box.getBoundingClientRect(), pp = zeigerXY(e);
+    greif = { satz: parseInt(box.getAttribute('data-set'), 10), x0:pp.x, y0:pp.y, zieht:false,
+              ox: pp.x - rb.left, oy: pp.y - rb.top };
+    return;
+  }
+  var node = steinNode(e.target);
+  if (!node) return;
+  var p = zeigerXY(e);
+  greif = {
+    id: parseInt(node.getAttribute('data-id'), 10),
+    ausHand: inHand(node), x0:p.x, y0:p.y, zieht:false, sortiert:false
+  };
+}
+function geistBauen(steine){
+  var s = '', i;
+  for (i=0;i<steine.length;i++) s += tileHtml(steine[i], '');
+  $geist.innerHTML = s.replace(/ hoch/g, '');
+  $geist.className = 'an';
+}
+function geistWeg(){ $geist.className = ''; $geist.innerHTML = ''; $geist.style.left = ''; $geist.style.top = ''; }
+/* Gestrichelter Rahmen dort, wo etwas landen wird */
+function platzZeigen(q, n, m){
+  var pl = el('platz');
+  if (!pl){ pl = document.createElement('div'); pl.id = 'platz'; $table.appendChild(pl); }
+  pl.style.left = (RAND + q.x*m.u) + 'px';
+  pl.style.top  = (RAND + q.y*m.v) + 'px';
+  pl.style.width  = boxPixel(n, m) + 'px';
+  pl.style.height = (Math.round(m.T*1.34) + 10) + 'px';
+}
+function platzWeg(){ var pl = el('platz'); if (pl) pl.parentNode.removeChild(pl); }
+
+/* ---------- einen ganzen Satz verschieben ---------- */
+function satzZieh(e){
+  var p = zeigerXY(e);
+  if (!greif.zieht){
+    if (Math.abs(p.x - greif.x0) + Math.abs(p.y - greif.y0) < 8) return;
+    var st0 = satzById(greif.satz);
+    if (!st0){ greif = null; return; }
+    greif.zieht = true;
+    document.body.classList.add('ordne');
+    var sh = '';
+    st0.tiles.forEach(function(t){ sh += tileHtml(t, ''); });
+    $geist.innerHTML = '<div class="set">' + sh.replace(/ hoch/g, '') + '</div>';
+    $geist.className = 'an satz';
+    var box = $table.querySelector('.satzbox[data-set="' + greif.satz + '"]');
+    if (box) box.classList.add('wandert');
+  }
+  if (e.cancelable) e.preventDefault();
+  var m = rasterMass(), st = satzById(greif.satz);
+  var links = p.x - greif.ox, oben = p.y - greif.oy;
+  $geist.style.left = (links + m.T*.56 + 2) + 'px';
+  $geist.style.top  = oben + 'px';
+
+  /* Liegt der Finger auf einem anderen Satz, heisst Loslassen: verbinden. */
+  var z = zielUnter(p.x, p.y), tid = null;
+  if (z && (z.was === 'satz' || z.was === 'zu') && z.node){
+    tid = parseInt(z.node.getAttribute('data-set'), 10);
+    if (tid === greif.satz) tid = null;
+  }
+  verbindenMarkieren(null);
+  if (tid != null){
+    var pr = verbindenPruefen(st, satzById(tid));
+    greif.verbinden = { id:tid, ok:pr.ok, grund:pr.grund };
+    greif.platz = null; platzWeg();
+    verbindenMarkieren(z.node, pr.ok);
+    G.ziehHinweis = pr.ok ? { t:'Loslassen: die beiden Sätze werden verbunden', k:'gut' }
+                  : pr.grund === 'vorRaus'
+                    ? { t:'Vor dem Rauskommen kannst du nur deine eigenen neuen Sätze verbinden', k:'warn' }
+                    : { t:'Diese beiden Sätze ergeben zusammen keinen gültigen Satz', k:'warn' };
+    renderStatus();
+    return;
+  }
+  greif.verbinden = null;
+  if (G.ziehHinweis){ G.ziehHinweis = null; renderStatus(); }
+  var roh = rasterVon(links, oben, true);
+  greif.platz = naechsterPlatz(roh.x, roh.y, satzBreite(st), st.id, m);
+  platzZeigen(greif.platz, st.tiles.length, m);
+}
+/* Zwei Saetze verbinden - geht, wenn zusammen ein gueltiger Satz entsteht.
+   Vor dem Rauskommen nur mit eigenen, in diesem Zug gelegten Saetzen. */
+function verbindenPruefen(a, b){
+  if (!a || !b) return { ok:false, grund:'passt' };
+  if (!darfAnlegen(a) || !darfAnlegen(b)) return { ok:false, grund:'vorRaus' };
+  var alle = a.tiles.concat(b.tiles);
+  return (alle.length <= 13 && checkSet(alle).ok) ? { ok:true } : { ok:false, grund:'passt' };
+}
+function verbindenMarkieren(node, ok){
+  var alt = $table.querySelectorAll('.satzbox.ziel, .satzbox.nein'), i;
+  for (i=0;i<alt.length;i++){ alt[i].classList.remove('ziel'); alt[i].classList.remove('nein'); }
+  if (node) node.classList.add(ok ? 'ziel' : 'nein');
+}
+
+function zielUnter(x, y){
+  $geist.style.visibility = 'hidden';
+  var n = document.elementFromPoint(x, y);
+  $geist.style.visibility = '';
+  while (n && n !== document.body){
+    if (n.classList){
+      if (n.id === 'neuSatz') return { was:'neu', node:n };
+      if (n.classList.contains('satzbox'))
+        return n.classList.contains('zu')
+          ? { was:'zu', node:n }
+          : { was:'satz', sid:parseInt(n.getAttribute('data-set'),10), node:n };
+      if (n.id === 'hand' || n.id === 'handbar' || n.classList.contains('t') && inHand(n))
+                                          return { was:'hand', node:$handbar };
+      if (n.id === 'tableframe' || n.id === 'table') return { was:'neu', node:null };
+    }
+    n = n.parentNode;
+  }
+  return null;
+}
+function zielMarkieren(z){
+  var alt = $frame.querySelectorAll('.ziel'), i;
+  for (i=0;i<alt.length;i++) alt[i].classList.remove('ziel');
+  $handbar.classList.remove('ziel');
+  if (!z || z.was === 'zu') return;
+  if (z.was === 'hand') $handbar.classList.add('ziel');
+  else if (z.node) z.node.classList.add('ziel');
+  else { var nn = el('neuSatz'); if (nn) nn.classList.add('ziel'); }
+}
+
+function greifZieh(e){
+  if (!greif) return;
+  if (greif.satz != null) return satzZieh(e);
+  var p = zeigerXY(e), dx = p.x - greif.x0, dy = p.y - greif.y0;
+  if (!greif.zieht){
+    if (Math.abs(dx) + Math.abs(dy) < 10) return;
+    greif.zieht = true;
+    document.body.classList.add('ordne');
+    /* Ein Handstein faengt als Umsortieren an. Sobald der Finger den Tisch
+       erreicht, wird daraus ein Hinlegen - das entscheidet das Ziel, nicht
+       der Startpunkt. */
+    greif.sortiert = greif.ausHand && !G.gehoben.length;
+    if (!greif.sortiert && !aufheben_fuersZiehen()) return;
+  }
+  if (e.cancelable) e.preventDefault();
+
+  var z = zielUnter(p.x, p.y);
+  if (greif.sortiert){
+    if (z && z.was !== 'hand'){
+      greif.sortiert = false;
+      if (!aufheben_fuersZiehen()) return;
+    } else {
+      return handUmsortieren(p);
+    }
+  }
+  $geist.style.left = p.x + 'px';
+  $geist.style.top  = p.y + 'px';
+  zielMarkieren(z);
+  /* ueber freier Flaeche: zeigen, wo der neue Satz landet */
+  if (z && z.was === 'neu' && !z.node){
+    var m = rasterMass();
+    greif.roh = rasterVon(p.x, p.y, false);
+    platzZeigen(naechsterPlatz(greif.roh.x, greif.roh.y, satzBreite(G.gehoben.length), null, m),
+                G.gehoben.length, m);
+  } else { greif.roh = null; platzWeg(); }
+}
+/* Den gegriffenen Stein in die Auswahl holen und den Geist bauen.
+   Gibt false zurueck, wenn das (noch) nicht erlaubt ist. */
+function aufheben_fuersZiehen(){
+  if (!istHoch(greif.id)){
+    if (!G.spieler[0].aus && !warInHand(tileById(greif.id) || {})){
+      greif = null;
+      document.body.classList.remove('ordne');
+      meldung('Erst rauskommen – dann darfst du den Tisch umbauen.', 3400);
+      return false;
+    }
+    G.gehoben.push(greif.id);
+    renderAll();
+  }
+  geistBauen(hochSteine());
+  return true;
+}
+function handUmsortieren(p){
+  var h = G.spieler[0].hand, von = -1, i;
+  for (i=0;i<h.length;i++) if (h[i].id === greif.id){ von = i; break; }
+  if (von < 0) return;
+  var kinder = $hand.children, ziel = h.length;
+  for (i=0;i<kinder.length;i++){
+    var r = kinder[i].getBoundingClientRect();
+    if (p.y < r.top - 4){ ziel = i; break; }
+    if (p.y > r.bottom + 4) continue;
+    if (p.x < r.left + r.width/2){ ziel = i; break; }
+    ziel = i + 1;
+  }
+  if (ziel > von) ziel--;
+  ziel = Math.max(0, Math.min(h.length - 1, ziel));
+  if (ziel === von) return;
+  h.splice(ziel, 0, h.splice(von, 1)[0]);
+  renderHand();
+  var nn = $hand.querySelector('[data-id="' + greif.id + '"]');
+  if (nn) nn.classList.add('greif');
+}
+function greifEnde(e){
+  if (!greif) return;
+  var g = greif; greif = null;
+  document.body.classList.remove('ordne');
+  platzWeg();
+  if (g.satz != null){
+    geistWeg();
+    if (!g.zieht){
+      var bx = $table.querySelector('.satzbox[data-set="' + g.satz + '"]');
+      if (bx) tippen({ target:bx, cancelable:false });
+      return;
+    }
+    G.ziehHinweis = null;
+    if (g.verbinden){
+      if (!g.verbinden.ok){
+        if (g.verbinden.grund === 'vorRaus') nichtAnlegen();
+        else meldung('Diese beiden Sätze ergeben zusammen keinen gültigen Satz.', 3400);
+        summ(30); renderAll(); return;
+      }
+      /* Das ist ein echter Umbau - also ein Schritt, den "Zurück" kennt. */
+      merken();
+      var weg = satzById(g.satz), bleibt = satzById(g.verbinden.id);
+      bleibt.tiles = bleibt.tiles.concat(weg.tiles);
+      G.saetze = G.saetze.filter(function(o){ return o !== weg; });
+      G.fixSaetze = [bleibt.id];
+      saetzeOrdnen(); summ(14); renderAll();
+      return;
+    }
+    var st = satzById(g.satz);
+    if (st && g.platz){ st.x = g.platz.x; st.y = g.platz.y; G.fixSaetze = [st.id]; }
+    summ(8); renderAll();
+    return;
+  }
+  if (!g.zieht){
+    tippen({ target: $hand.querySelector('[data-id="'+g.id+'"]') ||
+                     $table.querySelector('[data-id="'+g.id+'"]'), cancelable:false });
+    return;
+  }
+  if (g.sortiert){
+    if (cfg.sortMode !== 'm'){ cfg.sortMode = 'm'; saveCfg(); }
+    handReiheSichern(); summ(8); knoepfe();
+    return;
+  }
+  var p = zeigerXY(e), z = zielUnter(p.x, p.y);
+  geistWeg(); zielMarkieren(null);
+  if (!z){ renderAll(); return; }
+  if (z.was === 'zu'){ nichtAnlegen(); renderAll(); return; }
+  if (z.was === 'hand') hinlegen('hand');
+  else if (z.was === 'satz') hinlegen('satz', z.sid);
+  else hinlegen('neu', null, z.node ? null : rasterVon(p.x, p.y, false));
+}
+$frame.addEventListener(tapEvt, greifStart, {passive:true});
+$hand.addEventListener(tapEvt, greifStart, {passive:true});
+document.addEventListener(moveEvt, greifZieh, {passive:false});
+document.addEventListener(upEvt, greifEnde, {passive:true});
+if (!window.PointerEvent){
+  $frame.addEventListener('touchstart', greifStart, {passive:true});
+  $hand.addEventListener('touchstart', greifStart, {passive:true});
+  document.addEventListener('touchmove', greifZieh, {passive:false});
+  document.addEventListener('touchend', greifEnde, {passive:true});
+}
+/* Tippen auf alles, was kein Stein ist (Ablegefelder, freie Flaeche, Hand) */
+el('wrap').addEventListener(tapEvt, function(e){
+  if (e.pointerType === 'mouse' && e.button !== 0) return;
+  var p = e.target;
+  while (p && p !== document.body){ if (p.tagName === 'BUTTON') return; p = p.parentNode; }
+  if (steinNode(e.target) || griffNode(e.target)) return;   /* laufen ueber greifStart/greifEnde */
+  tippen(e);
+}, {passive:false});
+
+/* ---------- Sortieren ---------- */
+function sortHand(modus){
+  G.spieler[0].hand.sort(function(a,b){
+    if (a.j !== b.j) return a.j ? 1 : -1;   /* Teddi ans Ende */
+    if (a.j) return 0;
+    if (modus === 'c') return (a.c - b.c) || (a.n - b.n);
+    return (a.n - b.n) || (a.c - b.c);
+  });
+}
+/* Reihenfolge von `arr` an die von `ref` angleichen (Vergleich ueber die id). */
+function ordneNach(arr, ref){
+  var pos = {}; ref.forEach(function(t,i){ pos[t.id] = i; });
+  return arr.slice().sort(function(a,b){
+    var pa = (a.id in pos) ? pos[a.id] : 9999, pb = (b.id in pos) ? pos[b.id] : 9999;
+    return pa - pb;
+  });
+}
+/* Die Handreihenfolge in alle Rueckschritte durchschreiben, damit sie
+   beim Zuruecknehmen oder Ziehen nicht zurueckspringt. */
+function handReiheSichern(){
+  var ref = G.spieler[0].hand;
+  if (G.zugStart) G.zugStart.hand = ordneNach(G.zugStart.hand, ref);
+  for (var i=0;i<G.undo.length;i++) G.undo[i].hand = ordneNach(G.undo[i].hand, ref);
+}
+function sortiere(modus){
+  cfg.sortMode = modus; saveCfg();
+  if (modus !== 'm') sortHand(modus);
+  handReiheSichern();
+renderAll();
+  if (modus === 'm') meldung('Steine frei anordnen – zum Verschieben ziehen.', 3400, 'gut');
+}
+/* Einen frisch gezogenen Stein an die passende Stelle setzen. */
+function einsortieren(t){
+  var h = G.spieler[0].hand;
+  if (cfg.sortMode === 'm'){ h.push(t); return; }
+  var i, platz = h.length;
+  for (i=0;i<h.length;i++){
+    var a = h[i];
+    if (a.j) { platz = i; break; }            /* vor die Teddis */
+    var vor = (cfg.sortMode === 'c')
+      ? (a.c > t.c || (a.c === t.c && a.n > t.n))
+      : (a.n > t.n || (a.n === t.n && a.c > t.c));
+    if (vor){ platz = i; break; }
+  }
+  if (t.j) platz = h.length;
+  h.splice(platz, 0, t);
+}
+
+/* ==================================================================
+   Zug abschliessen
+   ================================================================== */
+function zugPruefen(){
+  if (G.gehoben.length) return { ok:false, txt:'Du hältst noch Steine in der Hand – leg sie ab.' };
+  if (!alleSaetzeGut()) return { ok:false, txt:'Ein Satz auf dem Tisch stimmt noch nicht (roter Rahmen).' };
+  var gelegt = zugGelegt();
+  if (!gelegt.length) return { ok:false, txt:'Du hast keinen eigenen Stein abgelegt.' };
+  if (!G.spieler[0].aus){
+    var e = ersteAuslagePunkte();
+    if (!e.rein) return { ok:false, txt:'Beim ersten Mal nur eigene Steine – noch nicht anlegen oder umbauen.' };
+    if (e.pts < G.minOut) return { ok:false, txt:'Zum Rauskommen brauchst du ' + G.minOut + ' Punkte, du hast ' + e.pts + '.' };
+  }
+  return { ok:true };
+}
+function spielen(){
+  if (!amZug()) return;
+  var gelegt = zugGelegt();
+  if (!gelegt.length && !G.gehoben.length) return ziehen();
+  var p = zugPruefen();
+  if (!p.ok){ meldung(p.txt, 5000); summ([20,40,20]);return; }
+  if (!G.spieler[0].aus){ G.spieler[0].aus = true; }
+
+  G.passen = 0;
+  G.undo = [];
+  if (!G.spieler[0].hand.length) return ende(0);
+  naechster();
+}
+function ziehen(){
+  if (!amZug()) return;
+  if (zugGelegt().length){ meldung('Du hast schon gelegt – dann kannst du nicht ziehen.', 3600); return; }
+  zurueckAufAnfang();
+  if (!G.deck.length){
+    meldung('Der Stapel ist leer – du musst passen.', 2600);
+    G.passen++;
+    G.undo = [];
+    if (G.passen >= G.spieler.length) return ende(-1);
+    return naechster();
+  }
+  var t = G.deck.pop(), nr = G.spielNr;
+  G.warten = true; knoepfe();
+  summ(12);
+  /* erst einmal gross ansehen, dann wandert er an seinen Platz */
+  zeigeGezogen(t, function(){
+    if (nr !== G.spielNr) return;
+    G.warten = false;
+    einsortieren(t);
+    handReiheSichern();
+    G.undo = [];
+    renderAll();
+    naechster();
+  });
+}
+function zurueckAufAnfang(){
+  if (G.zugStart) stelleHer(G.zugStart);
+  G.gehoben = [];
+  G.undo = [];
+}
+function zurueck(){
+  if (!G.undo.length) return;
+  stelleHer(G.undo.pop());renderAll();
+}
+function abbrechen(){ zurueckAufAnfang();renderAll(); }
+
+/* ==================================================================
+   Die Gegner
+   ================================================================== */
+function zuSorten(tiles){
+  var c = new Array(52), j = 0, i;
+  for (i=0;i<52;i++) c[i] = 0;
+  for (i=0;i<tiles.length;i++){ if (tiles[i].j) j++; else c[idxOf(tiles[i].c, tiles[i].n)]++; }
+  return { c:c, j:j };
+}
+/* Aus den Sorten-Saetzen wieder echte Steine machen - gleiche Reihenfolge
+   wie im Rechner: erst Tisch, dann Hand. */
+function materialisieren(sets, tischTiles, handTiles){
+  var pt = {}, ph = {}, jt = [], jh = [], i, k, x;
+  for (i=0;i<tischTiles.length;i++){
+    var t = tischTiles[i];
+    if (t.j) jt.push(t); else { x = idxOf(t.c,t.n); (pt[x] = pt[x] || []).push(t); }
+  }
+  for (i=0;i<handTiles.length;i++){
+    var u = handTiles[i];
+    if (u.j) jh.push(u); else { x = idxOf(u.c,u.n); (ph[x] = ph[x] || []).push(u); }
+  }
+  var raus = [], benutzt = {};
+  for (i=0;i<sets.length;i++){
+    var st = sets[i], tiles = [];
+    for (k=0;k<st.need.length;k++){
+      x = st.need[k];
+      var t2 = (pt[x] && pt[x].length) ? pt[x].shift() : (ph[x] && ph[x].length ? ph[x].shift() : null);
+      if (!t2) return null;
+      tiles.push(t2); benutzt[t2.id] = 1;
+    }
+    for (k=0;k<st.jok;k++){
+      var j2 = jt.length ? jt.shift() : (jh.length ? jh.shift() : null);
+      if (!j2) return null;
+      tiles.push(j2); benutzt[j2.id] = 1;
+    }
+    if (!checkSet(tiles).ok) return null;
+    raus.push(tiles);
+  }
+  return { sets:raus, benutzt:benutzt };
+}
+/* einzelne Steine an bestehende Saetze anlegen */
+function anlegenVersuch(hand, saetze){
+  var geaendert = false, weiter = true;
+  while (weiter){
+    weiter = false;
+    for (var i=0;i<hand.length;i++){
+      for (var k=0;k<saetze.length;k++){
+        var probe = saetze[k].tiles.concat([hand[i]]);
+        if (checkSet(probe).ok){
+          saetze[k].tiles = probe; hand.splice(i,1);
+          geaendert = true; weiter = true; break;
+        }
+        /* Passt es nur, wenn der Satz dabei in zwei gueltige Stuecke
+           zerfaellt (wie beim Spieler auch), dann eben so. */
+        var vorher = saetze[k].tiles;
+        saetze[k].tiles = probe;
+        if (nachTeilen(saetze[k], saetze, null)){
+          hand.splice(i,1); geaendert = true; weiter = true; break;
+        }
+        saetze[k].tiles = vorher;
+      }
+      if (weiter) break;
+    }
+  }
+  return geaendert;
+}
+
+function kiZug(pi){
+  var p = G.spieler[pi], stufe = G.kiStufe;
+  var handS = zuSorten(p.hand);
+  var tischTiles = [], i;
+  for (i=0;i<G.saetze.length;i++) tischTiles = tischTiles.concat(G.saetze[i].tiles);
+  var leer = new Array(52); for (i=0;i<52;i++) leer[i] = 0;
+  var gelegt = false;
+
+  if (!p.aus){
+    /* Rauskommen: nur eigene Steine, Mindestpunkte noetig */
+    var zeit = [0,90,150,300,600,1400][stufe] || 150;
+    var r = rechne(leer, 0, handS.c, handS.j, zeit, 0);
+    if (r.sets && r.sets.length){
+      var m = materialisieren(r.sets, [], p.hand);
+      if (m){
+        var summe = 0;
+        for (i=0;i<m.sets.length;i++) summe += checkSet(m.sets[i]).pts;
+        if (summe >= G.minOut){
+          for (i=0;i<m.sets.length;i++) G.saetze.push({ id:setId++, tiles:m.sets[i] });
+          p.hand = p.hand.filter(function(t){ return !m.benutzt[t.id]; });
+          p.aus = true; gelegt = true;
+        }
+      }
+    }
+  } else if (stufe >= 3 && tischTiles.length){
+    /* Umbau des ganzen Tisches */
+    var ts = zuSorten(tischTiles);
+    var zeit2 = stufe >= 5 ? 1400 : (stufe >= 4 ? 500 : 240);
+    var r2 = rechne(ts.c, ts.j, handS.c, handS.j, zeit2, 100);
+    if (r2.ok && r2.sets && r2.sets.length){
+      var m2 = materialisieren(r2.sets, tischTiles, p.hand);
+      var allesDrin = !!m2;
+      if (m2) for (i=0;i<tischTiles.length;i++) if (!m2.benutzt[tischTiles[i].id]) allesDrin = false;
+      if (allesDrin){
+        var vorher = p.hand.length;
+        var neueHand = p.hand.filter(function(t){ return !m2.benutzt[t.id]; });
+        if (neueHand.length < vorher){
+          var alteSaetze = G.saetze;
+          G.saetze = [];
+          for (i=0;i<m2.sets.length;i++) G.saetze.push({ id:setId++, tiles:m2.sets[i] });
+          erbePositionen(alteSaetze, G.saetze);
+          p.hand = neueHand; gelegt = true;
+        }
+      }
+    }
+  }
+
+  if (!gelegt && p.aus){
+    /* eigene neue Saetze */
+    var zeit3 = [0,80,140,220,400,900][stufe] || 140;
+    var r3 = rechne(leer, 0, handS.c, handS.j, zeit3, 100);
+    if (r3.sets && r3.sets.length){
+      var m3 = materialisieren(r3.sets, [], p.hand);
+      if (m3){
+        var nimmAlle = stufe >= 2 ? m3.sets.length : 1;
+        var benutzt2 = {};
+        for (i=0;i<nimmAlle;i++){
+          G.saetze.push({ id:setId++, tiles:m3.sets[i] });
+          for (var q=0;q<m3.sets[i].length;q++) benutzt2[m3.sets[i][q].id] = 1;
+          gelegt = true;
+        }
+        p.hand = p.hand.filter(function(t){ return !benutzt2[t.id]; });
+      }
+    }
+    /* anlegen */
+    if (stufe >= 2){
+      if (anlegenVersuch(p.hand, G.saetze)) gelegt = true;
+    }
+    /* Grossmeister: nach dem ersten Anlauf hat sich der Tisch veraendert -
+       kleinere Hand, mehr Steine auf dem Tisch. Ein zweiter, kuerzerer
+       Umbau-Versuch findet manchmal, was der erste (groessere) nicht in
+       der Zeit geschafft hat. */
+    if (stufe >= 5 && p.hand.length){
+      var tischTiles2 = [];
+      for (i=0;i<G.saetze.length;i++) tischTiles2 = tischTiles2.concat(G.saetze[i].tiles);
+      if (tischTiles2.length){
+        var ts2 = zuSorten(tischTiles2), handS2 = zuSorten(p.hand);
+        var r4 = rechne(ts2.c, ts2.j, handS2.c, handS2.j, 500, 100);
+        if (r4.ok && r4.sets && r4.sets.length){
+          var m4 = materialisieren(r4.sets, tischTiles2, p.hand);
+          var allesDrin2 = !!m4;
+          if (m4) for (i=0;i<tischTiles2.length;i++) if (!m4.benutzt[tischTiles2[i].id]) allesDrin2 = false;
+          if (allesDrin2){
+            var vorher2 = p.hand.length;
+            var neueHand2 = p.hand.filter(function(t){ return !m4.benutzt[t.id]; });
+            if (neueHand2.length < vorher2){
+              var alteSaetze2 = G.saetze;
+              G.saetze = [];
+              for (i=0;i<m4.sets.length;i++) G.saetze.push({ id:setId++, tiles:m4.sets[i] });
+              erbePositionen(alteSaetze2, G.saetze);
+              p.hand = neueHand2; gelegt = true;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  saetzeAufraeumen();
+  if (!alleSaetzeGut()){
+    /* Notbremse: sollte nicht vorkommen - Zug verwerfen und ziehen */
+    meldung(p.name + ' hat sich verrechnet.', 2000);
+  }
+  if (gelegt){
+    G.passen = 0;
+    meldung(p.name + ' hat gelegt.', 2200);
+  } else if (G.deck.length){
+    p.hand.push(G.deck.pop());
+    meldung(p.name + ' zieht.', 2000);
+  } else {
+    G.passen++;
+    meldung(p.name + ' passt.', 2000);
+  }
+  return p.hand.length === 0;
+}
+
+/* ==================================================================
+   Rundenlauf
+   ================================================================== */
+function naechster(nr){
+  if (nr !== undefined && nr !== G.spielNr) return;   /* Nachzuegler aus einer alten Partie */
+  spielSpeichern();
+  G.dran = (G.dran + 1) % G.spieler.length;
+  if (G.dran === 0){
+    G.warten = false;
+    G.zugStart = schnapp();
+    G.undo = [];
+    G.meldung = '';
+    renderAll(); spielSpeichern();
+  } else {
+    G.warten = true; renderAll();
+    var nr2 = G.spielNr;
+    setTimeout(function(){ kiSchritt(nr2); }, 620);
+  }
+}
+function kiSchritt(nr){
+  if (!G.laeuft || nr !== G.spielNr) return;
+  var pi = G.dran, fertig = false;
+  try { fertig = kiZug(pi); }
+  catch(err){ meldung('Ein Gegner hat gestockt.', 2000); }
+  renderAll();
+  var nr3 = G.spielNr;
+  if (fertig) return setTimeout(function(){ if (nr3 === G.spielNr) ende(pi); }, 500);
+  if (G.passen >= G.spieler.length) return setTimeout(function(){ if (nr3 === G.spielNr) ende(-1); }, 500);
+  setTimeout(function(){ naechster(nr3); }, 520);
+}
+
+/* ==================================================================
+   Abrechnung
+   ================================================================== */
+function ende(gewinner){
+  G.laeuft = false;
+  try{ localStorage.removeItem('teddi.spiel'); }catch(e){}
+  memStore['teddi.spiel'] = null;
+  var i, werte = [];
+  for (i=0;i<G.spieler.length;i++) werte.push(handWert(G.spieler[i].hand));
+  if (gewinner < 0){
+    var beste = 0;
+    for (i=1;i<G.spieler.length;i++) if (werte[i] < werte[beste]) beste = i;
+    gewinner = beste;
+  }
+  var summe = 0;
+  for (i=0;i<G.spieler.length;i++) if (i !== gewinner) summe += werte[i];
+  var zeilen = [];
+  for (i=0;i<G.spieler.length;i++){
+    var d = (i === gewinner) ? summe : -werte[i];
+    G.spieler[i].punkte += d;
+    zeilen.push({ name:G.spieler[i].name, delta:d, rest:G.spieler[i].hand.slice(),
+                  gesamt:G.spieler[i].punkte, sieg:i === gewinner });
+  }
+  G.runde++;
+  lsSet('teddi.karte', { runde:G.runde, stand:G.spieler.map(function(p,i){ return {platz:i, name:p.name, punkte:p.punkte}; }) });
+  renderAll();
+  setTimeout(function(){ zeigeErgebnis(zeilen, gewinner); }, 320);
+}
+
+/* ==================================================================
+   Neues Spiel
+   ================================================================== */
+function neuesSpiel(){
+  saveCfg();
+  G.deck = neuerVorrat();
+  G.minOut = cfg.minOut; G.kiStufe = cfg.ki;
+  G.saetze = []; G.gehoben = []; G.undo = []; G.passen = 0; G.laeuft = true;
+  G.dran = 0; G.warten = false; setId = 1; G.spielNr = (G.spielNr || 0) + 1;
+  var alt = lsGet('teddi.karte', null), punkte = {};
+  if (alt && alt.stand) alt.stand.forEach(function(x, k){
+    punkte[x.platz != null ? x.platz : k] = x.punkte;
+  });
+  G.runde = (alt && alt.runde) || 0;
+  G.spieler = [];
+  for (var i=0;i<=cfg.foes;i++){
+    var hand = [];
+    for (var k=0;k<14;k++) hand.push(G.deck.pop());
+    G.spieler.push({ name:spielerName(i), hand:hand, aus:false,
+                     punkte: punkte[i] || 0, ki: i > 0 });
+  }
+  sortHand(cfg.sortMode === 'm' ? 'n' : cfg.sortMode);
+  G.zugStart = schnapp();
+  zu();
+  G.meldung = '';
+  renderAll(); spielSpeichern();
+}
+
+/* ---------- Spielstand sichern und laden ---------- */
+function spielSpeichern(){
+  if (!G.laeuft) return;
+  try{
+    lsSet('teddi.spiel', {
+      deck:G.deck, dran:G.dran, minOut:G.minOut, kiStufe:G.kiStufe,
+      passen:G.passen, runde:G.runde,
+      saetze:G.saetze.map(function(s){ return { t:s.tiles, x:s.x, y:s.y }; }),
+      spieler:G.spieler.map(function(p){ return {name:p.name, hand:p.hand, aus:p.aus, punkte:p.punkte, ki:p.ki}; })
+    });
+  }catch(e){}
+}
+function spielLaden(){
+  var d = lsGet('teddi.spiel', null);
+  if (!d || !d.spieler || !d.spieler.length) return false;
+  var maxId = 0;
+  function fix(t){ if (t.id > maxId) maxId = t.id; return t; }
+  G.deck = d.deck.map(fix);
+  G.saetze = d.saetze.map(function(o){
+    if (o instanceof Array) return { id:setId++, tiles:o.map(fix) };      /* altes Format */
+    return { id:setId++, tiles:o.t.map(fix), x:o.x, y:o.y };
+  });
+  G.spieler = d.spieler.map(function(p){
+    return { name:p.name, hand:p.hand.map(fix), aus:p.aus, punkte:p.punkte, ki:p.ki };
+  });
+  nextId = maxId + 1;
+  G.dran = 0; G.minOut = d.minOut; G.kiStufe = d.kiStufe; G.passen = d.passen || 0;
+  G.runde = d.runde || 0; G.gehoben = []; G.undo = []; G.laeuft = true; G.warten = false;
+  cfg.minOut = G.minOut; cfg.ki = G.kiStufe;
+  G.spielNr = (G.spielNr || 0) + 1;
+  G.zugStart = schnapp();
+  return true;
+}
+
+/* ==================================================================
+   Dialoge
+   ================================================================== */
+function auf(html){ $dlg.innerHTML = html; $veil.className = 'on'; $dlg.scrollTop = 0; bindeRegler(); }
+function zu(){ $veil.className = ''; fitTiles(); }
+$veil.addEventListener('click', function(e){ if (e.target === $veil && G.laeuft) zu(); });
+$dlg.addEventListener('click', function(e){
+  var n = e.target;
+  while (n && n !== $dlg && !n.getAttribute('data-act')) n = n.parentNode;
+  if (!n || n === $dlg) return;
+  var a = n.getAttribute('data-act'), v = n.getAttribute('data-v');
+  if (a === 'zu') zu();
+  else if (a === 'neu') zeigeStart(true);
+  else if (a === 'start') { zu(); neuesSpiel(); }
+  else if (a === 'weiter') { if (spielLaden()) { zu(); renderAll(); } else zeigeStart(true); }
+  else if (a === 'hilfe') zeigeHilfe();
+  else if (a === 'opt') zeigeOptionen();
+  else if (a === 'karte') zeigeKarte();
+  else if (a === 'menu') zeigeMenu();
+  else if (a === 'sw'){
+    var f = n.getAttribute('data-f');
+    cfg[f] = !cfg[f]; saveCfg();
+    n.className = 'sw' + (cfg[f] ? ' on' : '');
+  }
+  else if (a === 'foes'){ cfg.foes = parseInt(v,10); saveCfg(); zeigeOptionen(); }
+  else if (a === 'feld'){ cfg.feld = v; saveCfg(); feldAnwenden(); zeigeOptionen(); }
+  else if (a === 'reset'){ lsSet('teddi.karte', null); zeigeOptionen(); }
+});
+
+function miniTile(t){
+  var c = t.j ? '#7a5b42' : FARBEN[t.c];
+  var txt = t.j ? 'T' : t.n;
+  return '<span style="display:inline-block;min-width:19px;text-align:center;border:1px solid #b9a894;'+
+         'border-radius:3px;background:#f8f2e8;color:'+c+';font-weight:bold;font-size:12px;'+
+         'padding:1px 3px;margin:1px 2px 1px 0;">'+txt+'</span>';
+}
+
+/* Die beiden Schwierigkeitsregler. Sie stehen im Startbild und in den
+   Einstellungen und schreiben beide in dasselbe cfg. */
+function reglerHtml(){
+  return ''+
+  '<div class="reg">'+
+    '<div class="kopf"><b>Minimum zum Rauskommen</b><em id="regMinWert">'+cfg.minOut+'</em></div>'+
+    '<input type="range" id="regMin" min="'+MIN_KLEIN+'" max="'+MIN_GROSS+'" step="1" value="'+cfg.minOut+'">'+
+    '<div class="skala"><span>'+MIN_KLEIN+' leicht</span><span>'+MIN_GROSS+' streng</span></div>'+
+    '<p class="txt" id="regMinTxt">'+minText()+'</p>'+
+  '</div>'+
+  '<div class="reg">'+
+    '<div class="kopf"><b>Spielniveau der Gegner</b><em id="regKiWert">'+KI_NAMEN[cfg.ki]+'</em></div>'+
+    '<input type="range" id="regKi" min="1" max="5" step="1" value="'+cfg.ki+'">'+
+    '<div class="skala"><span>1 ruhig</span><span>5 gnadenlos</span></div>'+
+    '<p class="txt" id="regKiTxt">Sie '+KI_TEXTE[cfg.ki]+'.</p>'+
+  '</div>';
+}
+function minText(){
+  var m = cfg.minOut;
+  var wie = m <= 21 ? 'Da ist man schnell draußen.'
+          : m <= 33 ? 'Der übliche Bereich.'
+          : m <= 42 ? 'Man muss auf gute Sätze warten.'
+          : 'Nur mit hohen Zahlen oder Teddi zu schaffen.';
+  return 'Dein erster Zug muss ' + m + ' Punkte aus eigenen Steinen bringen. ' + wie;
+}
+function bindeRegler(){
+  var felder = $dlg.querySelectorAll('input.nam'), q;
+  for (q=0;q<felder.length;q++) (function(f){
+    f.oninput = function(){
+      var i = parseInt(f.getAttribute('data-i'), 10);
+      cfg.namen[i] = f.value.slice(0,14);
+      saveCfg();
+    };
+    f.onblur = function(){
+      var i = parseInt(f.getAttribute('data-i'), 10);
+      if (!f.value.trim()){ cfg.namen[i] = NAMEN_STD[i]; f.value = NAMEN_STD[i]; saveCfg(); }
+    };
+  })(felder[q]);
+  var rm = el('regMin'), rk = el('regKi');
+  if (rm) rm.oninput = function(){
+    cfg.minOut = begrenze(parseInt(this.value,10) || 30, MIN_KLEIN, MIN_GROSS); saveCfg();
+    el('regMinWert').textContent = cfg.minOut;
+    el('regMinTxt').textContent = minText();
+  };
+  if (rk) rk.oninput = function(){
+    cfg.ki = begrenze(parseInt(this.value,10) || 2, 1, 5); saveCfg();
+    el('regKiWert').textContent = KI_NAMEN[cfg.ki];
+    el('regKiTxt').textContent = 'Sie ' + KI_TEXTE[cfg.ki] + '.';
+  };
+}
+
+function zeigeStart(nurNeu){
+  var hatStand = !!lsGet('teddi.spiel', null);
+  var h = '<div id="title"><div class="mk">'+teddiMarke()+'</div><div class="nm">Teddikub</div></div>';
+  if (hatStand && !nurNeu)
+    h += '<div class="lvl"><button data-act="weiter"><b>Fortsetzen</b><em>'+stufenKurz()+'</em></button></div>'+
+         '<h3>Neues Spiel</h3>';
+  h += reglerHtml();
+  h += '<div class="row"><button class="btn go" data-act="start" style="flex:2 1 60%;">'+
+       '<span class="ico">&#9654;</span>Spielen</button>'+
+       '<button class="btn" data-act="opt"><span class="ico">&#9881;</span>Mehr</button>'+
+       '<button class="btn" data-act="hilfe"><span class="ico">?</span>Regeln</button>';
+  if (G.laeuft) h += '<button class="btn" data-act="zu"><span class="ico">&#10005;</span>Zurück</button>';
+  h += '</div>';
+  auf(h);
+}
+function zeigeMenu(){
+  var h = '<h2>Menü</h2><div class="lvl">'+
+    (G.laeuft ? '<button data-act="zu"><b>Weiterspielen</b><em>&#9654;</em></button>' : '') +
+    '<button data-act="neu"><b>Neues Spiel</b><em>&#8635;</em></button>'+
+    '<button data-act="karte"><b>Punktekarte</b><em>&#931;</em></button>'+
+    '<button data-act="hilfe"><b>Regeln und Bedienung</b><em>?</em></button>'+
+    '<button data-act="opt"><b>Einstellungen</b><em>&#9881;</em></button>'+
+    '</div>';
+  auf(h);
+}
+function zeigeOptionen(){
+  var h = '<h2>Einstellungen</h2>';
+  h += reglerHtml();
+  h += '<div class="opt" style="border-top:1px solid rgba(122,47,24,.18);"><label>Anzahl der Gegner</label><div style="display:flex;gap:5px;">';
+  for (var i=1;i<=3;i++)
+    h += '<button class="btn" data-act="foes" data-v="'+i+'" style="min-width:42px;'+
+         (cfg.foes===i?'background:linear-gradient(180deg,#8fe08f,#3aa03a);':'')+'">'+i+'</button>';
+  h += '</div></div>';
+  h += '<h3>Spielfeld</h3><div class="felder">';
+  for (var fi=0; fi<FELDER.length; fi++)
+    h += '<button data-act="feld" data-v="'+FELDER[fi].id+'" class="'+(cfg.feld===FELDER[fi].id?'an':'')+'">'+
+         '<span class="probe feld-'+FELDER[fi].id+'"></span>'+FELDER[fi].name+'</button>';
+  h += '</div>';
+  h += '<h3>Namen</h3><div class="namen">';
+  for (var q=0;q<=cfg.foes;q++)
+    h += '<label><span>'+(q===0?'Du':'Gegner '+q)+'</span>'+
+         '<input type="text" class="nam" data-i="'+q+'" maxlength="14" value="'+
+         spielerName(q).replace(/"/g,'&quot;')+'" placeholder="'+NAMEN_STD[q]+'"></label>';
+  h += '</div>';
+  h += '<div class="opt"><label>Vibration</label><div class="sw'+(cfg.vibrate?' on':'')+'" data-act="sw" data-f="vibrate"><i></i></div></div>';
+  h += '<p style="margin-top:12px;font-size:13px;opacity:.8;">Regler, Gegnerzahl und Namen gelten ab dem nächsten neuen Spiel.</p>';
+  h += '<div class="row"><button class="btn" data-act="reset">Punktekarte löschen</button>'+
+       '<button class="btn" data-act="'+(G.laeuft?'zu':'neu')+'">Fertig</button></div>';
+  auf(h);
+}
+function zeigeKarte(){
+  var k = lsGet('teddi.karte', null);
+  var h = '<h2>Punktekarte</h2>';
+  if (!k || !k.stand || !k.stand.length) h += '<p>Noch keine beendete Runde.</p>';
+  else {
+    var st = k.stand.slice().sort(function(a,b){ return b.punkte - a.punkte; });
+    h += '<p>Nach '+k.runde+' '+(k.runde===1?'Runde':'Runden')+':</p><table class="sc">';
+    for (var i=0;i<st.length;i++)
+      h += '<tr'+(st[i].name==='Du'?' class="me"':'')+'><td>'+st[i].name+'</td><td class="n">'+
+           (st[i].punkte>0?'+':'')+st[i].punkte+'</td></tr>';
+    h += '</table>';
+  }
+  h += '<div class="row"><button class="btn" data-act="'+(G.laeuft?'zu':'neu')+'">Zurück</button></div>';
+  auf(h);
+}
+function zeigeErgebnis(zeilen, gewinner){
+  var duHast = gewinner === 0;
+  var h = '<div style="text-align:center;margin-bottom:6px;">'+
+          '<div style="width:120px;margin:0 auto;">'+(duHast ? teddyJubel() : teddyRuhig())+'</div>'+
+          '<h2 style="margin:2px 0 0;">'+(duHast ? 'Gewonnen!' : zeilen[gewinner].name + ' gewinnt')+'</h2>'+
+          '<p style="margin:0;opacity:.75;font-size:13px;">Runde '+G.runde+' &middot; '+stufenKurz()+'</p></div>';
+  h += '<table class="sc">';
+  for (var i=0;i<zeilen.length;i++){
+    var z = zeilen[i], rest = '';
+    for (var k=0;k<z.rest.length;k++) rest += miniTile(z.rest[k]);
+    if (!rest) rest = '<span style="opacity:.6;font-size:12px;">Hand leer</span>';
+    h += '<tr'+(i===0?' class="me"':'')+'><td><span class="big">'+z.name+'</span><br>'+rest+'</td>'+
+         '<td class="n" style="font-size:19px;white-space:nowrap;">'+(z.delta>0?'+':'')+z.delta+
+         '<br><span style="font-size:12px;font-weight:normal;opacity:.7;">gesamt '+
+         (z.gesamt>0?'+':'')+z.gesamt+'</span></td></tr>';
+  }
+  h += '</table>';
+  h += '<div class="row"><button class="btn" data-act="karte">Punktekarte</button>'+
+       '<button class="btn go" data-act="start"><span class="ico">&#9654;</span>Nochmal</button>'+
+       '<button class="btn" data-act="neu">Stufe wechseln</button></div>';
+  auf(h);
+}
+function zeigeHilfe(){
+  var h = '<h2>Teddikub - Regeln</h2>'+
+  '<h3>Ziel</h3><p>Wer als Erster alle Steine losgeworden ist, gewinnt die Runde. '+
+  'Die anderen zählen ihre übrigen Steine als Minuspunkte, der Gewinner bekommt die Summe gutgeschrieben.</p>'+
+  '<h3>Sortieren</h3><p><b>Reihe</b> ordnet nach Zahl, <b>Farbe</b> nach Farbe, <b>Manuell</b> lässt die Steine, wo sie sind - dann ziehst du sie selbst zurecht. Der aktive Knopf ist hervorgehoben.</p><h3>Sätze</h3><ul>'+
+  '<li><b>Gruppe:</b> drei oder vier gleiche Zahlen in verschiedenen Farben.</li>'+
+  '<li><b>Reihe:</b> mindestens drei fortlaufende Zahlen derselben Farbe. '+
+  '<b>Nach der 13 geht es bei der 1 weiter</b> - 12&#8209;13&#8209;1 ist also erlaubt.</li></ul>'+
+  '<h3>Rauskommen</h3><p>Der erste Zug muss ' + '<b>' + (G.minOut || cfg.minOut) + ' Punkte</b> '+
+  'aus eigenen Sätzen bringen. Solange du nicht raus bist, sind die Sätze der anderen '+
+  '<b>gesperrt</b> – sie erscheinen blass und ohne <b>+</b>, du kannst sie also gar nicht '+
+  'erst anfassen. Was du in diesem Zug selbst gelegt hast, bleibt offen: du darfst deinen '+
+  'eigenen frischen Satz weiter ergänzen.</p>'+
+  '<h3>Teddi, der Joker</h3><ul>'+
+  '<li>Teddi vertritt jeden Stein. Er <b>zählt mit</b> - mit dem Wert des Steins, den er ersetzt.</li>'+
+  '<li>In einem Satz dürfen nie mehr Teddis als echte Steine liegen.</li>'+
+  '<li>Liegt Teddi auf dem Tisch, darfst du ihn herausnehmen und <b>frei anderswo einsetzen</b> - '+
+  'zum Beispiel gegen den echten Stein tauschen.</li>'+
+  '<li>Auf die Hand darf er nicht zurück: Er muss vor dem Zugende wieder auf dem Tisch liegen.</li>'+
+  '<li>Bleibt Teddi am Rundenende auf deiner Hand, kostet er 25 Punkte.</li></ul>'+
+  '<h3>Bedienung</h3><ul>'+
+  '<li><b>Stein antippen</b> &rarr; du hebst ihn auf. Er bleibt liegen, wo er ist, nur angehoben. '+
+  'Das geht mit Handsteinen <b>und</b> mit Steinen vom Tisch – auch aus mehreren Sätzen auf einmal.</li>'+
+  '<li>Nochmal antippen &rarr; du legst ihn wieder hin.</li>'+
+  '<li>Sobald du etwas aufgehoben hast, erscheinen die gelben <b>+</b>-Felder. '+
+  'Auf ein <b>+</b> tippen &rarr; alles Aufgehobene wandert an diesen Satz. '+
+  'Auf <b>+ neuer Satz</b> oder die freie Fläche tippen &rarr; es entsteht ein neuer Satz. '+
+  'Auf die Hand tippen &rarr; die Steine gehen zurück auf die Hand (nur eigene).</li>'+
+  '<li>Wer lieber schiebt: einen Stein einfach <b>an seinen Platz ziehen</b>. '+
+  'Ist er Teil des Aufgehobenen, wandert alles mit.</li>'+
+  '<li>Einen Handstein innerhalb der Hand ziehen &rarr; du ordnest selbst; das schaltet auf <b>Manuell</b>.</li>'+
+  '<li><b>Sätze verschieben:</b> am gepunkteten Griff links neben jedem Satz fassen und ziehen. '+
+  'Der gestrichelte Rahmen zeigt, wo er landet. Das ist nur fürs Auge und zählt nicht als Zug.</li>'+
+  '<li><b>Sätze verbinden:</b> einen Satz am Griff auf einen anderen ziehen. Ergibt beides '+
+  'zusammen einen gültigen Satz (etwa 9‑10‑11 und 12‑13‑1), leuchtet das Ziel gelb, und beim '+
+  'Loslassen werden sie eins. Rot heißt: passt nicht. Vor dem Rauskommen geht das nur mit '+
+  'deinen eigenen neuen Sätzen.</li>'+
+  '<li><b>Ordnen</b> legt alle Sätze wieder gerade ins Raster – in derselben Reihenfolge, '+
+  'nur ohne Lücken und mit gleichmäßigem Abstand.</li>'+
+  '<li>Legst du an eine Reihe etwas an, das sie sprengt, sie aber sauber in zwei gültige '+
+  'Reihen zerfallen lässt, <b>trennt sie sich von selbst</b> – etwa eine zweite 11 an '+
+  '9‑10‑11‑12‑13‑1 ergibt 9‑10‑11 und 11‑12‑13‑1.</li>'+
+  '<li>Nimmst du Steine aus der <b>Mitte</b> einer Reihe, <b>teilt sie sich von selbst</b> in die '+
+  'Stücke links und rechts davon. Ist ein Stück dann zu kurz, bekommt es einen roten Rahmen – '+
+  'ergänze es oder räume es weg, bevor du „Spielen" drückst. Gruppen gleicher Zahlen bleiben ganz.</li>'+
+  '<li>Rote Rahmen heißen: dieser Satz stimmt so noch nicht. Gestrichelte heißen: hier fehlt noch etwas, '+
+  'weil du daraus Steine aufgehoben hast.</li>'+
+  '<li><b>Zurück</b> nimmt einen Schritt zurück, <b>Abbr.</b> den ganzen Zug – '+
+  'auch alles, was du gerade in der Hand hältst.</li>'+
+  '<li><b>Spielen</b> beendet den Zug. Hast du nichts gelegt, heißt der Knopf <b>Ziehen</b>.</li></ul>'+
+  '<h3>Tasten</h3><p>Leertaste = Spielen/Ziehen &middot; Z = Zurück &middot; Esc = Abbrechen &middot; '+
+  '1 = nach Reihe &middot; 2 = nach Farbe &middot; 3 = manuell &middot; O = Tisch ordnen.</p>'+
+  '<p style="opacity:.7;font-size:13px;margin-top:14px;">Vorbild ist das bekannte Legespiel mit Zahlenplättchen. '+
+  'Teddikub ist eine eigene Fassung: eigener Name, eigene Grafik, eigener Joker.</p>'+
+  '<div class="row"><button class="btn" data-act="'+(G.laeuft?'zu':'neu')+'">Zurück</button></div>';
+  auf(h);
+}
+
+/* ==================================================================
+   Knoepfe und Tasten
+   ================================================================== */
+el('bMenu').onclick = function(){zeigeMenu(); };
+el('bSortN').onclick = function(){ sortiere('n'); };
+el('bSortC').onclick = function(){ sortiere('c'); };
+el('bSortM').onclick = function(){ sortiere('m'); };
+el('bOrdnen').onclick = function(){ tischAufraeumen(); };
+el('bUndo').onclick = function(){ zurueck(); };
+el('bReset').onclick = function(){ abbrechen(); };
+el('bPlay').onclick = function(){ spielen(); };
+document.addEventListener('keydown', function(e){
+  if ($veil.className === 'on'){ if (e.key === 'Escape' && G.laeuft) zu(); return; }
+  if (!amZug()) return;
+  if (e.key === ' ' || e.key === 'Enter'){ e.preventDefault(); spielen(); }
+  else if (e.key === 'z' || e.key === 'Z') zurueck();
+  else if (e.key === 'Escape') abbrechen();
+  else if (e.key === '1') sortiere('n');
+  else if (e.key === '2') sortiere('c');
+  else if (e.key === '3') sortiere('m');
+  else if (e.key === 'o' || e.key === 'O') tischAufraeumen();
+});
+
+/* ==================================================================
+   Start
+   ================================================================== */
+$hint.innerHTML = 'Steine antippen – sie heben sich an.<br>'+
+  'Dann auf ein gelbes Feld tippen oder hierher.<br>'+
+  '<span style="font-size:13px;opacity:.8">Ziehen geht auch.</span>';
+feldAnwenden();
+G.spieler = [{ name:'Du', hand:[], aus:false, punkte:0, ki:false }];
+G.passen = 0; G.spielNr = 0;
+renderAll();
+zeigeStart(false);
+setTimeout(fitTiles, 80);
+</script>
+</body>
+</html>
