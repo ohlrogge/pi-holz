@@ -10,8 +10,41 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Spieleecke">
 <script>if('serviceWorker' in navigator && location.protocol.indexOf('http')===0) navigator.serviceWorker.register('sw.js');</script>
+<script>
+/* iOS zoomt sonst beim schnellen Doppeltippen oder mit zwei Fingern hinein -
+   beim Spielen ist das immer ein Versehen. Wird der zweite Tipp unterdrueckt,
+   loesen wir seine Wirkung selbst aus, damit nichts verloren geht. */
+(function(){
+  function imDialog(n){
+    while (n && n !== document.body){
+      if (n.id === 'dlg' || n.id === 'veil' || n.id === 'modal' || n.id === 'overlay') return true;
+      n = n.parentNode;
+    }
+    return false;
+  }
+  function klickZiel(n){
+    while (n && n !== document.body && !n.onclick) n = n.parentNode;
+    return (n && n.onclick) ? n : null;
+  }
+  var t0 = 0, x0 = 0, y0 = 0;
+  document.addEventListener('touchend', function(e){
+    var t = e.changedTouches && e.changedTouches[0];
+    if (!t) return;
+    var jetzt = Date.now(), nah = Math.abs(t.clientX - x0) + Math.abs(t.clientY - y0) < 40;
+    if (jetzt - t0 < 350 && nah && e.cancelable && !imDialog(e.target)){
+      e.preventDefault();                       /* kein Zoom */
+      var z = klickZiel(e.target);
+      if (z && !z.disabled) z.onclick(e);       /* Wirkung trotzdem ausloesen */
+    }
+    t0 = jetzt; x0 = t.clientX; y0 = t.clientY;
+  }, {passive:false});
+  ['gesturestart','gesturechange','gestureend'].forEach(function(g){
+    document.addEventListener(g, function(e){ if (e.cancelable) e.preventDefault(); }, {passive:false});
+  });
+})();
+</script>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
 <meta name="theme-color" content="#161616">
 <title>Teddyversi</title>
 <style>
