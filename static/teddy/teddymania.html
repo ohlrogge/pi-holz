@@ -58,6 +58,10 @@ button{font:inherit; color:#000;}
   border-color:var(--face-light) var(--black) var(--black) var(--face-light);
   box-shadow:inset 1px 1px 0 var(--white), inset -1px -1px 0 var(--shadow), 2px 2px 0 rgba(0,0,0,.25);}
 .menu.show{display:block;}
+@media (max-width: 700px){
+  .tb-rec{overflow:hidden; text-overflow:ellipsis; max-width:58%; font-size:12px;}
+  .menu{min-width:230px; max-width:calc(100vw - 14px);}
+}
 .mi{display:flex; align-items:center; padding:9px 16px 9px 26px; position:relative; cursor:pointer; white-space:nowrap;}
 .mi:hover{background:var(--navy); color:#fff;}
 .mi .mark{position:absolute; left:9px; width:12px; text-align:center;}
@@ -221,7 +225,10 @@ table.hs td.r{text-align:right;}
 
 var CW = 30, CH = 26;
 var cfg = { v:2, cols:25, rows:13, colors:5, level:3, tile:'auto', cellW:30, twotap:'auto',
-            sound:false, vibrate:true, marker:true, preview:true, touchAsked:false };
+            sound:false, vibrate:true, marker:true, preview:true, touchAsked:false, sizeAuto:true };
+/* Feldgröße "automatisch": Handy hochkant 10×16, sonst quer 25×13 */
+var handyMq = window.matchMedia('(max-width: 700px)');
+function autoFormat(){ return handyMq.matches ? [10,16] : [25,13]; }
 /* Schwierigkeitsstufen: sie steuern, wie stark die Farben beim Aufbau
    verklumpen (leicht) bzw. wie sehr gleiche Nachbarn vermieden werden (schwer). */
 var LEVELS = {
@@ -608,6 +615,7 @@ function randomGrid(){
   return g;
 }
 function newGame(){
+  if(cfg.sizeAuto){ var af=autoFormat(); cfg.cols=af[0]; cfg.rows=af[1]; }
   COLS=cfg.cols; ROWS=cfg.rows; TOTAL=COLS*ROWS;
   fitCells();
   board.style.width=(COLS*CW)+'px'; board.style.height=(ROWS*CH)+'px';
@@ -976,6 +984,8 @@ function showSettings(){
       '<div class="row"><span>Spalten:</span><input type="number" id="setCols" min="4" max="40" value="'+cfg.cols+'">'+
       '<span>Zeilen:</span><input type="number" id="setRows" min="4" max="24" value="'+cfg.rows+'"></div>'+
       '<div class="presets">'+
+        '<button class="btn" data-pre="auto">automatisch</button>'+
+        '<button class="btn" data-pre="10,16">hochkant</button>'+
         '<button class="btn" data-pre="12,8">klein</button>'+
         '<button class="btn" data-pre="18,11">mittel</button>'+
         '<button class="btn" data-pre="25,13">Original</button>'+
@@ -1012,6 +1022,7 @@ function showSettings(){
   Array.prototype.forEach.call(box.querySelectorAll('.presets .btn'), function(b){
     b.onclick=function(e){ e.preventDefault();
       var pre=b.getAttribute('data-pre');
+      if(pre==='auto') pre=autoFormat().join(',');
       var v = pre ? pre.split(',')
             : (b.id==='preTouch' ? touchFormat()
                                  : screenFormat(clampNum(inC.value,4,40)*clampNum(inR.value,4,24)));
@@ -1020,7 +1031,10 @@ function showSettings(){
   dialog({ title:'Einstellungen', body:box, buttons:[
     {label:'OK', fn:function(){
       cfg.level=clampNum(inL.value,1,5);
-      cfg.cols=clampNum(inC.value,4,40); cfg.rows=clampNum(inR.value,4,24);
+      var nc=clampNum(inC.value,4,40), nr=clampNum(inR.value,4,24);
+      if(nc!==cfg.cols || nr!==cfg.rows) cfg.sizeAuto=false;
+      var af=autoFormat(); if(nc===af[0] && nr===af[1]) cfg.sizeAuto=true;
+      cfg.cols=nc; cfg.rows=nr;
       var rc=box.querySelector('input[name=ncol]:checked'); if(rc) cfg.colors=parseInt(rc.value,10);
       var rt=box.querySelector('input[name=tile]:checked'); if(rt) cfg.tile=rt.value;
       var rp=box.querySelector('input[name=tap]:checked');  if(rp) cfg.twotap=rp.value;
@@ -1050,10 +1064,12 @@ function menuDef(){
       {label:'6 Farben (schwer)', radio:cfg.colors===6, fn:function(){ setOpt('colors',6); }},
       {label:'7 Farben (Experte)', radio:cfg.colors===7, fn:function(){ setOpt('colors',7); }},
       {sep:true},
-      {label:'Feld klein (12×8)', radio:cfg.cols===12, fn:function(){ setSize(12,8); }},
-      {label:'Feld mittel (18×11)', radio:cfg.cols===18, fn:function(){ setSize(18,11); }},
-      {label:'Feld original (25×13)', radio:cfg.cols===25, fn:function(){ setSize(25,13); }},
-      {label:'Feld groß (32×16)', radio:cfg.cols===32, fn:function(){ setSize(32,16); }},
+      {label:'Feld automatisch (Handy hochkant, sonst quer)', radio:cfg.sizeAuto, fn:function(){ cfg.sizeAuto=true; saveCfg(); confirmNew(newGame); }},
+      {label:'Feld hochkant (10×16)', radio:!cfg.sizeAuto&&cfg.cols===10, fn:function(){ setSize(10,16); }},
+      {label:'Feld klein (12×8)', radio:!cfg.sizeAuto&&cfg.cols===12, fn:function(){ setSize(12,8); }},
+      {label:'Feld mittel (18×11)', radio:!cfg.sizeAuto&&cfg.cols===18, fn:function(){ setSize(18,11); }},
+      {label:'Feld original (25×13)', radio:!cfg.sizeAuto&&cfg.cols===25, fn:function(){ setSize(25,13); }},
+      {label:'Feld groß (32×16)', radio:!cfg.sizeAuto&&cfg.cols===32, fn:function(){ setSize(32,16); }},
       {label:'Feld an Bildschirm anpassen', fn:fitFieldToScreen},
       {label:'Feld fingerfreundlich (große Steine)', fn:fitFieldToTouch},
       {sep:true},
@@ -1086,14 +1102,14 @@ function touchFormat(){
 }
 function fitFieldToTouch(){
   var f=touchFormat();
-  cfg.cols=f[0]; cfg.rows=f[1]; cfg.tile='auto'; saveCfg(); confirmNew(newGame);
+  cfg.cols=f[0]; cfg.rows=f[1]; cfg.tile='auto'; cfg.sizeAuto=false; saveCfg(); confirmNew(newGame);
 }
 function fitFieldToScreen(){
   var f = screenFormat();
-  cfg.cols=f[0]; cfg.rows=f[1]; saveCfg(); confirmNew(newGame);
+  cfg.cols=f[0]; cfg.rows=f[1]; cfg.sizeAuto=false; saveCfg(); confirmNew(newGame);
 }
 function setOpt(k,v){ cfg[k]=v; saveCfg(); confirmNew(newGame); }
-function setSize(c,r){ cfg.cols=c; cfg.rows=r; saveCfg(); confirmNew(newGame); }
+function setSize(c,r){ cfg.cols=c; cfg.rows=r; cfg.sizeAuto=false; saveCfg(); confirmNew(newGame); }
 function buildMenus(){
   menubar.innerHTML='';
   menuDef().forEach(function(m){
@@ -1188,11 +1204,15 @@ function relayout(){ fitCells(); applyCellSize(); if(armed) showConfirm(armed); 
 window.addEventListener('resize', relayout);
 window.addEventListener('orientationchange', function(){ setTimeout(relayout,250); });
 if(window.visualViewport) window.visualViewport.addEventListener('resize', relayout);
+/* Wechsel Handy <-> Desktop: unberührtes Feld sofort neu im passenden Format,
+   ein laufendes Spiel bleibt erhalten und wechselt erst beim nächsten Spiel. */
+function onFormatChange(){ if(cfg.sizeAuto && moves===0 && !undoStack.length) newGame(); }
+if(handyMq.addEventListener) handyMq.addEventListener('change', onFormatChange); else handyMq.addListener(onFormatChange);
 
 /* Auf kleinen Touchgeräten einmalig ein größeres Rasterformat anbieten */
 var touchOfferShown=false;
 function maybeOfferTouchLayout(){
-  if(touchOfferShown || cfg.touchAsked) return;
+  if(touchOfferShown || cfg.touchAsked || cfg.sizeAuto) return;
   if(!(window.matchMedia && matchMedia('(pointer:coarse)').matches)) return;
   if(CW>=24) return;
   touchOfferShown=true;

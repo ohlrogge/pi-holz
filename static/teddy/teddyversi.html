@@ -9,8 +9,8 @@
 :root{
   --holz1:#7a2f18; --holz2:#4e1c0d; --holz3:#8f3a1e;
   --leiste:#e2914a; --leiste2:#c9702f; --leiste3:#f3b478;
-  --brett:#1f6b3a; --brett1:#2a8049; --linie:#154a28;
-  --du:#3a2416; --du2:#5c3b26; --teddy:#efe4d0; --teddy2:#d9c9a6;
+  --brett:#0f3d22; --brett1:#164d2c; --linie:#082615;
+  --du:#111111; --du2:#4a4a4a; --teddy:#b3121b; --teddy2:#e8474f;
   --zelle:52px;
 }
 *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
@@ -56,7 +56,7 @@ input, textarea{user-select:text; -webkit-user-select:text; font-size:16px;}
 #board{
   display:grid; grid-template-columns:repeat(8, var(--zelle)); grid-template-rows:repeat(8, var(--zelle));
   gap:2px; background:var(--linie); padding:7px; border-radius:8px;
-  box-shadow:0 12px 30px rgba(0,0,0,.55), inset 0 0 0 3px #123a20;
+  box-shadow:0 12px 30px rgba(0,0,0,.55), inset 0 0 0 3px #051a0e;
 }
 .zelle{
   position:relative; background:var(--brett); display:flex; align-items:center; justify-content:center;

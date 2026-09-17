@@ -288,6 +288,52 @@ table.times td.r{text-align:right; font-variant-numeric:tabular-nums;}
 .winteddy{margin:-6px 0 2px;}
 .winteddy svg{width:118px; height:118px;}
 
+/* ---------- Handy-Layout (schmaler Bildschirm, per body.handy) ---------- */
+body.handy #stage{width:640px; height:900px;}
+body.handy .card{left:18px; width:604px; height:706px;}
+body.handy .menu-left{left:50%; transform:translateX(-50%); top:556px; flex-direction:row; gap:16px;}
+body.handy .menu-right{right:auto; left:50%; transform:translateX(-50%); top:628px;
+  flex-direction:row; gap:16px; align-items:normal;}
+body.handy .menu-print{right:auto; left:50%; transform:translateX(-50%);}
+body.handy .panel{top:142px; width:556px; min-height:380px; padding:24px 24px 28px;}
+body.handy .grid{top:132px; width:558px; height:558px;}
+body.handy .cell{font-size:36px;}
+body.handy .pal{display:none;}
+body.handy .gamebar{top:712px;}
+body.handy .gamebtns{display:none;}
+body.handy #bubble{
+  position:fixed; left:8px; right:8px; bottom:var(--bar-h,120px); transform:none; width:auto; z-index:40;
+  max-height:42vh; padding:12px 14px;
+  transition:top .15s ease, bottom .15s ease;
+}
+/* Liegt das markierte Feld im unteren Teil des Bildschirms, springt die Blase
+   nach oben, damit sie das Feld nicht verdeckt. */
+body.handy #bubble.top{ bottom:auto; top:calc(8px + env(safe-area-inset-top)); }
+body.handy .credit{bottom:34px;}
+
+/* ---------- Feste Bedienleiste am unteren Rand (nur Handy) ---------- */
+#phonebar{
+  position:fixed; left:0; right:0; bottom:0; z-index:30;
+  padding:6px 6px calc(6px + env(safe-area-inset-bottom));
+  background:linear-gradient(180deg,#6f57bd,#4b3790);
+  box-shadow:0 -4px 14px rgba(20,10,60,.45);
+  display:none; flex-direction:column; gap:6px;
+}
+body.handy #phonebar{display:flex;}
+#phonebar .row{display:flex; gap:5px; justify-content:center;}
+#phonebar .k{
+  flex:1 1 0; min-width:0; height:48px; border-radius:10px; cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+  font-size:23px; font-weight:bold; color:var(--ink);
+  background:linear-gradient(180deg,#ffffff 0%,#eaf7ff 55%,#cfe6f6 100%);
+  box-shadow:0 3px 0 rgba(20,40,90,.4), inset 0 2px 0 rgba(255,255,255,.9);
+}
+#phonebar .k.on{background:linear-gradient(180deg,#ffe9a8,#ffb02e); color:#5a3200;}
+#phonebar .k.wide{font-size:15px; height:44px;}
+#phonebar .k.teddy{background:linear-gradient(180deg,#a9e6a2,#3fae4a); color:#fff;}
+#phonebar .k:active{transform:translateY(2px); box-shadow:0 1px 0 rgba(20,40,90,.4);}
+#phonebar .k svg{width:26px; height:26px; margin-right:5px; flex:0 0 26px;}
+
 /* ---------- Drucken ---------- */
 #printarea{display:none;}
 @media print{
@@ -356,6 +402,11 @@ table.times td.r{text-align:right; font-variant-numeric:tabular-nums;}
 
   <div id="overlay"></div>
   <div id="confetti"></div>
+</div>
+
+<div id="phonebar">
+  <div class="row" id="pb-nums"></div>
+  <div class="row" id="pb-acts"></div>
 </div>
 
 <div id="printarea"></div>
@@ -725,6 +776,7 @@ function render(){
   }
   var er=document.querySelectorAll('.eraser');
   for(i=0;i<er.length;i++) er[i].className='eraser'+(eraser?' on':'');
+  paintPhoneBar();
 }
 function checkSolved(){
   for(var i=0;i<81;i++) if(board[i]!==solution[i]) return;
@@ -1452,6 +1504,25 @@ function sayTeddy(title, html, buttons, mood){
     var e=document.createElement('div'); e.className='pill '+(x.cls||''); e.textContent=x.label;
     e.onclick=x.fn; host.appendChild(e);
   });
+  positionBubble();
+}
+/* Handy: Blase notfalls an den oberen Rand verlegen, damit das markierte Feld frei bleibt */
+function positionBubble(){
+  bubbleEl.classList.remove('top');
+  if(!isHandy() || !bubbleEl.classList.contains('show')) return;
+  var keys = Object.keys(coachHit).length ? Object.keys(coachHit) : Object.keys(coachSet);
+  if(!keys.length) return;
+  var bottom=-Infinity, gefunden=false;
+  keys.forEach(function(k){
+    var el = cellEls[+k];
+    if(!el) return;
+    var r = el.getBoundingClientRect();
+    gefunden=true;
+    if(r.bottom>bottom) bottom=r.bottom;
+  });
+  if(!gefunden) return;
+  var br = bubbleEl.getBoundingClientRect();
+  if(br.top < bottom + 8) bubbleEl.classList.add('top');
 }
 function askTeddy(){
   closePad();
@@ -1567,15 +1638,66 @@ function printPuzzle(){
 })();
 
 /* ---------- Bühne einpassen ---------- */
+var handyMq=window.matchMedia('(max-width: 700px)');
+function isHandy(){ return document.body.classList.contains('handy'); }
 function fitStage(){
   var vv=window.visualViewport;
-  var w=(vv? vv.width : window.innerWidth), h=(vv? vv.height : window.innerHeight);
-  var s=Math.min(w/1000, h/700);
+  var w=(vv? vv.width : window.innerWidth), h=(vv? vv.height : window.innerHeight), s;
+  if(isHandy()){
+    var bh=document.getElementById('phonebar').offsetHeight;
+    s=Math.min(w/640, (h-bh)/900);
+    stage.style.top=((h-bh)/2)+'px';
+    bubbleEl.style.setProperty('--bar-h', (bh+8)+'px');
+  } else {
+    s=Math.min(w/1000, h/700);
+    stage.style.top='';
+  }
   stage.style.transform='translate(-50%,-50%) scale('+s+')';
 }
-window.addEventListener('resize', fitStage);
-window.addEventListener('orientationchange', function(){ setTimeout(fitStage,250); });
-if(window.visualViewport) window.visualViewport.addEventListener('resize', fitStage);
+/* Desktop: Blase liegt in der Bühne. Handy: fest über der Bedienleiste. */
+function applyLayout(){
+  document.body.classList.toggle('handy', handyMq.matches);
+  if(isHandy()) document.body.insertBefore(bubbleEl, document.getElementById('phonebar'));
+  else stage.querySelector('#gameview').insertBefore(bubbleEl, document.getElementById('hint'));
+  fitStageAndBubble();
+}
+function fitStageAndBubble(){ fitStage(); positionBubble(); }
+if(handyMq.addEventListener) handyMq.addEventListener('change', applyLayout); else handyMq.addListener(applyLayout);
+window.addEventListener('resize', fitStageAndBubble);
+window.addEventListener('orientationchange', function(){ setTimeout(fitStageAndBubble,250); });
+if(window.visualViewport) window.visualViewport.addEventListener('resize', fitStageAndBubble);
+
+/* ---------- Bedienleiste unten (Handy) ---------- */
+function buildPhoneBar(){
+  var nums=document.getElementById('pb-nums'), acts=document.getElementById('pb-acts'), v;
+  nums.innerHTML=''; acts.innerHTML='';
+  for(v=1;v<=9;v++){
+    var k=document.createElement('div');
+    k.className='k'; k.setAttribute('data-v',v); k.textContent=v;
+    k.onclick=(function(n){ return function(){ pickNumber(n); }; })(v);
+    nums.appendChild(k);
+  }
+  [['Radieren', pickEraser, 'eraser'],
+   ['Rückg.',   undo,       ''],
+   ['Teddy',    askTeddy,   'teddy'],
+   ['Menü',     toMenu,     '']].forEach(function(a){
+    var k=document.createElement('div');
+    k.className='k wide'+(a[2]==='teddy'?' teddy':'');
+    if(a[2]==='teddy') k.innerHTML=teddySVG('normal')+'Teddy'; else k.textContent=a[0];
+    if(a[2]==='eraser') k.setAttribute('data-eraser','1');
+    k.onclick=a[1];
+    acts.appendChild(k);
+  });
+}
+function paintPhoneBar(){
+  var ks=document.querySelectorAll('#pb-nums .k'), i;
+  for(i=0;i<ks.length;i++){
+    var v=parseInt(ks[i].getAttribute('data-v'),10);
+    ks[i].className='k'+(pen===v && !eraser ? ' on':'');
+  }
+  var er=document.querySelector('#pb-acts .k[data-eraser]');
+  if(er) er.className='k wide'+(eraser?' on':'');
+}
 
 /* ---------- Tastatur ---------- */
 document.addEventListener('keydown', function(e){
@@ -1610,7 +1732,8 @@ document.getElementById('b-menu').onclick=toMenu;
 document.getElementById('b-give').onclick=giveUp;
 
 /* ---------- Start ---------- */
-fitStage();
+buildPhoneBar();
+applyLayout();
 showWelcome();
 </script>
 </body>
