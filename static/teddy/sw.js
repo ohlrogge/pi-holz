@@ -1,8 +1,8 @@
 /* Offline-Speicher für Teddys Spieleecke: zeigt sofort die gespeicherte Fassung
    und holt im Hintergrund die neueste (wirkt beim nächsten Öffnen). */
-const CACHE = 'teddy-v1';
+const CACHE = 'teddy-v2';
 const DATEIEN = ['./', 'teddikub.html', 'teddydoku.html', 'teddymania.html', 'teddyversi.html',
-  'manifest.webmanifest', 'icon-180.png', 'icon-192.png', 'icon-512.png'];
+  'manifest.webmanifest', 'icon-180.png', 'icon-192.png', 'icon-512.png', 'favicon.svg', 'favicon-32.png'];
 
 // Cloudflare leitet /x.html auf /x und /index.html auf / um – beides unter einem Schlüssel ablegen.
 function schluessel(url) {
