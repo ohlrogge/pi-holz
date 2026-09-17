@@ -104,6 +104,7 @@ input, textarea{user-select:text; -webkit-user-select:text; font-size:16px;}
 .btn:active{opacity:.75;}
 .btn[disabled]{opacity:.42; pointer-events:none;}
 .btn .ico{font-size:16px; line-height:1;}
+.ecke-ico{width:1.25em; height:1.25em; border-radius:22%; display:block; margin:0 auto;}
 .btn.go{background:var(--rot); color:#fff; flex:1.6 1 0;}
 
 /* ---------- Dialoge: helle Karte mit schwarzem Rand ---------- */
@@ -180,6 +181,7 @@ table.sc tr.me{background:rgba(216,35,43,.16);}
   </div>
   <div id="boardframe"><div id="board"></div></div>
   <div id="bar">
+    <button class="btn" id="bEcke"><span class="ico"><img class="ecke-ico" src="favicon.svg" alt=""></span><span class="lbl">Spieleecke</span></button>
     <button class="btn" id="bMenu"><span class="ico">&#9776;</span><span class="lbl">Menü</span></button>
     <button class="btn" id="bHilfe"><span class="ico">?</span><span class="lbl">Regeln</span></button>
     <div style="flex:1 1 auto;"></div>
@@ -829,6 +831,7 @@ function zeigeHilfe(){
 /* ==================================================================
    Knoepfe und Start
    ================================================================== */
+el('bEcke').onclick = function(){ location.href = './'; };
 el('bMenu').onclick = function(){ zeigeMenu(); };
 el('bHilfe').onclick = function(){ zeigeHilfe(); };
 el('bNeu').onclick = function(){ zeigeStart(true); };

@@ -55,6 +55,12 @@ button{font:inherit; color:#000;}
 .tb-icon i:nth-child(3){background:#2079d8;} .tb-icon i:nth-child(4){background:#2f8f30;}
 .tb-text{flex:1 1 auto; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
 .tb-rec{font-weight:normal; opacity:.9; white-space:nowrap;}
+.tb-close{flex:0 0 auto; width:22px; height:18px; margin-left:4px; display:flex; align-items:center; justify-content:center;
+  background:var(--face); color:#000; font:bold 15px/1 Arial,sans-serif; cursor:pointer; border:2px solid;
+  border-color:var(--face-light) var(--black) var(--black) var(--face-light);
+  box-shadow:inset 1px 1px 0 var(--white), inset -1px -1px 0 var(--shadow);}
+.tb-close:active{border-color:var(--black) var(--face-light) var(--face-light) var(--black);}
+.tbtn .ecke-ico{width:26px; height:26px; border-radius:22%; display:block;}
 
 /* ---------- Menue ---------- */
 .menubar{flex:0 0 auto; display:flex; padding:2px 0; position:relative; z-index:20;}
@@ -125,6 +131,7 @@ button{font:inherit; color:#000;}
 
 /* ---------- Fingerbedienung: größere Ziele, weniger Fummelei ---------- */
 @media (pointer:coarse){
+  .tb-close{width:30px; height:22px; font-size:18px;}
   body{font-size:15px;}
   .titlebar{height:32px; font-size:16px;}
   .menutitle{padding:9px 16px; font-size:16px;}
@@ -203,6 +210,7 @@ table.hs td.r{text-align:right;}
     <div class="tb-icon"><i></i><i></i><i></i><i></i></div>
     <div class="tb-text">Teddymania!</div>
     <div class="tb-rec" id="tb-rec"></div>
+    <div class="tb-close" id="tb-close" title="Zur Spieleecke">&times;</div>
   </div>
   <div class="menubar" id="menubar"></div>
   <div class="toolbar" id="toolbar"></div>
@@ -1195,6 +1203,8 @@ function svgSound(on){
 function buildToolbar(){
   var host=document.getElementById('toolbar');
   var items=[
+    {html:'<img class="ecke-ico" src="favicon.svg" alt="">', title:'Zur Spieleecke', fn:function(){ location.href='./'; }},
+    {sep:true},
     {html:svgCube('#ffffff'), title:'Neues Spiel (F2)', fn:function(){ confirmNew(newGame); }},
     {html:svgCube('#e8412c'), title:'Einstellungen: Feldgröße & Schwierigkeit (F5)', fn:showSettings},
     {sep:true},
@@ -1220,6 +1230,7 @@ function buildToolbar(){
   });
 }
 document.getElementById('sp-arrow').onclick=showScores;
+document.getElementById('tb-close').onclick=function(){ location.href='./'; };
 
 /* ---------- Tastatur ---------- */
 document.addEventListener('keydown', function(e){

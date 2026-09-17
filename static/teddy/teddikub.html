@@ -50,6 +50,7 @@ input, textarea{user-select:text; -webkit-user-select:text; font-size:16px;}
 .btn:active{border-color:#9a5320 #ffdcb8 #ffdcb8 #9a5320; background:linear-gradient(180deg,#dd8f45,#f6bd85);}
 .btn[disabled]{opacity:.42; pointer-events:none;}
 .btn .ico{font-size:16px; line-height:1;}
+.ecke-ico{width:1.25em; height:1.25em; border-radius:22%; display:block; margin:0 auto;}
 .btn.wide{min-width:64px;}
 .btn.go{background:linear-gradient(180deg,#8fe08f,#3aa03a); color:#0b2f0b; border-color:#ccf5cc #1c6b1c #1c6b1c #ccf5cc;}
 .btn.aktiv{background:linear-gradient(180deg,#ffe7b8,#e39b3d); box-shadow:inset 0 2px 6px rgba(122,47,24,.55);}
@@ -481,6 +482,7 @@ table.sc tr.me{background:rgba(255,210,58,.3);}
   <div id="tableframe"><div id="table"></div><div id="hint"></div></div>
   <div id="handbar"><span id="handCnt">0</span><div id="hand"></div></div>
   <div id="bar">
+    <button class="btn" id="bEcke"><span class="ico"><img class="ecke-ico" src="favicon.svg" alt=""></span><span class="lbl">Spieleecke</span></button>
     <button class="btn" id="bMenu"><span class="ico">&#9776;</span><span class="lbl">Menü</span></button>
     <button class="btn" id="bSortN"><span class="ico">123</span><span class="lbl">Reihe</span></button>
     <button class="btn" id="bSortC"><span class="ico">&#9679;&#9679;&#9679;</span><span class="lbl">Farbe</span></button>
@@ -2555,6 +2557,7 @@ function zeigeHilfe(){
 /* ==================================================================
    Knoepfe und Tasten
    ================================================================== */
+el('bEcke').onclick = function(){ location.href = './'; };
 el('bMenu').onclick = function(){zeigeMenu(); };
 el('bSortN').onclick = function(){ sortiere('n'); };
 el('bSortC').onclick = function(){ sortiere('c'); };

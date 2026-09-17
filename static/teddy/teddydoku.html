@@ -107,7 +107,9 @@ body{
 
 .menu-left{position:absolute; left:112px; top:236px; display:flex; flex-direction:column; gap:26px; z-index:4;}
 .menu-right{position:absolute; right:112px; top:236px; display:flex; flex-direction:column; gap:26px; align-items:flex-end; z-index:4;}
-.menu-print{position:absolute; right:120px; bottom:120px; z-index:4;}
+.menu-print{position:absolute; right:120px; bottom:120px; z-index:4; display:flex; gap:16px;}
+.pill.ecke{gap:8px; padding-left:8px;}
+.pill.ecke .ecke-ico{width:30px; height:30px; border-radius:22%; flex:0 0 30px;}
 
 /* ---------- Mittleres Panel ---------- */
 .panel{
@@ -384,7 +386,7 @@ body.handy #phonebar{display:flex;}
       <div class="pill" id="b-times">Zeiten</div>
       <div class="pill" id="b-quit">Beenden</div>
     </div>
-    <div class="menu-print"><div class="pill green sm" id="b-print">Drucken</div></div>
+    <div class="menu-print"><div class="pill sm ecke" id="b-ecke"><img class="ecke-ico" src="favicon.svg" alt="">Spieleecke</div><div class="pill green sm" id="b-print">Drucken</div></div>
     <div class="panel" id="panel"></div>
     <div class="credit">EIN SPIEL FÜR<div class="tag">Uli</div></div>
   </div>
@@ -1763,6 +1765,7 @@ document.getElementById('b-opts').onclick=showOptions;
 document.getElementById('b-times').onclick=showTimes;
 document.getElementById('b-quit').onclick=showQuit;
 document.getElementById('b-print').onclick=printPuzzle;
+document.getElementById('b-ecke').onclick=function(){ location.href='./'; };
 document.getElementById('teddy-icon').innerHTML=teddySVG();
 document.getElementById('b-teddy').onclick=askTeddy;
 document.getElementById('b-menu').onclick=toMenu;
