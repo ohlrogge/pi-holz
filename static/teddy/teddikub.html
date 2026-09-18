@@ -312,10 +312,7 @@ body.ordne{-webkit-user-select:none; user-select:none;}
   background-clip:content-box, border-box; padding:calc(var(--tile)*.2) 3px;
 }
 .griff:active{background-color:rgba(0,0,0,.34);}
-@media (max-width:560px){
-  .griff{width:calc(var(--tile)*.36); margin-right:2px; padding-left:2px; padding-right:2px;}
-  .drop{width:calc(var(--tile)*.6); margin-left:3px; font-size:calc(var(--tile)*.5); border-width:2px;}
-}
+
 .set.teilt .t.hoch{margin:0 3px;}
 #platz{
   position:absolute; pointer-events:none; border:3px dashed #ffd23a; border-radius:8px;
@@ -333,6 +330,12 @@ body.ordne{-webkit-user-select:none; user-select:none;}
 }
 .legen .satzbox:not(.zu) .drop{visibility:visible;}
 .satzbox.ziel .drop{background:rgba(255,210,58,.4); border-style:solid;}
+/* Schmale Schirme: Griff, Rahmen und Ablegefeld muessen zusammen in EINE
+   Spalte passen (Steinbreite + 2px), sonst stossen dicht gepackte Saetze an. */
+@media (max-width:560px){
+  .griff{width:calc(var(--tile)*.32); margin-right:1px; padding-left:2px; padding-right:2px;}
+  .drop{width:calc(var(--tile)*.36); margin-left:2px; font-size:calc(var(--tile)*.36); border-width:2px;}
+}
 #neuSatz{
   position:absolute; display:flex; align-items:center; justify-content:center; cursor:pointer;
   height:calc(var(--tile)*1.34 + 10px); padding:0 12px; box-sizing:border-box;
@@ -1058,7 +1061,7 @@ function rasterMass(){
 }
 /* Griff + Steine + Ablegefeld + Luft, in Spalten */
 function satzBreite(st){ return (typeof st === 'number' ? st : st.tiles.length) + satzRand(); }
-function boxPixel(n, m){ return n*(m.T+2) + Math.round((schmal() ? 0.96 : 1.36)*m.T) + (schmal() ? 9 : 14); }
+function boxPixel(n, m){ return n*(m.T+2) + Math.round((schmal() ? 0.68 : 1.36)*m.T) + (schmal() ? 11 : 14); }
 function satzById(id){
   for (var i=0;i<G.saetze.length;i++) if (G.saetze[i].id === id) return G.saetze[i];
   return null;
@@ -1153,15 +1156,25 @@ function tischOrdnen(){
   });
   G.fixSaetze = [];
 }
-/* Knopf "Ordnen": alle Saetze gerade ins Raster legen. Die Lesereihenfolge
-   (oben nach unten, links nach rechts) bleibt erhalten, damit man seine Saetze
-   wiederfindet - nur die Luecken verschwinden und jeder bekommt LUFT. */
+/* Knopf "Ordnen": die Saetze so dicht wie moeglich packen. Die laengsten
+   kommen zuerst, jeder weitere in die erste Zeile, in die er noch passt -
+   so fuellen kurze Saetze die Luecken neben langen. Extra-Luft braucht es
+   nicht: das (unsichtbare) Ablegefeld jedes Satzes haelt sie auseinander. */
 function tischAufraeumen(){
   if (!amZug() || !G.saetze.length) return;
-  var m = rasterMass();
-  var reihe = G.saetze.slice().sort(function(a,b){ return (a.y - b.y) || (a.x - b.x); });
-  G.saetze.forEach(function(o){ o.x = null; o.y = null; });
-  reihe.forEach(function(o){ var q = ersterPlatz(satzBreite(o), m); o.x = q.x; o.y = q.y; });
+  var m = rasterMass(), luecke = 0, zeilen = [];
+  var reihe = G.saetze.slice().sort(function(a,b){
+    return (b.tiles.length - a.tiles.length) || ((a.y || 0) - (b.y || 0)) || ((a.x || 0) - (b.x || 0));
+  });
+  reihe.forEach(function(o){
+    var w = satzBreite(o), z = null, i;
+    for (i=0;i<zeilen.length;i++){
+      if (zeilen[i].frei + luecke + w <= m.spalten){ z = zeilen[i]; break; }
+    }
+    if (!z){ z = { y:zeilen.length, frei:-luecke }; zeilen.push(z); }
+    o.x = z.frei + luecke; o.y = z.y;
+    z.frei = o.x + w;
+  });
   G.fixSaetze = [];
   summ(10); renderAll();
 }
