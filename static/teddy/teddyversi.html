@@ -248,14 +248,14 @@ if (saved) for (var ck in saved) if (ck in cfg) cfg[ck] = saved[ck];
 function saveCfg(){ lsSet('teddyversi.cfg', cfg); }
 
 var STUFEN = [
-  { name:'Leicht',  budget:150,  tiefe:2,  zufall:true,
-    txt:'Teddy spielt schnell und lässt sich gern ins Eck locken.' },
-  { name:'Normal',  budget:400,  tiefe:5,  zufall:false,
-    txt:'Teddy denkt kurz nach und spielt ordentlich mit.' },
-  { name:'Schwer',  budget:900,  tiefe:8,  zufall:false,
-    txt:'Teddy rechnet mehrere Züge voraus und meidet gefährliche Felder.' },
-  { name:'Meister', budget:1800, tiefe:99, zufall:false,
-    txt:'Teddy rechnet, sobald das Brett übersichtlich wird, bis zum Schluss durch.' }
+  { name:'Leicht',  art:'anfaenger',
+    txt:'Teddy spielt wie ein Anfänger: meist irgendwohin, Ecken sind ihm egal.' },
+  { name:'Normal',  art:'flach',
+    txt:'Teddy schaut nur auf den nächsten Zug und vertut sich öfter.' },
+  { name:'Schwer',  art:'suche', budget:400, tiefe:4,
+    txt:'Teddy rechnet ein paar Züge voraus und mag Ecken.' },
+  { name:'Meister', art:'suche', budget:1800, tiefe:99,
+    txt:'Teddy rechnet weit voraus und am Ende bis zum Schluss durch.' }
 ];
 
 /* ---------- Ton und Vibration ---------- */
@@ -482,6 +482,27 @@ function teddyWahl(brett, stufe){
   var zuege = zuegeMitFlips(brett, 2);
   if (!zuege.length) return null;
   if (zuege.length === 1) return zuege[0];
+
+  /* Leicht: wie ein Anfaenger - meist ein beliebiger Zug, sonst der, der am
+     meisten Steine umdreht. Keine Stellungsbewertung, keine Vorausschau. */
+  if (stufe.art === 'anfaenger'){
+    if (Math.random() < 0.65) return zuege[(Math.random() * zuege.length) | 0];
+    zuege.sort(function(a,b){ return b.flips.length - a.flips.length; });
+    return zuege[0];
+  }
+
+  /* Normal: bewertet nur den eigenen naechsten Zug und greift oefter daneben. */
+  if (stufe.art === 'flach'){
+    var bewertet = zuege.map(function(z){ return { z:z, w:bewerten(zugAnwenden(brett, z, 2), 2) }; });
+    bewertet.sort(function(a,b){ return b.w - a.w; });
+    if (Math.random() < 0.35){
+      var n = Math.min(4, bewertet.length);
+      return bewertet[1 + ((Math.random() * (n - 1)) | 0)].z;
+    }
+    return bewertet[0].z;
+  }
+
+  /* Schwer und Meister: vorausrechnen, so tief die Zeit reicht */
   _rvKnoten = 0;
   var endeZeit = Date.now() + stufe.budget;
   var bestZug = zuege[0], tiefe = 1, leer = leereFelder(brett);
@@ -491,14 +512,6 @@ function teddyWahl(brett, stufe){
     if (erg.zug) bestZug = erg.zug;
     tiefe++;
     if (tiefe > leer) break;                        /* Rest schon vollstaendig geloest */
-  }
-  if (stufe.zufall){
-    var bewertet = zuege.map(function(z){
-      return { z:z, w:bewerten(zugAnwenden(brett, z, 2), 2) };
-    });
-    bewertet.sort(function(a,b){ return b.w - a.w; });
-    var kandidaten = bewertet.slice(0, Math.min(3, bewertet.length));
-    if (Math.random() < 0.4) bestZug = kandidaten[(Math.random()*kandidaten.length) | 0].z;
   }
   return bestZug;
 }
