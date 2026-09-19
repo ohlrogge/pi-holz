@@ -1817,7 +1817,7 @@ document.getElementById('b-ecke-spiel').onclick=function(){ spielSpeichern(); lo
 /* ---------- Start ---------- */
 buildPhoneBar();
 applyLayout();
-showWelcome();
+if (gespeichertesSpiel()) spielFortsetzen(); else showWelcome();
 </script>
 </body>
 </html>

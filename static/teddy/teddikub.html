@@ -2709,8 +2709,8 @@ $hint.innerHTML = 'Steine antippen – sie heben sich an.<br>'+
 feldAnwenden();
 G.spieler = [{ name:'Du', hand:[], aus:false, punkte:0, ki:false }];
 G.passen = 0; G.spielNr = 0;
+if (!spielLaden()) zeigeStart(false);
 renderAll();
-zeigeStart(false);
 setTimeout(fitTiles, 80);
 </script>
 </body>
