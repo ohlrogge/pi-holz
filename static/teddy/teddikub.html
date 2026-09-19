@@ -415,14 +415,6 @@ input[type=range]::-moz-range-thumb{
   width:28px; height:28px; border-radius:50%;
   background:linear-gradient(180deg,#fff6ea,#dd8f45); border:2px solid #7a2f18; cursor:pointer;
 }
-.namen{display:flex; flex-wrap:wrap; gap:8px; margin:4px 0 10px;}
-.namen label{display:flex; flex-direction:column; gap:2px; flex:1 1 120px; font-size:12px; opacity:.85;}
-.namen input{
-  font-family:inherit; font-size:15px; font-weight:bold; color:#4a1d07;
-  background:#fff6ea; border:2px solid #a75c22; border-radius:6px; padding:7px 9px; width:100%;
-  min-height:40px;
-}
-.namen input:focus{outline:none; border-color:#7a2f18; background:#fffdf6;}
 .opt{display:flex; align-items:center; justify-content:space-between; gap:10px; padding:7px 0; border-bottom:1px solid rgba(122,47,24,.18);}
 .opt label{font-size:14px;}
 .sw{
@@ -527,10 +519,7 @@ table.sc tr.me{background:rgba(255,210,58,.3);}
 /* ---------- Speichern mit Rueckfall in den Arbeitsspeicher ---------- */
 
 /* ---------- Einstellungen ---------- */
-var cfg = { v:2, minOut:30, ki:2, foes:2, vibrate:true, sortMode:'n', feld:'nacht', feldV:1,
-            namen:['Du','Bello','Luna','Nero'] };
-var NAMEN_STD = ['Du','','',''];
-var NAMEN_ALT = ['Du','Bello','Luna','Nero'];
+var cfg = { v:2, minOut:30, ki:2, foes:2, vibrate:true, sortMode:'n', feld:'nacht', feldV:1 };
 /* Gegner ohne eingetragenen Namen heissen wie Kinder der Jahrgaenge 1958/59. */
 var GEGNER_NAMEN = [
   'Sabine','Susanne','Petra','Monika','Birgit','Gabriele','Andrea','Karin',
@@ -538,20 +527,17 @@ var GEGNER_NAMEN = [
   'Michael','Peter','Thomas','Klaus','Wolfgang','Andreas','Jürgen','Frank',
   'Uwe','Hans','Bernd','Rainer','Manfred','Stefan'
 ];
-var gegnerZufall = ['Du','','',''];
+var gegnerZufall = ['','','',''];
 function neueGegnerNamen(){
   var topf = GEGNER_NAMEN.slice(), i;
   for (i=1;i<=3;i++) gegnerZufall[i] = topf.splice(Math.floor(Math.random()*topf.length), 1)[0];
 }
 neueGegnerNamen();
 /* Der eigene Platz heisst wie in der Spieleecke eingetragen. */
-function namensVorgabe(i){ return i === 0 ? (meinName() || NAMEN_ALT[0]) : gegnerZufall[i]; }
+function spielerName(i){ return i === 0 ? (meinName() || 'Du') : gegnerZufall[i]; }
 var savedCfg = lsGet('teddy.kub.cfg', null);
 if (savedCfg){
   for (var ck in savedCfg) if (ck in cfg) cfg[ck] = savedCfg[ck];
-  if (!(cfg.namen instanceof Array) || cfg.namen.length !== 4) cfg.namen = NAMEN_STD.slice();
-  /* Die frueheren festen Gegnernamen zaehlen als nicht eingetragen. */
-  for (var ni=1; ni<4; ni++) if (cfg.namen[ni] === NAMEN_ALT[ni]) cfg.namen[ni] = '';
   /* Einmalig: Amelie hat sich fuer Nachtblau entschieden (11.09.2026). */
   if (savedCfg.feldV !== 1){ cfg.feld = 'nacht'; cfg.feldV = 1; }
   if (savedCfg.v !== 2){
@@ -590,12 +576,6 @@ function feldAnwenden(){
   var fr = document.getElementById('tableframe');
   for (i=0;i<FELDER.length;i++) fr.classList.remove('feld-' + FELDER[i].id);
   fr.classList.add('feld-' + cfg.feld);
-}
-function spielerName(i){
-  var n = (cfg.namen && cfg.namen[i] || '').toString().trim();
-  /* "Du" ist der Platzhalter des eigenen Platzes, kein eingetragener Name. */
-  if (i === 0 && n === NAMEN_ALT[0]) n = '';
-  return n ? n.slice(0,14) : namensVorgabe(i);
 }
 function stufenKurz(){ return cfg.minOut + ' Punkte · ' + KI_NAMEN[cfg.ki]; }
 
@@ -2384,18 +2364,6 @@ function minText(){
   return 'Dein erster Zug muss ' + m + ' Punkte aus eigenen Steinen bringen. ' + wie;
 }
 function bindeRegler(){
-  var felder = $dlg.querySelectorAll('input.nam'), q;
-  for (q=0;q<felder.length;q++) (function(f){
-    f.oninput = function(){
-      var i = parseInt(f.getAttribute('data-i'), 10);
-      cfg.namen[i] = f.value.slice(0,14);
-      saveCfg();
-    };
-    f.onblur = function(){
-      var i = parseInt(f.getAttribute('data-i'), 10);
-      if (!f.value.trim()){ cfg.namen[i] = ''; f.value = ''; saveCfg(); }
-    };
-  })(felder[q]);
   var rm = el('regMin'), rk = el('regKi');
   if (rm) rm.oninput = function(){
     cfg.minOut = begrenze(parseInt(this.value,10) || 30, MIN_KLEIN, MIN_GROSS); saveCfg();
@@ -2449,14 +2417,8 @@ function zeigeOptionen(){
     h += '<button data-act="feld" data-v="'+FELDER[fi].id+'" class="'+(cfg.feld===FELDER[fi].id?'an':'')+'">'+
          '<span class="probe feld-'+FELDER[fi].id+'"></span>'+FELDER[fi].name+'</button>';
   h += '</div>';
-  /* Nur der eigene Platz ist benennbar; die Gegner ziehen ihre Namen selbst. */
-  h += '<h3>Namen</h3><div class="namen">'+
-       '<label><span>Du</span>'+
-       '<input type="text" class="nam" data-i="0" maxlength="14" value="'+
-       ((cfg.namen[0] || '').replace(/"/g,'&quot;'))+'" placeholder="'+namensVorgabe(0)+'"></label>'+
-       '</div>';
   h += '<div class="opt"><label>Vibration</label><div class="sw'+(cfg.vibrate?' on':'')+'" data-act="sw" data-f="vibrate"><i></i></div></div>';
-  h += '<p style="margin-top:12px;font-size:13px;opacity:.8;">Regler, Gegnerzahl und Name gelten ab dem nächsten neuen Spiel.</p>';
+  h += '<p style="margin-top:12px;font-size:13px;opacity:.8;">Regler und Gegnerzahl gelten ab dem nächsten neuen Spiel.</p>';
   h += '<div class="row"><button class="btn" data-act="reset">Punktekarte löschen</button>'+
        '<button class="btn" data-act="'+(G.laeuft?'zu':'neu')+'">Fertig</button></div>';
   auf(h);
@@ -2469,7 +2431,7 @@ function zeigeKarte(){
     var st = k.stand.slice().sort(function(a,b){ return b.punkte - a.punkte; });
     h += '<p>Nach '+k.runde+' '+(k.runde===1?'Runde':'Runden')+':</p><table class="sc">';
     for (var i=0;i<st.length;i++)
-      h += '<tr'+(st[i].name==='Du'?' class="me"':'')+'><td>'+st[i].name+'</td><td class="n">'+
+      h += '<tr'+(st[i].platz===0?' class="me"':'')+'><td>'+st[i].name+'</td><td class="n">'+
            (st[i].punkte>0?'+':'')+st[i].punkte+'</td></tr>';
     h += '</table>';
   }

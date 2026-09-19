@@ -52,13 +52,17 @@ function lsDel(k){
 }
 
 /* ---------- Der Name des Hauptspielers ----------
-   Wird in der Spieleecke eingetragen und gilt in allen Spielen als Vorgabe.
-   Ein Spiel darf ihn fuer sich ueberschreiben; dann gewinnt der eigene Name. */
+   Wird in der Spieleecke eingetragen und gilt in allen Spielen. Ein Spiel
+   fragt nur dann nach Namen, wenn mehrere Menschen an einem Geraet sitzen;
+   die gehoeren dann zum Platz und nicht zum Geraet. */
+function nameKuerzen(n){
+  return String(n || '').replace(/\s+/g, ' ').trim().slice(0, 14);
+}
 function meinName(){
-  return String(lsGet('teddy.name', '') || '').replace(/\s+/g, ' ').trim().slice(0, 14);
+  return nameKuerzen(lsGet('teddy.name', ''));
 }
 function meinNameSetzen(n){
-  lsSet('teddy.name', String(n || '').replace(/\s+/g, ' ').trim().slice(0, 14));
+  lsSet('teddy.name', nameKuerzen(n));
 }
 
 /* Sichern gehoert nicht in den Zeichenweg. Die Spiele melden nach einem Zug

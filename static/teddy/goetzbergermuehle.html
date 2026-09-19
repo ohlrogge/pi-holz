@@ -479,13 +479,13 @@ var G = {
   wahl:-1, wegnehmen:false, wegZiel:-1, ohneWeg:0, verlauf:{}
 };
 function istKI(s){ return G.modus !== 'zweit' && s === 2; }
-/* Ein eigener Name schlaegt den aus der Spieleecke, der schlaegt "Du".
-   Teddy behaelt seinen Namen. */
+/* Gegen Teddy spielt nur ein Mensch; der heisst wie in der Spieleecke.
+   Erst zu zweit gehoeren die Namen zum Platz, dann gilt der eingetragene. */
 function nameFuer(s, modus){
-  var eigen = String(cfg.namen[s] || '').trim();
+  if (modus !== 'zweit') return s === 1 ? (meinName() || 'Du') : 'Teddy';
+  var eigen = nameKuerzen(cfg.namen[s]);
   if (eigen) return eigen;
-  if (s === 1) return meinName() || 'Du';
-  return modus === 'zweit' ? 'Spieler 2' : 'Teddy';
+  return s === 1 ? (meinName() || 'Spieler 1') : 'Spieler 2';
 }
 function spielerName(s){ return nameFuer(s, G.modus); }
 function esc(t){ return String(t).replace(/[&<>"]/g, function(c){ return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]; }); }
@@ -1011,12 +1011,14 @@ function zeigeStart(nurNeu){
 
   h += segZeile('Gegner', 'gegner', [{v:'ki', name:'Teddy'}, {v:'zweit', name:'Zu zweit'}], cfg.modus);
 
-  h += '<div class="feld">Namen</div><div class="namen">'+
-       '<input class="namefeld" data-p="1" type="text" maxlength="14" autocomplete="off" placeholder="'+
-       esc(meinName() || 'Du')+'" value="'+esc(cfg.namen[1] || '')+'">'+
-       (zweit ? '<input class="namefeld" data-p="2" type="text" maxlength="14" autocomplete="off"'+
-                ' placeholder="Spieler 2" value="'+esc(cfg.namen[2] || '')+'">' : '')+
-       '</div>';
+  /* Allein gegen Teddy braucht es kein Feld, da zaehlt der Name aus der Ecke. */
+  if (zweit)
+    h += '<div class="feld">Namen</div><div class="namen">'+
+         '<input class="namefeld" data-p="1" type="text" maxlength="14" autocomplete="off" placeholder="'+
+         esc(meinName() || 'Spieler 1')+'" value="'+esc(cfg.namen[1] || '')+'">'+
+         '<input class="namefeld" data-p="2" type="text" maxlength="14" autocomplete="off"'+
+         ' placeholder="Spieler 2" value="'+esc(cfg.namen[2] || '')+'">'+
+         '</div>';
 
   if (!zweit){
     var stufen = [];

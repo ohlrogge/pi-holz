@@ -573,16 +573,19 @@ function istMensch(p){ return G.sitze[p] === 'mensch'; }
 function istTeddy(p){ return G.sitze[p] === 'teddy'; }
 function spielt(p){ return G.sitze[p] !== 'frei'; }
 function anzahl(sitze, art){ return sitze.filter(function(s){ return s === art; }).length; }
-/* Menschen heißen, wie sie sich eingetragen haben. Ohne Namen heißt ein
-   einzelner Mensch "Du"; sonst heißen alle nach ihrer Farbe. */
+function ersterMensch(sitze){ for (var p=0;p<4;p++) if (sitze[p] === 'mensch') return p; return -1; }
+/* Ein einzelner Mensch heißt wie in der Spieleecke. Sitzen mehrere am Gerät,
+   zählt der eingetragene Name des Platzes, sonst die Farbe. */
 function name(p){
-  if (istMensch(p) && G.namen[p]) return G.namen[p];
-  if (istMensch(p) && anzahl(G.sitze, 'mensch') === 1) return meinName() || 'Du';
+  if (!istMensch(p)) return SPIELER[p].wort;
+  if (anzahl(G.sitze, 'mensch') === 1) return meinName() || 'Du';
+  if (G.namen[p]) return G.namen[p];
+  if (p === ersterMensch(G.sitze) && meinName()) return meinName();
   return SPIELER[p].wort;
 }
 function esc(t){ return String(t).replace(/[&<>"]/g, function(c){ return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]; }); }
 function namenAufraeumen(namen){
-  return [0,1,2,3].map(function(p){ return String(namen[p] || '').replace(/\s+/g, ' ').trim().slice(0, 14); });
+  return [0,1,2,3].map(function(p){ return nameKuerzen(namen[p]); });
 }
 function kontext(){ return { team:G.team, schlagzwang:G.schlagzwang, aktiv:[0,1,2,3].map(spielt), mensch:[0,1,2,3].map(istMensch) }; }
 function el(id){ return document.getElementById(id); }
@@ -1265,9 +1268,12 @@ function zeigeStart(nurNeu){
       h += '<button data-act="sitz" data-p="'+p+'" data-v="'+s[0]+'" class="'+(cfg.sitze[p] === s[0] ? 'an' : '')+'">'+s[1]+'</button>';
     });
     h += '</div></div>';
-    if (cfg.sitze[p] === 'mensch')
+    /* Namensfelder erst, wenn mehrere Menschen am Gerät sitzen. Allein
+       gegen die Teddys zählt der Name aus der Spieleecke. */
+    if (cfg.sitze[p] === 'mensch' && anzahl(cfg.sitze, 'mensch') > 1)
       h += '<div class="namezeile"><input class="namefeld" data-p="'+p+'" type="text" maxlength="14" autocomplete="off"'+
-           ' placeholder="Name (sonst '+SPIELER[p].wort+')" value="'+esc(cfg.namen[p] || '')+'"></div>';
+           ' placeholder="Name (sonst '+esc(p === ersterMensch(cfg.sitze) && meinName() ? meinName() : SPIELER[p].wort)+')"'+
+           ' value="'+esc(cfg.namen[p] || '')+'"></div>';
     if (team && n % 2 === 1) h += '</div>';
   }
   var teddys = anzahl(cfg.sitze, 'teddy'), mit = 4 - anzahl(cfg.sitze, 'frei');
@@ -1331,8 +1337,8 @@ function zeigeBilanz(){
 function zeigeErgebnis(gewinner, b){
   var mensch = gewinner.some(istMensch), du = mensch && anzahl(G.sitze, 'mensch') === 1, titel, unter;
   if (du){
-    var ich = gewinner.filter(istMensch)[0];
-    titel = G.namen[ich] ? 'Gewonnen, '+esc(G.namen[ich])+'!' : 'Gewonnen!';
+    var wie = meinName();
+    titel = wie ? 'Gewonnen, '+esc(wie)+'!' : 'Gewonnen!';
     unter = G.team ? 'Zusammen mit '+esc(name(gewinner[istMensch(gewinner[0]) ? 1 : 0]))+'.' : 'Alle vier Figuren sind im Ziel.';
   } else if (G.team){
     titel = 'Team '+esc(name(gewinner[0]))+' & '+esc(name(gewinner[1]))+' gewinnt';
