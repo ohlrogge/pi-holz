@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta name="robots" content="noindex, nofollow">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="icon" href="favicon-32.png" sizes="32x32" type="image/png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Spieleecke">
+<script>if('serviceWorker' in navigator && location.protocol.indexOf('http')===0) navigator.serviceWorker.register('sw.js');</script>
+<script src="teddy.js"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+<meta name="theme-color" content="#3b2314">
+<title>Götzberger Mühle</title>
+<style>
+:root{
+  --schrift:"Arial Rounded MT Bold","Arial Rounded MT",ui-rounded,"SF Pro Rounded","Helvetica Rounded","Nunito","Trebuchet MS",sans-serif;
+  --grund:#e4d3b2;
+  --dunkel:#3b2314; --tinte:#2e1b0f;
+  --rot:#8c1419; --rot2:#6e0f13;
+  --beige:#f1e2c0;
+  --brett:#cfa86e; --linie:#4a2b17;
+}
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+html,body{height:100%;}
+body{
+  margin:0; position:fixed; inset:0; overflow:hidden;
+  background:var(--grund);
+  font-family:var(--schrift);
+  color:var(--tinte); user-select:none; -webkit-user-select:none;
+  -webkit-touch-callout:none; touch-action:manipulation; overscroll-behavior:none;
+}
+#wrap{position:absolute; inset:0; display:flex; flex-direction:column;}
+
+/* ---------- Statuszeile ---------- */
+#status{
+  flex:0 0 auto; display:flex; align-items:center; gap:8px;
+  padding:calc(7px + env(safe-area-inset-top)) 10px 7px;
+  background:var(--dunkel); color:#fff;
+  box-shadow:0 3px 0 var(--rot); font-size:14px; line-height:1.25;
+}
+#status.warn{background:var(--rot2);}
+.chip{
+  display:flex; align-items:center; gap:6px; padding:3px 11px 3px 4px; border-radius:16px;
+  background:#56351f; border:2px solid #6a4429; color:#fff;
+  font-size:14px; white-space:nowrap;
+}
+.chip.dran{background:var(--rot); border-color:var(--beige);}
+.chip svg{width:22px; height:22px; flex:0 0 auto; display:block;}
+#statusTxt{flex:1 1 auto; text-align:center; font-size:15px; letter-spacing:.3px;}
+
+/* ---------- Spielfeld ---------- */
+#boardframe{
+  flex:1 1 auto; min-height:0; display:flex; align-items:center; justify-content:center;
+  padding:10px;
+}
+#brett{display:block; touch-action:manipulation; cursor:pointer;}
+.linie{stroke:var(--linie); stroke-width:7; fill:none; stroke-linecap:square;}
+.punkt{fill:var(--linie);}
+.pos{transition:transform .3s ease;}
+.stein{transform-box:fill-box; transform-origin:center;}
+.stein.neu{animation:setzen .18s ease-out;}
+@keyframes setzen{from{transform:scale(.35); opacity:0;} to{transform:scale(1); opacity:1;}}
+.stein.weg{transition:opacity .28s, transform .28s; opacity:0; transform:scale(.4);}
+/* Stein 1: beige mit dunkler Muehle, Stein 2: dunkel mit beiger Muehle */
+.k1{fill:#f1e2c0; stroke:#9c7743; stroke-width:2.5;}
+.k2{fill:#4a2b17; stroke:#241208; stroke-width:2.5;}
+.r1{fill:none; stroke:#dcc79d; stroke-width:2;}
+.r2{fill:none; stroke:#5e3a21; stroke-width:2;}
+.m1{color:#4a2b17; --st:#f1e2c0;}
+.m2{color:#ead3a2; --st:#4a2b17;}
+.h1{color:#fffaf0; --st:#fffaf0; opacity:.75;}
+.h2{color:#1c0d05; --st:#1c0d05; opacity:.6;}
+.ring{fill:none; stroke:var(--rot); stroke-width:6;}
+.ring.weg{stroke-dasharray:14 9; animation:kreisen 1.2s linear infinite;}
+@keyframes kreisen{to{stroke-dashoffset:-46;}}
+.ziel{fill:rgba(140,20,25,.55);}
+
+/* ---------- Symbolleiste ---------- */
+#bar{
+  flex:0 0 auto; display:flex; align-items:stretch; gap:6px;
+  padding:6px 6px calc(6px + env(safe-area-inset-bottom));
+  background:var(--dunkel); box-shadow:0 -3px 0 var(--rot);
+}
+.btn{
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  min-width:46px; padding:3px 9px; cursor:pointer; flex:1 1 0;
+  border:2px solid #1f1108; border-radius:10px;
+  background:var(--beige); color:var(--tinte);
+  font-family:var(--schrift); font-size:11px; line-height:1.15; white-space:nowrap;
+}
+.btn:active{opacity:.75;}
+.btn .ico{font-size:16px; line-height:1;}
+.ecke-ico{width:1.25em; height:1.25em; border-radius:22%; display:block; margin:0 auto;}
+.btn.go{background:var(--rot); color:#fff; flex:1.6 1 0;}
+
+/* ---------- Dialoge ---------- */
+#veil{position:absolute; inset:0; background:rgba(30,15,6,.62); display:none; z-index:40;
+  align-items:center; justify-content:center; padding:14px; overflow:auto;}
+#veil.on{display:flex;}
+.dlg{
+  background:#f4ead6; color:var(--tinte); border-radius:14px;
+  border:4px solid var(--dunkel);
+  max-width:480px; width:100%; max-height:100%; overflow:auto; padding:16px 18px 18px;
+}
+.dlg h2{margin:0 0 8px; font-size:24px; color:var(--rot); letter-spacing:.5px;}
+.dlg h3{margin:14px 0 4px; font-size:16px; color:var(--tinte);}
+.dlg p,.dlg li{font-size:14px; line-height:1.5; margin:5px 0; font-family:var(--schrift);}
+.dlg ul{margin:4px 0; padding-left:20px;}
+.dlg a{color:var(--rot);}
+.row{display:flex; gap:8px; flex-wrap:wrap; margin-top:12px;}
+.row .btn{flex:1 1 auto; min-height:42px; font-size:15px;}
+.lvl{display:flex; flex-direction:column; gap:8px; margin-top:10px;}
+.lvl button{
+  display:flex; align-items:center; gap:10px; text-align:left; cursor:pointer;
+  border:2px solid var(--dunkel); border-radius:10px; padding:9px 12px; font-size:16px;
+  background:var(--beige); color:var(--tinte); font-family:var(--schrift);
+}
+.lvl button.an{background:var(--rot); color:#fff;}
+.lvl button:active{opacity:.75;}
+.lvl b{flex:1 1 auto; font-weight:normal;}
+.lvl span{font-size:12px; opacity:.8; display:block; margin-top:1px;}
+table.sc{width:100%; border-collapse:collapse; margin-top:8px; font-size:15px;}
+table.sc th,table.sc td{padding:6px; border-bottom:2px solid rgba(0,0,0,.15); text-align:left;}
+table.sc td.n{text-align:right;}
+table.sc tr.me{background:rgba(140,20,25,.14);}
+.opt{display:flex; align-items:center; justify-content:space-between; gap:10px; padding:8px 0; border-bottom:2px solid rgba(0,0,0,.12);}
+.opt label{font-size:15px;}
+.sw{
+  width:52px; height:28px; border-radius:14px; border:2px solid var(--dunkel); background:#c9b99a;
+  position:relative; cursor:pointer; flex:0 0 auto;
+}
+.sw i{position:absolute; top:1px; left:1px; width:22px; height:22px; border-radius:50%;
+  background:var(--beige); box-shadow:0 0 0 2px var(--dunkel) inset; transition:left .14s;}
+.sw.on{background:var(--rot);} .sw.on i{left:25px;}
+
+/* ---------- Startbild ---------- */
+#title{text-align:center; margin-bottom:12px;}
+#title svg{width:96px; height:96px; display:block; margin:0 auto 8px;}
+#title .nm{font-size:34px; line-height:1.05; color:var(--rot); letter-spacing:.5px;}
+#title .streifen{height:6px; margin:10px 18px 0; background:var(--dunkel);}
+
+@media (pointer:coarse){
+  .btn{min-width:50px; min-height:50px; font-size:12px;}
+  .btn .ico{font-size:19px;}
+  .lvl button{padding:13px 14px; font-size:17px;}
+  .row .btn{min-height:50px; font-size:16px;}
+  .dlg p,.dlg li{font-size:15px;}
+  .sw{width:58px; height:32px; border-radius:16px;}
+  .sw i{width:26px; height:26px;} .sw.on i{left:27px;}
+  .chip{font-size:15px;}
+}
+@media (max-width:420px){
+  .chip .name{display:none;}
+  #statusTxt{font-size:13px;}
+  #title .nm{font-size:30px;}
+}
+</style>
+</head>
+<body>
+<!-- Die Windmuehle als Gravur, frei nach dem Logo der Goetzberger Windmuehle.
+     Fuellung = currentColor, die Luecke zwischen Fluegeln und Rumpf in --st. -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="muehle" viewBox="0 0 100 100">
+    <path d="M30 89 H70 V97 H30 Z" fill="currentColor"/>
+    <path d="M34 90 C39 80 41 70 42 60 L58 60 C59 70 61 80 66 90 Z" fill="currentColor"/>
+    <path d="M39 61 C39 44 61 44 61 61 Z" fill="currentColor"/>
+    <g transform="translate(50 50)" fill="currentColor" style="stroke:var(--st,#000); stroke-width:5; paint-order:stroke;">
+      <g transform="rotate(-52)">
+        <rect x="-47" y="-2.4" width="94" height="4.8"/>
+        <rect x="13" y="-14" width="34" height="9"/>
+        <rect x="-47" y="5" width="34" height="9"/>
+      </g>
+      <g transform="rotate(34)">
+        <rect x="-47" y="-2.4" width="94" height="4.8"/>
+        <rect x="13" y="-14" width="34" height="9"/>
+        <rect x="-47" y="5" width="34" height="9"/>
+      </g>
+    </g>
+  </symbol>
+</svg>
+<div id="wrap">
+  <div id="status">
+    <div class="chip" id="chip1"><svg viewBox="-44 -44 88 88" id="chipStein1"></svg><span class="name">Du</span><span id="zahl1">9</span></div>
+    <span id="statusTxt">Götzberger Mühle</span>
+    <div class="chip" id="chip2"><svg viewBox="-44 -44 88 88" id="chipStein2"></svg><span class="name" id="name2">Teddy</span><span id="zahl2">9</span></div>
+  </div>
+  <div id="boardframe"><svg id="brett" viewBox="0 0 700 700" xmlns="http://www.w3.org/2000/svg">
+    <rect x="4" y="4" width="692" height="692" rx="22" fill="var(--brett)" stroke="var(--dunkel)" stroke-width="8"/>
+    <g id="linien"></g><g id="marken"></g><g id="steine"></g><g id="ringe"></g>
+  </svg></div>
+  <div id="bar">
+    <button class="btn" id="bEcke"><span class="ico"><img class="ecke-ico" src="favicon.svg" alt=""></span><span class="lbl">Spieleecke</span></button>
+    <button class="btn" id="bMenu"><span class="ico">&#9776;</span><span class="lbl">Menü</span></button>
+    <button class="btn" id="bHilfe"><span class="ico">?</span><span class="lbl">Regeln</span></button>
+    <div style="flex:1 1 auto;"></div>
+    <button class="btn go" id="bNeu"><span class="ico">&#8635;</span><span class="lbl">Neues Spiel</span></button>
+  </div>
+</div>
+<div id="veil"><div class="dlg" id="dlg"></div></div>
+<script>
+"use strict";
+
+/* ==================================================================
+   Götzberger Mühle - das Brettspiel Mühle mit Teddy als Mitspieler
+   Eine Datei, keine Bibliotheken, kein Netz.
+   Gewidmet der Götzberger Windmühle in Henstedt-Ulzburg; die Steine
+   tragen ihre Mühle als Gravur. Die Spielregeln sind die klassischen
+   von Mühle (9 Steine, setzen, ziehen, springen).
+   ================================================================== */
+
+/* ---------- Einstellungen ---------- */
+var cfg = { v:1, stufe:1, modus:'ki', vibrate:true, sound:false, hinweise:true };
+var saved = lsGet('teddy.muehle.cfg', null);
+if (saved) for (var ck in saved) if (ck in cfg) cfg[ck] = saved[ck];
+function saveCfg(){ lsSet('teddy.muehle.cfg', cfg); }
+
+var STUFEN = [
+  { name:'Leicht',  art:'anfaenger',
+    txt:'Teddy setzt meist irgendwohin und übersieht deine Mühlen.' },
+  { name:'Normal',  art:'flach',
+    txt:'Teddy schließt Mühlen und stellt sich manchmal in den Weg.' },
+  { name:'Schwer',  art:'suche', budget:450, tiefe:4,
+    txt:'Teddy rechnet ein paar Züge voraus.' },
+  { name:'Meister', art:'suche', budget:1600, tiefe:99,
+    txt:'Teddy rechnet so weit voraus, wie er kann, und baut Zwickmühlen.' }
+];
+
+/* ---------- Ton und Vibration ---------- */
+var actx = null;
+function ton(f, d, typ){
+  if (!cfg.sound) return;
+  try{
+    if (!actx) actx = new (window.AudioContext || window.webkitAudioContext)();
+    var o = actx.createOscillator(), g = actx.createGain();
+    o.type = typ || 'triangle'; o.frequency.value = f;
+    g.gain.setValueAtTime(.0001, actx.currentTime);
+    g.gain.exponentialRampToValueAtTime(.16, actx.currentTime + .01);
+    g.gain.exponentialRampToValueAtTime(.0001, actx.currentTime + d);
+    o.connect(g); g.connect(actx.destination);
+    o.start(); o.stop(actx.currentTime + d + .02);
+  }catch(e){}
+}
+function summ(ms){ if (cfg.vibrate && navigator.vibrate) try{ navigator.vibrate(ms); }catch(e){} }
+
+/* ==================================================================
+   Spielregeln
+   ------------------------------------------------------------------
+   24 Punkte, flach in einem Array. 0 = leer, 1 = Du, 2 = Teddy.
+   vorrat[1], vorrat[2]: Steine, die noch gesetzt werden muessen.
+   Ein Zug ist { von, nach, weg }: von = -1 beim Setzen, weg = -1,
+   wenn keine Muehle geschlossen wird. So sieht die Suche Muehle und
+   Wegnahme als einen einzigen Zug.
+   ================================================================== */
+var PUNKTE = [
+  [0,0],[3,0],[6,0], [1,1],[3,1],[5,1], [2,2],[3,2],[4,2],
+  [0,3],[1,3],[2,3],[4,3],[5,3],[6,3],
+  [2,4],[3,4],[4,4], [1,5],[3,5],[5,5], [0,6],[3,6],[6,6]
+];
+var LINIEN = [
+  [0,1,2],[3,4,5],[6,7,8],[9,10,11],[12,13,14],[15,16,17],[18,19,20],[21,22,23],
+  [0,9,21],[3,10,18],[6,11,15],[1,4,7],[16,19,22],[8,12,17],[5,13,20],[2,14,23]
+];
+var NACHBARN = [], LINIEN_AN = [];
+(function(){
+  var i, l;
+  for (i=0;i<24;i++){ NACHBARN.push([]); LINIEN_AN.push([]); }
+  for (l=0;l<LINIEN.length;l++){
+    var a = LINIEN[l][0], b = LINIEN[l][1], c = LINIEN[l][2];
+    NACHBARN[a].push(b); NACHBARN[b].push(a); NACHBARN[b].push(c); NACHBARN[c].push(b);
+    LINIEN_AN[a].push(l); LINIEN_AN[b].push(l); LINIEN_AN[c].push(l);
+  }
+})();
+function gegner(s){ return s === 1 ? 2 : 1; }
+function anzahl(b, s){ var n = 0; for (var i=0;i<24;i++) if (b[i] === s) n++; return n; }
+function inMuehle(b, idx){
+  var s = b[idx]; if (!s) return false;
+  for (var k=0;k<LINIEN_AN[idx].length;k++){
+    var L = LINIEN[LINIEN_AN[idx][k]];
+    if (b[L[0]] === s && b[L[1]] === s && b[L[2]] === s) return true;
+  }
+  return false;
+}
+/* Gegnerische Steine, die weggenommen werden duerfen: nicht aus einer
+   geschlossenen Muehle - ausser alle stehen in Muehlen. */
+function wegnehmbar(b, opfer){
+  var frei = [], alle = [], i;
+  for (i=0;i<24;i++) if (b[i] === opfer){ alle.push(i); if (!inMuehle(b, i)) frei.push(i); }
+  return frei.length ? frei : alle;
+}
+function phaseVon(b, v, s){
+  if (v[s] > 0) return 'setzen';
+  return anzahl(b, s) === 3 ? 'springen' : 'ziehen';
+}
+/* Zuege ohne Wegnahme: setzen, schieben oder springen. */
+function grundzuege(b, v, s){
+  var out = [], i, j, ph = phaseVon(b, v, s);
+  if (ph === 'setzen'){
+    for (i=0;i<24;i++) if (!b[i]) out.push({ von:-1, nach:i });
+    return out;
+  }
+  for (i=0;i<24;i++){
+    if (b[i] !== s) continue;
+    if (ph === 'springen'){ for (j=0;j<24;j++) if (!b[j]) out.push({ von:i, nach:j }); }
+    else for (j=0;j<NACHBARN[i].length;j++) if (!b[NACHBARN[i][j]]) out.push({ von:i, nach:NACHBARN[i][j] });
+  }
+  return out;
+}
+function zuege(b, v, s){
+  var gz = grundzuege(b, v, s), out = [], i, k;
+  for (i=0;i<gz.length;i++){
+    var z = gz[i], nb = b.slice();
+    if (z.von >= 0) nb[z.von] = 0;
+    nb[z.nach] = s;
+    if (inMuehle(nb, z.nach)){
+      var w = wegnehmbar(nb, gegner(s));
+      if (!w.length) out.push({ von:z.von, nach:z.nach, weg:-1 });
+      for (k=0;k<w.length;k++) out.push({ von:z.von, nach:z.nach, weg:w[k] });
+    } else out.push({ von:z.von, nach:z.nach, weg:-1 });
+  }
+  return out;
+}
+function anwenden(b, v, z, s){
+  var nb = b.slice(), nv = v.slice();
+  if (z.von < 0) nv[s]--; else nb[z.von] = 0;
+  nb[z.nach] = s;
+  if (z.weg >= 0) nb[z.weg] = 0;
+  return { b:nb, v:nv };
+}
+/* Verloren hat, wer am Zug ist und weniger als drei Steine hat oder
+   keinen Zug mehr findet. */
+function verlorenGrund(b, v, s){
+  if (anzahl(b, s) + v[s] < 3) return 'steine';
+  if (!grundzuege(b, v, s).length) return 'blockiert';
+  return '';
+}
+
+/* ==================================================================
+   Teddy - die Gegner-KI
+   ------------------------------------------------------------------
+   Negamax mit Alpha-Beta-Schnitt und schrittweiser Vertiefung, wie in
+   Teddyversi. Bewertet werden Steine, geschlossene und halb fertige
+   Muehlen, Beweglichkeit und eingesperrte Steine.
+   ================================================================== */
+function seitenwerte(b, v, s){
+  var w = { mat: anzahl(b, s) + v[s], muehlen:0, zweier:0, mob:0, fest:0 }, l, i, j;
+  for (l=0;l<LINIEN.length;l++){
+    var L = LINIEN[l], eigen = 0, leer = 0;
+    for (j=0;j<3;j++){ if (b[L[j]] === s) eigen++; else if (!b[L[j]]) leer++; }
+    if (eigen === 3) w.muehlen++;
+    else if (eigen === 2 && leer === 1) w.zweier++;
+  }
+  for (i=0;i<24;i++){
+    if (b[i] !== s) continue;
+    var frei = 0;
+    for (j=0;j<NACHBARN[i].length;j++) if (!b[NACHBARN[i][j]]) frei++;
+    w.mob += frei; if (!frei) w.fest++;
+  }
+  return w;
+}
+function bewerten(b, v, s){
+  var a = seitenwerte(b, v, s), o = seitenwerte(b, v, gegner(s));
+  var springtA = !v[s] && a.mat === 3, springtO = !v[gegner(s)] && o.mat === 3;
+  var wert = 120*(a.mat - o.mat) + 16*(a.muehlen - o.muehlen) + 9*(a.zweier - o.zweier);
+  if (!springtA && !springtO) wert += 3*(a.mob - o.mob) - 5*(a.fest - o.fest);
+  return wert;
+}
+var _knoten = 0;
+function negamax(b, v, s, tiefe, alpha, beta, endeZeit, ply, zuerst){
+  if ((++_knoten % 512 === 0) && Date.now() > endeZeit) return { wert:0, abgebrochen:true };
+  if (verlorenGrund(b, v, s)) return { wert: -100000 + ply };
+  if (tiefe <= 0) return { wert: bewerten(b, v, s) };
+  var zs = zuege(b, v, s);
+  if (!ply) mischen(zs);                            /* gleich gute Zuege nicht immer gleich waehlen */
+  zs.sort(function(x, y){ return (y.weg >= 0) - (x.weg >= 0); });
+  if (zuerst) for (var k=0;k<zs.length;k++)
+    if (zs[k].von === zuerst.von && zs[k].nach === zuerst.nach && zs[k].weg === zuerst.weg){
+      zs.unshift(zs.splice(k, 1)[0]); break;
+    }
+  var best = -Infinity, bestZug = zs[0], abgebrochen = false;
+  for (var i=0;i<zs.length;i++){
+    var r = anwenden(b, v, zs[i], s);
+    var erg = negamax(r.b, r.v, gegner(s), tiefe-1, -beta, -alpha, endeZeit, ply+1, null);
+    if (erg.abgebrochen){ abgebrochen = true; break; }
+    var wert = -erg.wert;
+    if (wert > best){ best = wert; bestZug = zs[i]; }
+    if (best > alpha) alpha = best;
+    if (alpha >= beta) break;
+  }
+  return { wert:best, zug:bestZug, abgebrochen:abgebrochen };
+}
+function kannMuehleSchliessen(b, v, s){
+  var zs = zuege(b, v, s);
+  for (var i=0;i<zs.length;i++) if (zs[i].weg >= 0) return true;
+  return false;
+}
+function zufall(a){ return a[(Math.random() * a.length) | 0]; }
+function mischen(a){
+  for (var i=a.length-1;i>0;i--){ var j = (Math.random() * (i+1)) | 0, t = a[i]; a[i] = a[j]; a[j] = t; }
+}
+function teddyWahl(b, v, stufe){
+  var zs = zuege(b, v, 2);
+  if (!zs.length) return null;
+  if (zs.length === 1) return zs[0];
+
+  /* Leicht: meist irgendein Zug; manchmal greift er eine Muehle mit. */
+  if (stufe.art === 'anfaenger'){
+    var mitMuehle = zs.filter(function(z){ return z.weg >= 0; });
+    if (mitMuehle.length && Math.random() < 0.45) return zufall(mitMuehle);
+    return zufall(zs);
+  }
+
+  /* Normal: schaut nur einen Zug weit - schliesst Muehlen, laesst dir
+     ungern eine offen und greift ab und zu daneben. */
+  if (stufe.art === 'flach'){
+    var bewertet = zs.map(function(z){
+      var r = anwenden(b, v, z, 2), w = bewerten(r.b, r.v, 2);
+      if (verlorenGrund(r.b, r.v, 1)) w += 1000000;
+      else if (kannMuehleSchliessen(r.b, r.v, 1)) w -= 90;
+      return { z:z, w:w + Math.random() * 4 };
+    });
+    bewertet.sort(function(x, y){ return y.w - x.w; });
+    if (Math.random() < 0.3){
+      var n = Math.min(3, bewertet.length);
+      return bewertet[(Math.random() * n) | 0].z;
+    }
+    return bewertet[0].z;
+  }
+
+  /* Schwer und Meister: vorausrechnen, so tief die Zeit reicht */
+  _knoten = 0;
+  var endeZeit = Date.now() + stufe.budget, bestZug = zs[0], tiefe = 1;
+  while (Date.now() < endeZeit && tiefe <= stufe.tiefe){
+    var erg = negamax(b, v, 2, tiefe, -Infinity, Infinity, endeZeit, 0, bestZug);
+    if (erg.abgebrochen) break;
+    if (erg.zug) bestZug = erg.zug;
+    if (Math.abs(erg.wert) > 50000) break;          /* Ausgang steht fest */
+    tiefe++;
+  }
+  return bestZug;
+}
+
+/* ==================================================================
+   Spielstand
+   ================================================================== */
+var G = {
+  brett:null, vorrat:[0,9,9], dran:1, laeuft:false, warten:false, spielNr:0, modus:'ki',
+  wahl:-1, wegnehmen:false, wegZiel:-1, ohneWeg:0, verlauf:{}
+};
+function istKI(s){ return G.modus !== 'zweit' && s === 2; }
+function spielerName(s){
+  if (s === 1) return 'Du';
+  return G.modus === 'zweit' ? 'Spieler 2' : 'Teddy';
+}
+function el(id){ return document.getElementById(id); }
+var $brett = el('brett'), $steine = el('steine'), $marken = el('marken'), $ringe = el('ringe'),
+    $status = el('status'), $statusTxt = el('statusTxt'), $veil = el('veil'), $dlg = el('dlg'),
+    $frame = el('boardframe');
+var SVGNS = 'http://www.w3.org/2000/svg';
+
+/* ---------- Zeichnen ---------- */
+function px(idx){ return 50 + 100 * PUNKTE[idx][0]; }
+function py(idx){ return 50 + 100 * PUNKTE[idx][1]; }
+function steinInhalt(s){
+  var h = s === 1 ? 'h1' : 'h2', d = s === 1 ? 1.4 : -1.2;
+  return '<circle r="40" class="k'+s+'"/><circle r="34" class="r'+s+'"/>'+
+    '<use href="#muehle" x="'+(-27+d)+'" y="'+(-29+d)+'" width="54" height="54" class="'+h+'"/>'+
+    '<use href="#muehle" x="-27" y="-29" width="54" height="54" class="m'+s+'"/>';
+}
+function brettZeichnen(){
+  var s = '';
+  [[50,650],[150,550],[250,450]].forEach(function(q){
+    s += '<rect class="linie" x="'+q[0]+'" y="'+q[0]+'" width="'+(q[1]-q[0])+'" height="'+(q[1]-q[0])+'"/>';
+  });
+  s += '<path class="linie" d="M350 50V250M350 450V650M50 350H250M450 350H650"/>';
+  for (var i=0;i<24;i++) s += '<circle class="punkt" cx="'+px(i)+'" cy="'+py(i)+'" r="11"/>';
+  el('linien').innerHTML = s;
+  el('chipStein1').innerHTML = steinInhalt(1);
+  el('chipStein2').innerHTML = steinInhalt(2);
+}
+var steinEl = [];
+function steineAufbauen(){
+  $steine.innerHTML = ''; steinEl = [];
+  for (var i=0;i<24;i++){ steinEl.push(null); if (G.brett[i]) steinNeu(i, G.brett[i], false); }
+}
+function steinNeu(idx, s, animiert){
+  var g = document.createElementNS(SVGNS, 'g');
+  g.setAttribute('class', 'pos');
+  g.style.transform = 'translate('+px(idx)+'px,'+py(idx)+'px)';
+  g.innerHTML = '<g class="stein'+(animiert ? ' neu' : '')+'">'+steinInhalt(s)+'</g>';
+  $steine.appendChild(g);
+  steinEl[idx] = g;
+}
+function steinBewegen(von, nach){
+  var g = steinEl[von]; steinEl[von] = null; steinEl[nach] = g;
+  if (g) g.style.transform = 'translate('+px(nach)+'px,'+py(nach)+'px)';
+}
+function steinEntfernen(idx){
+  var g = steinEl[idx]; steinEl[idx] = null;
+  if (!g) return;
+  g.firstChild.classList.add('weg');
+  setTimeout(function(){ if (g.parentNode) g.parentNode.removeChild(g); }, 320);
+}
+function markenZeichnen(){
+  var m = '', r = '', i;
+  if (G.laeuft){
+    if (G.wegnehmen){
+      var ziele = istKI(G.dran) ? (G.wegZiel >= 0 ? [G.wegZiel] : []) : wegnehmbar(G.brett, gegner(G.dran));
+      for (i=0;i<ziele.length;i++) r += '<circle class="ring weg" cx="'+px(ziele[i])+'" cy="'+py(ziele[i])+'" r="46"/>';
+    } else if (!G.warten && !istKI(G.dran) && G.wahl >= 0){
+      r += '<circle class="ring" cx="'+px(G.wahl)+'" cy="'+py(G.wahl)+'" r="46"/>';
+      if (cfg.hinweise){
+        var ziele2 = zielpunkte(G.wahl);
+        for (i=0;i<ziele2.length;i++) m += '<circle class="ziel" cx="'+px(ziele2[i])+'" cy="'+py(ziele2[i])+'" r="17"/>';
+      }
+    }
+  }
+  $marken.innerHTML = m; $ringe.innerHTML = r;
+}
+function zielpunkte(von){
+  var gz = grundzuege(G.brett, G.vorrat, G.dran), out = [];
+  for (var i=0;i<gz.length;i++) if (gz[i].von === von) out.push(gz[i].nach);
+  return out;
+}
+
+/* ---------- Brettgroesse: bildfuellend ---------- */
+function brettGroesse(){
+  var seite = Math.min($frame.clientWidth - 20, $frame.clientHeight - 20);
+  seite = Math.max(200, Math.min(720, seite));
+  $brett.style.width = seite + 'px'; $brett.style.height = seite + 'px';
+}
+beiGroessenwechsel(brettGroesse);
+
+/* ---------- Status ---------- */
+function statusText(){
+  if (!G.laeuft) return { t:'Götzberger Mühle', k:'' };
+  var wer = spielerName(G.dran), du = G.dran === 1 && wer === 'Du';
+  if (G.wegnehmen) return istKI(G.dran)
+    ? { t:wer + ' hat eine Mühle!', k:'warn' }
+    : { t:'Mühle! ' + (du ? 'Nimm' : wer + ' nimmt') + ' einen Stein weg', k:'warn' };
+  if (G.warten) return { t:wer + ' überlegt …', k:'' };
+  var ph = phaseVon(G.brett, G.vorrat, G.dran);
+  if (ph === 'setzen') return { t:wer + ' setzt – noch ' + G.vorrat[G.dran], k:'' };
+  if (ph === 'springen') return { t:wer + (du ? ' darfst springen' : ' darf springen'), k:'' };
+  return { t:wer + (du ? ' ziehst' : ' zieht'), k:'' };
+}
+function renderStatus(){
+  if (G.meldung){ $statusTxt.textContent = G.meldung; $status.className = G.meldungArt || ''; return; }
+  var s = statusText();
+  $statusTxt.textContent = s.t; $status.className = s.k;
+}
+function meldung(txt, dauer, art){
+  G.meldung = txt || ''; G.meldungArt = art || '';
+  if (G.meldTimer) clearTimeout(G.meldTimer);
+  if (txt) G.meldTimer = setTimeout(function(){ G.meldung = ''; renderStatus(); }, dauer || 2200);
+  renderStatus();
+}
+function punkteAnzeigen(){
+  el('zahl1').textContent = anzahl(G.brett, 1) + G.vorrat[1];
+  el('zahl2').textContent = anzahl(G.brett, 2) + G.vorrat[2];
+  el('chip1').classList.toggle('dran', G.laeuft && G.dran === 1);
+  el('chip2').classList.toggle('dran', G.laeuft && G.dran === 2);
+}
+function aktualisieren(){
+  spaeterSichern();
+  punkteAnzeigen(); renderStatus(); markenZeichnen();
+}
+
+/* ---------- Spielstand sichern ---------- */
+function spielSpeichern(){
+  if (!G.laeuft) return;
+  standSpeichern('teddy.muehle.spiel', {
+    brett:G.brett, vorrat:G.vorrat, dran:G.dran, wegnehmen:G.wegnehmen, ohneWeg:G.ohneWeg,
+    verlauf:G.verlauf, modus:G.modus, stufe:cfg.stufe,
+    fortsetzen:(G.modus === 'zweit' ? 'Zu zweit' : STUFEN[cfg.stufe].name)
+  });
+}
+function spielLaden(){
+  var d = standLaden('teddy.muehle.spiel');
+  if (!d || !d.brett || d.brett.length !== 24 || !d.vorrat) return false;
+  cfg.modus = d.modus; cfg.stufe = d.stufe; G.modus = d.modus;
+  el('name2').textContent = spielerName(2);
+  G.brett = d.brett; G.vorrat = d.vorrat; G.dran = d.dran; G.wegnehmen = !!d.wegnehmen;
+  G.ohneWeg = d.ohneWeg || 0; G.verlauf = d.verlauf || {};
+  G.laeuft = true; G.warten = false; G.wahl = -1; G.wegZiel = -1; G.spielNr = (G.spielNr||0) + 1;
+  steineAufbauen();
+  meldung('Spiel fortgesetzt.', 1800);
+  aktualisieren();
+  if (istKI(G.dran)){
+    var nr = G.spielNr;
+    G.warten = true; aktualisieren();
+    setTimeout(function(){ teddyZug(nr); }, 700);
+  }
+  return true;
+}
+
+function neuesSpiel(){
+  saveCfg();
+  G.modus = cfg.modus;
+  el('name2').textContent = spielerName(2);
+  G.brett = []; for (var i=0;i<24;i++) G.brett.push(0);
+  G.vorrat = [0, 9, 9]; G.dran = 1; G.laeuft = true; G.warten = false;
+  G.wahl = -1; G.wegnehmen = false; G.wegZiel = -1; G.ohneWeg = 0; G.verlauf = {};
+  G.spielNr = (G.spielNr||0) + 1;
+  steineAufbauen();
+  meldung('');
+  aktualisieren();
+}
+
+/* ---------- Rundenlauf ---------- */
+function zugFertig(mitWegnahme){
+  G.wahl = -1; G.wegnehmen = false; G.wegZiel = -1;
+  if (!G.vorrat[1] && !G.vorrat[2]){
+    if (mitWegnahme){ G.ohneWeg = 0; G.verlauf = {}; }
+    else G.ohneWeg++;
+  }
+  naechsterZug();
+}
+function naechsterZug(){
+  var nr = G.spielNr;
+  G.dran = gegner(G.dran);
+  var grund = verlorenGrund(G.brett, G.vorrat, G.dran);
+  if (grund){ spielEnde(gegner(G.dran), grund); return; }
+  if (!G.vorrat[1] && !G.vorrat[2]){
+    var key = G.brett.join('') + G.dran;
+    G.verlauf[key] = (G.verlauf[key] || 0) + 1;
+    if (G.verlauf[key] >= 3){ spielEnde(0, 'wiederholung'); return; }
+    if (G.ohneWeg >= 50){ spielEnde(0, 'zuege'); return; }
+  }
+  if (istKI(G.dran)){
+    G.warten = true; aktualisieren();
+    setTimeout(function(){ teddyZug(nr); }, 550);
+  } else {
+    G.warten = false; aktualisieren();
+  }
+}
+/* Stein setzen oder ziehen; danach entweder weiter oder Muehle - wegnehmen. */
+function steinZiehen(von, nach, s){
+  if (von < 0){ G.vorrat[s]--; steinNeu(nach, s, true); }
+  else { G.brett[von] = 0; steinBewegen(von, nach); }
+  G.brett[nach] = s;
+  ton(s === 1 ? 420 : 340, .06); summ(10);
+  return inMuehle(G.brett, nach) && wegnehmbar(G.brett, gegner(s)).length > 0;
+}
+function steinWegnehmen(idx){
+  G.brett[idx] = 0;
+  steinEntfernen(idx);
+  ton(250, .12, 'square'); summ([15, 30, 15]);
+}
+function feldGetippt(idx){
+  if (!G.laeuft || G.warten || istKI(G.dran) || idx < 0) return;
+  var s = G.dran;
+  if (G.wegnehmen){
+    if (wegnehmbar(G.brett, gegner(s)).indexOf(idx) < 0){
+      if (G.brett[idx] === gegner(s)) meldung('Steine in einer Mühle sind geschützt.', 1800, 'warn');
+      return;
+    }
+    steinWegnehmen(idx);
+    zugFertig(true);
+    return;
+  }
+  var ph = phaseVon(G.brett, G.vorrat, s), von = -1;
+  if (ph === 'setzen'){
+    if (G.brett[idx]) return;
+  } else {
+    if (G.brett[idx] === s){
+      G.wahl = (G.wahl === idx) ? -1 : idx;
+      if (G.wahl >= 0 && !zielpunkte(idx).length){ G.wahl = -1; meldung('Dieser Stein kann nicht ziehen.', 1500); }
+      markenZeichnen();
+      return;
+    }
+    if (G.wahl < 0 || zielpunkte(G.wahl).indexOf(idx) < 0) return;
+    von = G.wahl;
+  }
+  G.wahl = -1;
+  if (steinZiehen(von, idx, s)){ G.wegnehmen = true; aktualisieren(); }
+  else zugFertig(false);
+}
+function teddyZug(nr){
+  if (!G.laeuft || nr !== G.spielNr) return;
+  var s = G.dran, stufe = STUFEN[cfg.stufe];
+
+  /* Nach dem Laden kann Teddy mitten in seiner Muehle stehen - dann nur wegnehmen. */
+  if (G.wegnehmen){
+    var ziele = wegnehmbar(G.brett, gegner(s)), best = ziele[0], bw = -Infinity;
+    for (var i=0;i<ziele.length;i++){
+      var nb = G.brett.slice(); nb[ziele[i]] = 0;
+      var w = bewerten(nb, G.vorrat, s) + (stufe.art === 'anfaenger' ? Math.random() * 400 : 0);
+      if (w > bw){ bw = w; best = ziele[i]; }
+    }
+    G.wegZiel = best; aktualisieren();
+    setTimeout(function(){
+      if (nr !== G.spielNr) return;
+      steinWegnehmen(best); zugFertig(true);
+    }, 700);
+    return;
+  }
+
+  var z = teddyWahl(G.brett, G.vorrat, stufe);
+  if (!z){ spielEnde(gegner(s), 'blockiert'); return; }
+  var muehle = steinZiehen(z.von, z.nach, s);
+  if (muehle && z.weg >= 0){
+    G.wegnehmen = true; G.wegZiel = z.weg; G.warten = true; aktualisieren();
+    setTimeout(function(){
+      if (nr !== G.spielNr) return;
+      steinWegnehmen(z.weg); zugFertig(true);
+    }, 900);
+  } else {
+    setTimeout(function(){ if (nr === G.spielNr) zugFertig(false); }, 320);
+  }
+}
+
+/* ==================================================================
+   Bedienung - Touch zuerst
+   ================================================================== */
+var tapEvt = window.PointerEvent ? 'pointerdown' : 'mousedown';
+$brett.addEventListener(tapEvt, function(e){
+  if (e.pointerType === 'mouse' && e.button !== 0) return;
+  var r = $brett.getBoundingClientRect();
+  var x = (e.clientX - r.left) / r.width * 700, y = (e.clientY - r.top) / r.height * 700;
+  var best = -1, bd = 60 * 60;
+  for (var i=0;i<24;i++){
+    var dx = px(i) - x, dy = py(i) - y, d = dx*dx + dy*dy;
+    if (d < bd){ bd = d; best = i; }
+  }
+  feldGetippt(best);
+}, {passive:true});
+
+/* ==================================================================
+   Abrechnung
+   ================================================================== */
+function bilanzSchluessel(modus){ return modus === 'zweit' ? 'teddy.muehle.bilanzZweit' : 'teddy.muehle.bilanz'; }
+function bilanzLesen(modus){
+  modus = modus || G.modus;
+  if (modus === 'zweit') return lsGet(bilanzSchluessel(modus), { du:0, spieler2:0, unentschieden:0 });
+  return lsGet(bilanzSchluessel(modus), { du:0, teddy:0, unentschieden:0 });
+}
+function spielEnde(gewinner, grund){
+  G.laeuft = false; G.warten = false; G.wahl = -1; G.wegnehmen = false;
+  lsDel('teddy.muehle.spiel');
+  var bilanz = bilanzLesen();
+  var sieger = gewinner === 1 ? 'du' : (gewinner === 2 ? (G.modus === 'zweit' ? 'spieler2' : 'teddy') : 'unentschieden');
+  bilanz[sieger] = (bilanz[sieger] || 0) + 1;
+  lsSet(bilanzSchluessel(G.modus), bilanz);
+  aktualisieren();
+  setTimeout(function(){ zeigeErgebnis(gewinner, grund, sieger, bilanz); }, 450);
+}
+
+/* ==================================================================
+   Dialoge
+   ================================================================== */
+function auf(html){ $dlg.innerHTML = html; $veil.className = 'on'; $dlg.scrollTop = 0; }
+function zu(){ $veil.className = ''; }
+$veil.addEventListener('click', function(e){ if (e.target === $veil && G.laeuft) zu(); });
+$dlg.addEventListener('click', function(e){
+  var n = e.target;
+  while (n && n !== $dlg && !(n.getAttribute && n.getAttribute('data-act'))) n = n.parentNode;
+  if (!n || n === $dlg) return;
+  var a = n.getAttribute('data-act'), v = n.getAttribute('data-v');
+  ton(500, .05);
+  if (a === 'zu') zu();
+  else if (a === 'neu') zeigeStart(true);
+  else if (a === 'start'){ cfg.modus = 'ki'; if (v != null) cfg.stufe = parseInt(v, 10); zu(); neuesSpiel(); }
+  else if (a === 'zweit'){ cfg.modus = 'zweit'; zu(); neuesSpiel(); }
+  else if (a === 'hilfe') zeigeHilfe();
+  else if (a === 'opt') zeigeOptionen();
+  else if (a === 'menu') zeigeMenu();
+  else if (a === 'bilanz') zeigeBilanz();
+  else if (a === 'ecke') zurSpieleecke();
+  else if (a === 'stufe'){ cfg.stufe = parseInt(v, 10); saveCfg(); zeigeOptionen(); }
+  else if (a === 'sw'){
+    var f = n.getAttribute('data-f');
+    cfg[f] = !cfg[f]; saveCfg();
+    n.className = 'sw' + (cfg[f] ? ' on' : '');
+    if (f === 'sound' && cfg.sound) ton(660, .08);
+    if (f === 'hinweise') markenZeichnen();
+  }
+  else if (a === 'reset'){
+    lsSet('teddy.muehle.bilanz', { du:0, teddy:0, unentschieden:0 });
+    lsSet('teddy.muehle.bilanzZweit', { du:0, spieler2:0, unentschieden:0 });
+    zeigeOptionen();
+  }
+});
+
+function muehlenLogo(){
+  return '<svg viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="48" fill="#8c1419"/>'+
+    '<use href="#muehle" x="14" y="12" width="72" height="72" style="color:#fff; --st:#8c1419;"/></svg>';
+}
+function stufenListe(aktionName){
+  var h = '<div class="lvl">';
+  for (var i=0;i<STUFEN.length;i++)
+    h += '<button data-act="'+aktionName+'" data-v="'+i+'" class="'+(cfg.stufe === i ? 'an' : '')+'">'+
+         '<b>'+STUFEN[i].name+'<span>'+STUFEN[i].txt+'</span></b></button>';
+  return h + '</div>';
+}
+function zeigeStart(nurNeu){
+  var h = '<div id="title">'+muehlenLogo()+'<div class="nm">Götzberger Mühle</div><div class="streifen"></div></div>';
+  h += '<h3>Gegen Teddy</h3>' + stufenListe('start');
+  h += '<div class="row"><button class="btn" data-act="zweit" style="flex:1 1 100%;">'+
+       '<span class="ico">&#128101;</span>Zu zweit spielen (ohne Teddy)</button></div>';
+  h += '<div class="row">'+
+       '<button class="btn" data-act="opt"><span class="ico">&#9881;</span>Mehr</button>'+
+       '<button class="btn" data-act="hilfe"><span class="ico">?</span>Regeln</button>';
+  if (G.laeuft && !nurNeu) h += '<button class="btn" data-act="zu"><span class="ico">&#10005;</span>Zurück</button>';
+  h += '</div>';
+  auf(h);
+}
+function zeigeMenu(){
+  auf('<h2>Menü</h2><div class="lvl">'+
+    (G.laeuft ? '<button data-act="zu"><b>Weiterspielen</b></button>' : '')+
+    '<button data-act="neu"><b>Neues Spiel</b></button>'+
+    '<button data-act="bilanz"><b>Bilanz</b></button>'+
+    '<button data-act="hilfe"><b>Regeln und Bedienung</b></button>'+
+    '<button data-act="opt"><b>Einstellungen</b></button>'+
+    '<button data-act="ecke"><b>Zur Spieleecke</b></button></div>');
+}
+function zeigeOptionen(){
+  var h = '<h2>Einstellungen</h2><h3>Schwierigkeit</h3>' + stufenListe('stufe');
+  h += '<div class="opt"><label>Mögliche Züge anzeigen</label><div class="sw'+(cfg.hinweise?' on':'')+'" data-act="sw" data-f="hinweise"><i></i></div></div>';
+  h += '<div class="opt"><label>Ton</label><div class="sw'+(cfg.sound?' on':'')+'" data-act="sw" data-f="sound"><i></i></div></div>';
+  h += '<div class="opt"><label>Vibration</label><div class="sw'+(cfg.vibrate?' on':'')+'" data-act="sw" data-f="vibrate"><i></i></div></div>';
+  h += '<p style="margin-top:10px;font-size:13px;opacity:.8;">Die Schwierigkeit gilt ab dem nächsten neuen Spiel.</p>';
+  h += '<div class="row"><button class="btn" data-act="reset">Bilanz löschen</button>'+
+       '<button class="btn" data-act="'+(G.laeuft?'zu':'neu')+'">Fertig</button></div>';
+  auf(h);
+}
+function zeigeBilanz(){
+  var bk = bilanzLesen('ki'), bz = bilanzLesen('zweit');
+  var h = '<h2>Bilanz</h2><h3>Gegen Teddy</h3><table class="sc">'+
+    '<tr class="me"><td>Du</td><td class="n">'+bk.du+'</td></tr>'+
+    '<tr><td>Teddy</td><td class="n">'+bk.teddy+'</td></tr>'+
+    '<tr><td>Unentschieden</td><td class="n">'+bk.unentschieden+'</td></tr></table>';
+  h += '<h3>Zu zweit</h3><table class="sc">'+
+    '<tr class="me"><td>Du</td><td class="n">'+bz.du+'</td></tr>'+
+    '<tr><td>Spieler 2</td><td class="n">'+(bz.spieler2||0)+'</td></tr>'+
+    '<tr><td>Unentschieden</td><td class="n">'+bz.unentschieden+'</td></tr></table>';
+  h += '<div class="row"><button class="btn" data-act="'+(G.laeuft?'zu':'neu')+'">Zurück</button></div>';
+  auf(h);
+}
+function zeigeErgebnis(gewinner, grund, sieger, bilanz){
+  var zweit = G.modus === 'zweit', verlierer = gegner(gewinner);
+  var bild = gewinner === 1 ? teddyJubel() : (gewinner === 0 ? teddyStaunt() : teddyRuhig());
+  var titel = gewinner === 1 ? 'Gewonnen!' : (gewinner === 0 ? 'Unentschieden' : spielerName(2) + ' gewinnt');
+  var wer = spielerName(verlierer), du = verlierer === 1;
+  var warum = grund === 'steine' ? wer + (du ? ' hast' : ' hat') + ' nur noch zwei Steine.'
+            : grund === 'blockiert' ? wer + (du ? ' kannst' : ' kann') + ' nicht mehr ziehen.'
+            : grund === 'wiederholung' ? 'Dreimal dieselbe Stellung.'
+            : '50 Züge ohne Wegnahme.';
+  var h = '<div style="text-align:center;margin-bottom:6px;">'+
+          '<div style="width:110px;margin:0 auto;">'+bild+'</div>'+
+          '<h2 style="margin:2px 0 0;">'+titel+'</h2>'+
+          '<p style="margin:2px 0 0;">'+warum+'</p>'+
+          '<p style="margin:0;opacity:.75;font-size:13px;">'+(zweit ? 'Zu zweit' : STUFEN[cfg.stufe].name)+'</p></div>';
+  h += '<p style="font-size:13px;opacity:.75;margin-top:8px;text-align:center;">Bilanz: Du '+bilanz.du+' &middot; '+spielerName(2)+' '+
+       (zweit ? (bilanz.spieler2||0) : bilanz.teddy)+' &middot; Unentschieden '+bilanz.unentschieden+'</p>';
+  h += '<div class="row"><button class="btn go" data-act="'+(zweit ? 'zweit' : 'start')+'" data-v="'+cfg.stufe+'">'+
+       '<span class="ico">&#9654;</span>Nochmal</button>'+
+       '<button class="btn" data-act="neu">'+(zweit ? 'Zurück' : 'Stufe wechseln')+'</button>'+
+       eckeKnopf()+'</div>';
+  auf(h);
+  ton(gewinner === 1 ? 720 : 240, gewinner === 1 ? .1 : .2, gewinner === 1 ? 'triangle' : 'square');
+}
+function zeigeHilfe(){
+  auf('<h2>Mühle – Regeln</h2>'+
+  '<h3>Ziel</h3><p>Nimm dem Gegner so viele Steine weg, dass er nur noch zwei hat – oder sperre ihn so ein, dass er nicht mehr ziehen kann.</p>'+
+  '<h3>Setzen</h3><p>Jede Seite hat <b>neun Steine</b>. Abwechselnd setzt ihr sie auf freie Punkte. Du hast die hellen Steine und fängst an.</p>'+
+  '<h3>Ziehen</h3><p>Sind alle Steine gesetzt, schiebt ihr abwechselnd einen eigenen Stein entlang einer Linie auf einen freien Nachbarpunkt. '+
+  'Tippe erst deinen Stein an, dann das Ziel.</p>'+
+  '<h3>Springen</h3><p>Wer nur noch <b>drei Steine</b> hat, darf mit einem davon auf jeden freien Punkt springen.</p>'+
+  '<h3>Mühle</h3><ul>'+
+  '<li>Drei eigene Steine in einer Linie sind eine <b>Mühle</b>. Dann nimmst du einen gegnerischen Stein vom Brett.</li>'+
+  '<li>Steine, die selbst in einer Mühle stehen, sind geschützt – außer der Gegner hat nur noch solche.</li>'+
+  '<li>Eine Mühle öffnen und wieder schließen gilt jedes Mal neu. Wer zwei Mühlen so nebeneinander hat, dass ein Zug die eine öffnet und die andere schließt, hat eine <b>Zwickmühle</b>.</li></ul>'+
+  '<h3>Unentschieden</h3><p>Wenn dieselbe Stellung zum dritten Mal auf dem Brett steht oder 50 Züge lang kein Stein weggenommen wird.</p>'+
+  '<h3>Zu zweit</h3><p>Im Startbild <b>Zu zweit spielen</b> wählen – dann spielen zwei Menschen abwechselnd auf demselben Gerät.</p>'+
+  '<p style="opacity:.7;font-size:13px;margin-top:14px;">Die Steine tragen die Götzberger Windmühle aus Henstedt-Ulzburg. '+
+  'Mehr über die Mühle und ihren Verein: <a href="https://vereingoetzbergerwindmuehle.de/" target="_blank" rel="noopener">vereingoetzbergerwindmuehle.de</a></p>'+
+  '<div class="row"><button class="btn" data-act="'+(G.laeuft?'zu':'neu')+'">Zurück</button></div>');
+}
+
+/* ==================================================================
+   Knoepfe und Start
+   ================================================================== */
+el('bEcke').onclick = zurSpieleecke;
+el('bMenu').onclick = function(){ zeigeMenu(); };
+el('bHilfe').onclick = function(){ zeigeHilfe(); };
+el('bNeu').onclick = function(){ zeigeStart(true); };
+
+brettZeichnen();
+G.brett = []; for (var i0=0;i0<24;i0++) G.brett.push(0);
+steineAufbauen();
+punkteAnzeigen();
+if (!spielLaden()) zeigeStart(false);
+brettGroesse();
+setTimeout(brettGroesse, 80);
+</script>
+</body>
+</html>
