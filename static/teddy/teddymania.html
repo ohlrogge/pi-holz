@@ -75,6 +75,10 @@ button{font:inherit; color:#000;}
 @media (max-width: 700px){
   .tb-rec{overflow:hidden; text-overflow:ellipsis; max-width:58%; font-size:12px;}
   .menu{min-width:230px; max-width:calc(100vw - 14px);}
+  /* Eine zweite Reihe Symbole frisst die Haelfte des Spielfelds. Alles hinter
+     dem Vorwaerts-Pfeil steht auch in den Menues und faellt hier weg. */
+  .toolbar{flex-wrap:nowrap;}
+  .toolbar .breit{display:none;}
 }
 .mi{display:flex; align-items:center; padding:9px 16px 9px 26px; position:relative; cursor:pointer; white-space:nowrap;}
 .mi:hover{background:var(--navy); color:#fff;}
@@ -1107,6 +1111,8 @@ function menuDef(){
       {label:'Feld mittel (18×11)', radio:!cfg.sizeAuto&&cfg.cols===18, fn:function(){ setSize(18,11); }},
       {label:'Feld original (25×13)', radio:!cfg.sizeAuto&&cfg.cols===25, fn:function(){ setSize(25,13); }},
       {label:'Feld groß (32×16)', radio:!cfg.sizeAuto&&cfg.cols===32, fn:function(){ setSize(32,16); }},
+      {label:'Steine kleiner', fn:function(){ zoom(-4); }},
+      {label:'Steine größer', fn:function(){ zoom(4); }},
       {label:'Feld an Bildschirm anpassen', fn:fitFieldToScreen},
       {label:'Feld fingerfreundlich (große Steine)', fn:fitFieldToTouch},
       {sep:true},
@@ -1208,20 +1214,21 @@ function buildToolbar(){
     {sep:true},
     {html:svgArrow('left','#2f8f30'),  title:'Zug zurück (Strg+Z)', off:!undoStack.length, fn:undo},
     {html:svgArrow('right','#2079d8'), title:'Feld zurücksetzen',    off:!undoStack.length, fn:restart},
-    {sep:true},
-    {html:'<b>&minus;</b>', title:'Kleiner', fn:function(){ zoom(-4); }},
-    {html:'<b>+</b>',       title:'Größer',  fn:function(){ zoom(4); }},
-    {sep:true},
-    {html:svgSound(cfg.sound), title:(cfg.sound?'Ton aus':'Ton an'),
+    {sep:true, breit:true},
+    {html:'<b>&minus;</b>', title:'Kleiner', breit:true, fn:function(){ zoom(-4); }},
+    {html:'<b>+</b>',       title:'Größer',  breit:true, fn:function(){ zoom(4); }},
+    {sep:true, breit:true},
+    {html:svgSound(cfg.sound), title:(cfg.sound?'Ton aus':'Ton an'), breit:true,
      fn:function(){ cfg.sound=!cfg.sound; saveCfg(); if(cfg.sound) beep(880,0.09); buildToolbar(); buildMenus(); }},
-    {sep:true},
-    {html:'<b style="color:#c00000">!</b>', title:'Bestenliste', fn:showScores},
-    {html:'<b style="color:#000080">?</b>', title:'Hilfe (F1)',  fn:showRules}
+    {sep:true, breit:true},
+    {html:'<b style="color:#c00000">!</b>', title:'Bestenliste', breit:true, fn:showScores},
+    {html:'<b style="color:#000080">?</b>', title:'Hilfe (F1)',  breit:true, fn:showRules}
   ];
   host.innerHTML='';
   items.forEach(function(it){
-    if(it.sep){ var s=document.createElement('div'); s.className='tbsep'; host.appendChild(s); return; }
-    var b=document.createElement('div'); b.className='tbtn'+(it.off?' off':'');
+    var breit=it.breit?' breit':'';
+    if(it.sep){ var s=document.createElement('div'); s.className='tbsep'+breit; host.appendChild(s); return; }
+    var b=document.createElement('div'); b.className='tbtn'+(it.off?' off':'')+breit;
     b.title=it.title; b.innerHTML=it.html;
     b.onclick=function(ev){ ev.stopPropagation(); closeMenus(); if(!it.off) it.fn(); };
     host.appendChild(b);
