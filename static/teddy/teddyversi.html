@@ -505,7 +505,7 @@ function spielLaden(){
 }
 
 function aktualisieren(){
-  spielSpeichern();
+  sofortSichern();
   punkteAnzeigen(); renderStatus();
   if (G.laeuft && !G.warten && !istKI(G.dran) && cfg.hinweise) legaleZuegeAnzeigen(zuegeMitFlips(G.brett, G.dran));
   else legaleZuegeAnzeigen([]);

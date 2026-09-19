@@ -2181,14 +2181,14 @@ function kiZug(pi){
    ================================================================== */
 function naechster(nr){
   if (nr !== undefined && nr !== G.spielNr) return;   /* Nachzuegler aus einer alten Partie */
-  spielSpeichern();
+  sofortSichern();
   G.dran = (G.dran + 1) % G.spieler.length;
   if (G.dran === 0){
     G.warten = false;
     G.zugStart = schnapp();
     G.undo = [];
     G.meldung = '';
-    renderAll(); spielSpeichern();
+    renderAll(); sofortSichern();
   } else {
     G.warten = true; renderAll();
     var nr2 = G.spielNr;
@@ -2260,7 +2260,7 @@ function neuesSpiel(){
   G.zugStart = schnapp();
   zu();
   G.meldung = '';
-  renderAll(); spielSpeichern();
+  renderAll(); sofortSichern();
 }
 
 /* ---------- Spielstand sichern und laden ---------- */

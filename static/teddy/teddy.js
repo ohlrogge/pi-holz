@@ -44,8 +44,27 @@ function lsSet(k, v){
   try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){}
 }
 function lsDel(k){
+  /* Wer einen Stand loescht, will ihn los sein - eine wartende Sicherung
+     duerfte ihn sonst gleich darauf wieder hinschreiben. */
+  sicherungAbbrechen();
   delete teddySpeicher[k];
   try{ localStorage.removeItem(k); }catch(e){}
+}
+
+/* Sichern gehoert nicht in den Zeichenweg. Die Spiele melden nach einem Zug
+   nur an, dass sich etwas geaendert hat; geschrieben wird einmal in der
+   naechsten Ruhepause - oder sofort, wenn die Seite weggeht. */
+var sicherungTimer = 0;
+function sicherungAbbrechen(){
+  if (sicherungTimer){ clearTimeout(sicherungTimer); sicherungTimer = 0; }
+}
+function spaeterSichern(){
+  if (sicherungTimer) return;
+  sicherungTimer = setTimeout(function(){ sicherungTimer = 0; sofortSichern(); }, 400);
+}
+function sofortSichern(){
+  sicherungAbbrechen();
+  if (typeof spielSpeichern === 'function') spielSpeichern();
 }
 
 /* ---------- Spielstaende: Schluessel und Fassung ----------
@@ -120,16 +139,15 @@ function standLaden(schluessel){
 
 /* ---------- Zurueck in die Spieleecke ---------- */
 function zurSpieleecke(){
-  if (typeof spielSpeichern === 'function') spielSpeichern();
+  sofortSichern();
   location.href = './';
 }
 /* Der Spielstand muss auch dann sitzen, wenn die Seite ohne Klick verschwindet.
    Auf iOS ist pagehide das einzige Ereignis, das beim Wegwischen einer
    Web-App noch kommt; unload und beforeunload bleiben dort aus. */
 (function(){
-  function sichern(){ if (typeof spielSpeichern === 'function') spielSpeichern(); }
-  document.addEventListener('visibilitychange', function(){ if (document.hidden) sichern(); });
-  window.addEventListener('pagehide', sichern);
+  document.addEventListener('visibilitychange', function(){ if (document.hidden) sofortSichern(); });
+  window.addEventListener('pagehide', sofortSichern);
 })();
 
 function eckeKnopf(){
