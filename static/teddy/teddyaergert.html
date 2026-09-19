@@ -322,6 +322,11 @@ function achsenDrehung(achse, winkel){
   var s = Math.sin(winkel/2);
   return [Math.cos(winkel/2), achse[0]*s, achse[1]*s, achse[2]*s];
 }
+/* Wie weit liegen zwei Lagen auseinander (Drehwinkel)? */
+function lagenWinkel(a, b){
+  var d = Math.abs(a[0]*b[0]+a[1]*b[1]+a[2]*b[2]+a[3]*b[3]);
+  return 2*Math.acos(Math.min(1, d));
+}
 /* Gleichmäßig von Lage a nach Lage b, den kürzeren Weg */
 function slerp(a, b, t){
   var d = a[0]*b[0]+a[1]*b[1]+a[2]*b[2]+a[3]*b[3];
@@ -331,21 +336,21 @@ function slerp(a, b, t){
   return [a[0]*fa+b[0]*fb, a[1]*fa+b[1]*fb, a[2]*fa+b[2]*fb, a[3]*fa+b[3]*fb];
 }
 
-/* Zehn Bewegungen. dauer in Sekunden; drehungen = ganze Überschläge zusätzlich
-   zum Weg in die Ziellage; achse: quer (rollt in Laufrichtung), hoch (kreiselt)
-   oder schraeg; huepfer mit hoehe; bogen und zickzack lenken zur Seite; weg ist
-   die Strecke als Anteil der Schale. */
+/* Zehn Bewegungen. dauer in Sekunden; achse für den Überschlag: quer (rollt in
+   Laufrichtung), hoch (kreiselt) oder schraeg; huepfer mit hoehe; bogen und
+   zickzack lenken zur Seite; weg ist die Strecke als Anteil der Schale.
+   Gedreht wird nur so viel wie nötig: auf dem kürzesten Weg in die Ziellage. */
 var WUERFE = [
-  { dauer:1.1, drehungen:1, achse:'quer',    huepfer:0, hoehe:.25, bogen:0,    zickzack:0,  weg:.45 },
-  { dauer:1.8, drehungen:2, achse:'quer',    huepfer:0, hoehe:.25, bogen:0,    zickzack:0,  weg:.6  },
-  { dauer:1.3, drehungen:1, achse:'quer',    huepfer:2, hoehe:.8,  bogen:0,    zickzack:0,  weg:.45 },
-  { dauer:1.3, drehungen:1, achse:'quer',    huepfer:1, hoehe:.6,  bogen:.3,   zickzack:0,  weg:.5  },
-  { dauer:1.3, drehungen:1, achse:'quer',    huepfer:1, hoehe:.6,  bogen:-.3,  zickzack:0,  weg:.5  },
-  { dauer:1.4, drehungen:1, achse:'hoch',    huepfer:0, hoehe:.2,  bogen:0,    zickzack:0,  weg:.2  },
-  { dauer:1.3, drehungen:1, achse:'schraeg', huepfer:1, hoehe:.7,  bogen:.12,  zickzack:0,  weg:.45 },
-  { dauer:1.4, drehungen:1, achse:'quer',    huepfer:1, hoehe:1.3, bogen:0,    zickzack:0,  weg:.25 },
-  { dauer:1.4, drehungen:1, achse:'quer',    huepfer:2, hoehe:.45, bogen:0,    zickzack:.25, weg:.5 },
-  { dauer:1.6, drehungen:0, achse:'quer',    huepfer:0, hoehe:.15, bogen:.1,   zickzack:0,  weg:.35 }
+  { dauer:0.68, achse:'quer',    huepfer:0, hoehe:.25, bogen:0,    zickzack:0,  weg:.45 },
+  { dauer:1.12, achse:'quer',    huepfer:0, hoehe:.25, bogen:0,    zickzack:0,  weg:.6  },
+  { dauer:0.81, achse:'quer',    huepfer:2, hoehe:.8,  bogen:0,    zickzack:0,  weg:.45 },
+  { dauer:0.81, achse:'quer',    huepfer:1, hoehe:.6,  bogen:.3,   zickzack:0,  weg:.5  },
+  { dauer:0.81, achse:'quer',    huepfer:1, hoehe:.6,  bogen:-.3,  zickzack:0,  weg:.5  },
+  { dauer:0.87, achse:'hoch',    huepfer:0, hoehe:.2,  bogen:0,    zickzack:0,  weg:.2  },
+  { dauer:0.81, achse:'schraeg', huepfer:1, hoehe:.7,  bogen:.12,  zickzack:0,  weg:.45 },
+  { dauer:0.87, achse:'quer',    huepfer:1, hoehe:1.3, bogen:0,    zickzack:0,  weg:.25 },
+  { dauer:0.87, achse:'quer',    huepfer:2, hoehe:.45, bogen:0,    zickzack:.25, weg:.5 },
+  { dauer:0.99, achse:'quer',    huepfer:0, hoehe:.15, bogen:.1,   zickzack:0,  weg:.35 }
 ];
 var RAND = 1.5;
 function wurfPlanen(W, zahl, rnd, letzte){
@@ -363,8 +368,16 @@ function wurfPlanen(W, zahl, rnd, letzte){
   var quer = [-dir[1], dir[0], 0];
   var achse = b.achse === 'hoch' ? [0,0,1] :
               b.achse === 'schraeg' ? (function(){ var s = [quer[0], quer[1], .8], n = laenge(s); return [s[0]/n, s[1]/n, s[2]/n]; })() : quer;
+  /* Ziellage mit der Drehung um die Hochachse, die am wenigsten Weg braucht */
+  var q0 = W.q.slice(), q1 = null, bester = 9, versatz = rnd()*Math.PI/4;
+  for (var k=0; k<8; k++){
+    var kandidat = lageFuer(zahl, versatz + k*Math.PI/4), w = lagenWinkel(q0, kandidat);
+    if (w < bester){ bester = w; q1 = kandidat; }
+  }
+  /* Nur wenn er sich sonst kaum bewegen würde: ein einzelner Überschlag */
+  var drehungen = bester < Math.PI/2 ? 1 : 0;
   return { art:art, b:b, zahl:zahl, von:von, nach:nach, l:l, dir:dir, achse:achse,
-           q0:W.q.slice(), q1:lageFuer(zahl, rnd()*Math.PI*2), dauer:b.dauer };
+           q0:q0, q1:q1, drehungen:drehungen, dauer:b.dauer + (drehungen ? .3 : 0) };
 }
 /* Stand des Wurfs bei f = 0..1 */
 function wurfStand(W, w, f){
@@ -375,7 +388,7 @@ function wurfStand(W, w, f){
   var z = b.huepfer ? b.hoehe * Math.abs(Math.sin(Math.PI*b.huepfer*e)) * Math.pow(1-e, .6)
                     : b.hoehe * Math.sin(Math.PI*e);
   W.p = [Math.max(1.2, Math.min(W.breite-1.2, x)), Math.max(1.2, Math.min(W.tiefe-1.2, y)), 1 + z];
-  W.q = qMal(achsenDrehung(w.achse, 2*Math.PI*b.drehungen*e), slerp(w.q0, w.q1, e));
+  W.q = qMal(achsenDrehung(w.achse, 2*Math.PI*w.drehungen*e), slerp(w.q0, w.q1, e));
 }
 
 /* ==================================================================
