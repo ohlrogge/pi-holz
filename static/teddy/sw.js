@@ -27,10 +27,14 @@ async function aktualisieren(cache, url) {
   return res;
 }
 
+/* Eine einzelne Datei, die gerade nicht kommt, darf die Installation nicht
+   kippen - sonst steht am Ende gar kein Offline-Speicher, statt nur einer
+   Datei zu wenig. Was fehlt, holt der fetch-Zweig beim ersten Zugriff nach. */
 self.addEventListener('install', (e) => {
   e.waitUntil((async () => {
     const cache = await caches.open(CACHE);
-    await Promise.all(DATEIEN.map((d) => aktualisieren(cache, new URL(d, self.registration.scope).href)));
+    await Promise.all(DATEIEN.map((d) =>
+      aktualisieren(cache, new URL(d, self.registration.scope).href).catch(() => {})));
     await self.skipWaiting();
   })());
 });
