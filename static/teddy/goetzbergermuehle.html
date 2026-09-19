@@ -622,6 +622,10 @@ function spielSpeichern(){
     fortsetzen:(G.modus === 'zweit' ? 'Zu zweit' : STUFEN[cfg.stufe].name)
   });
 }
+/* Ein ausgewaehlter Stein steht in keinem Spielstand. Neuladen kostet dann den
+   Antipper, der schon getan war. */
+function darfNeuLaden(){ return G.wahl < 0; }
+
 function spielLaden(){
   var d = standLaden('teddy.muehle.spiel');
   if (!d || !d.brett || d.brett.length !== 24 || !d.vorrat) return false;

@@ -67,6 +67,38 @@ function sofortSichern(){
   if (typeof spielSpeichern === 'function') spielSpeichern();
 }
 
+/* ---------- Neue Fassung uebernehmen ----------
+   Der Service Worker zeigt beim Start die gespeicherte Seite und meldet sich,
+   wenn die im Hintergrund geholte sich davon unterscheidet. Dann wird der Stand
+   sofort geschrieben und neu geladen, sobald kein Dialog offen ist. Ein Spiel
+   kann mit darfNeuLaden() weitere Momente ausschliessen. */
+(function(){
+  if (!('serviceWorker' in navigator)) return;
+  var wartet = 0;
+
+  /* getClientRects greift unabhaengig davon, wie ein Spiel seinen Dialog
+     ein- und ausblendet. */
+  function sichtbar(id){
+    var n = document.getElementById(id);
+    return !!n && n.getClientRects().length > 0;
+  }
+  function jetztGeht(){
+    if (sichtbar('veil') || sichtbar('dlg') || sichtbar('modal') || sichtbar('overlay')) return false;
+    return typeof darfNeuLaden !== 'function' || darfNeuLaden();
+  }
+  function versuchen(){
+    if (!jetztGeht()) return;
+    clearInterval(wartet);
+    sofortSichern();
+    location.reload();
+  }
+  navigator.serviceWorker.addEventListener('message', function(e){
+    if (!e.data || e.data.teddy !== 'neueFassung' || wartet) return;
+    wartet = setInterval(versuchen, 1000);
+    versuchen();
+  });
+})();
+
 /* ---------- Spielstaende: Schluessel und Fassung ----------
    Alle Schluessel liegen unter teddy.<spiel>., damit kein Spiel
    versehentlich den Stand eines anderen ueberschreibt. Jeder Spielstand

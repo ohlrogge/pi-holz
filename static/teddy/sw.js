@@ -1,5 +1,6 @@
-/* Offline-Speicher für Teddys Spieleecke: zeigt sofort die gespeicherte Fassung
-   und holt im Hintergrund die neueste (wirkt beim nächsten Öffnen). */
+/* Offline-Speicher für Teddys Spieleecke: zeigt sofort die gespeicherte Fassung,
+   holt im Hintergrund die neueste und meldet der Seite, wenn sie sich unterscheidet.
+   Die Seite lädt sich dann selbst neu, sobald gerade nichts läuft. */
 const CACHE = 'teddy-v5';
 const DATEIEN = ['./', 'teddy.js', 'teddikub.html', 'teddydoku.html', 'teddymania.html', 'teddyversi.html', 'teddyaergert.html', 'goetzbergermuehle.html',
   'manifest.webmanifest', 'icon-180.png', 'icon-192.png', 'icon-512.png', 'favicon.svg', 'favicon-32.png'];
@@ -19,6 +20,29 @@ async function holen(url) {
   if (!res.ok) throw new Error(res.status);
   if (!res.redirected) return res;
   return new Response(await res.blob(), { status: 200, headers: res.headers });
+}
+
+/* Nur Seiten und Skripte koennen eine neue Fassung bedeuten. Bilder und das
+   Manifest aendern sich zusammen mit ihnen und muessen nicht geprueft werden. */
+function textartig(res) {
+  const t = res.headers.get('content-type') || '';
+  return t.includes('html') || t.includes('javascript');
+}
+
+/* teddy.js steckt in jeder Seite, eine Aenderung dort betrifft alle offenen
+   Fenster. Sonst ist nur das Fenster gemeint, das genau diese Datei anzeigt. */
+async function melden(url) {
+  const k = schluessel(url);
+  const ueberall = new URL(url).pathname.endsWith('/teddy.js');
+  for (const c of await self.clients.matchAll({ type: 'window' })) {
+    if (ueberall || schluessel(c.url) === k) c.postMessage({ teddy: 'neueFassung' });
+  }
+}
+
+async function pruefen(url, alt, neu) {
+  if (!textartig(neu)) return;
+  const [a, b] = await Promise.all([alt.text(), neu.clone().text()]);
+  if (a !== b) await melden(url);
 }
 
 async function aktualisieren(cache, url) {
@@ -54,7 +78,8 @@ self.addEventListener('fetch', (e) => {
     const treffer = await cache.match(schluessel(req.url));
     const frisch = aktualisieren(cache, req.url);
     if (treffer) {
-      e.waitUntil(frisch.catch(() => {}));
+      const alt = treffer.clone();
+      e.waitUntil(frisch.then((neu) => pruefen(req.url, alt, neu)).catch(() => {}));
       return treffer;
     }
     try { return await frisch; } catch (err) { return fetch(req); }
