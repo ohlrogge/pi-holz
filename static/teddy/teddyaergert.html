@@ -37,7 +37,7 @@ body{
 #wrap{position:absolute; inset:0; display:flex; flex-direction:column; padding-top:env(safe-area-inset-top);}
 
 .kugel{border-radius:50%; box-shadow:inset -3px -3px 5px rgba(0,0,0,.35), inset 3px 3px 5px rgba(255,255,255,.55);}
-.k0{background:var(--rot);} .k1{background:var(--blau);} .k2{background:var(--gelb);} .k3{background:#3a3a3a; outline:1.5px solid #777;}
+.k0{background:var(--rot);} .k1{background:var(--blau);} .k2{background:var(--gelb);} .k3{background:#3a3a3a;}
 
 /* ---------- Spielfläche: Brett und Würfelschale ---------- */
 #main{flex:1 1 auto; min-height:0; position:relative;}
@@ -58,7 +58,7 @@ body{
 #schatten{
   position:absolute; left:0; top:0; width:var(--wuerfel); height:var(--wuerfel);
   margin:calc(var(--wuerfel) / -2) 0 0 calc(var(--wuerfel) / -2);
-  border-radius:28%; background:rgba(0,0,0,.34); filter:blur(5px); pointer-events:none;
+  border-radius:50%; background:radial-gradient(closest-side, rgba(0,0,0,.38), rgba(0,0,0,0)); pointer-events:none;
 }
 #wuerfel{
   position:absolute; left:0; top:0; width:var(--wuerfel); height:var(--wuerfel);
@@ -224,12 +224,12 @@ p.klein{font-size:13px; opacity:.8; margin:6px 0 2px;}
 /* ==================================================================
    Teddy ärgert dich nicht - nach dem Vorbild von "Mensch ärgere dich
    nicht": Du gegen drei Teddys. Eine Datei, keine Bibliotheken, kein Netz.
-   Der Würfel ist ein kleiner Physik-Körper in einer Schale: Schütteln
-   des Handys oder ein Wurf mit dem Finger bestimmen, wie er fällt.
+   Der Würfel ist ein kleiner Physik-Körper in einer Schale: ein Wurf mit
+   dem Finger bestimmt, wie er fällt.
    ================================================================== */
 
 /* ---------- Einstellungen ---------- */
-var cfg = { v:2, stufe:2, schlagzwang:true, team:false, schuetteln:true, bestaetigen:false, vibrate:true, sound:false,
+var cfg = { v:2, stufe:2, schlagzwang:true, team:false, bestaetigen:false, vibrate:true, sound:false,
             sitze:['mensch','teddy','teddy','teddy'], namen:['','','',''], vorschau:false };
 var saved = lsGet('teddy.aerger.cfg', null);
 /* Fassung 1 kannte nur zwei Stufen - deren Nummern bedeuten heute etwas anderes */
@@ -362,10 +362,10 @@ function stossAnEcke(W, r, n){
   W.om[0] += PH.INV_I*jt*rt[0]; W.om[1] += PH.INV_I*jt*rt[1]; W.om[2] += PH.INV_I*jt*rt[2];
 }
 
-/* Ein Zeitschritt; `aussen` ist die Scheinkraft aus dem Schütteln (Einheiten/s²). */
-function schritt(W, dt, aussen){
+/* Ein Zeitschritt */
+function schritt(W, dt){
   var i, k, it;
-  W.v[0] += aussen[0]*dt; W.v[1] += aussen[1]*dt; W.v[2] += (aussen[2] - PH.G)*dt;
+  W.v[2] -= PH.G*dt;
   var dl = 1 - 0.15*dt, dw = 1 - 0.3*dt;
   for (i=0;i<3;i++){ W.v[i] *= dl; W.om[i] *= dw; }
   W.p[0] += W.v[0]*dt; W.p[1] += W.v[1]*dt; W.p[2] += W.v[2]*dt;
@@ -408,7 +408,7 @@ function ruhePruefen(W, dt, rnd){
   return false;
 }
 
-/* In der Hand oder im Becher wird der Würfel durchgemischt: Er verlässt sie in
+/* In der Hand wird der Würfel durchgemischt: Er verlässt sie in
    einer ganz zufälligen Lage. Weil der Würfel symmetrisch ist, wird dadurch
    jede Augenzahl exakt gleich wahrscheinlich - welche es wird, entscheidet
    dann der Flug durch die Schale, also Richtung und Schwung des Wurfs. */
@@ -435,7 +435,7 @@ function fingerWurf(W, v, rnd){
   /* Richtung vom Finger, Schwung mindestens so viel, dass er sicher kullert */
   var ziel = Math.max(40, Math.min(65, sp));
   v = [v[0]/sp*ziel, v[1]/sp*ziel]; sp = ziel;
-  W.p[2] = Math.max(W.p[2], 2.6);        /* aus der Hand bzw. dem Becher: er fällt erst */
+  W.p[2] = Math.max(W.p[2], 2.6);        /* aus der Hand: er fällt erst */
   W.q = gemischteLage(rnd);
   W.v = [v[0], v[1], 18 + sp*0.2];
   /* Rollen in Wurfrichtung, dazu ein Hauch Luftwirbel */
@@ -651,13 +651,14 @@ function leeresBrett(){ return [[-1,-1,-1,-1],[-1,-1,-1,-1],[-1,-1,-1,-1],[-1,-1
 var SVGNS = 'http://www.w3.org/2000/svg';
 var $marken, $figuren, $geister, figEl = [], figPos = [];
 function glasFigur(p){
-  /* Kegel mit Kugelkopf aus getöntem Glas: Schatten in der Glasfarbe,
-     durchscheinender Körper, helle Lichtkante, Glanzpunkt am Kopf. */
+  /* Kegel mit Kugelkopf aus kräftig getöntem Glas: Schatten in der Glasfarbe,
+     kaum durchscheinender Körper mit dunklem Umriss, helle Lichtkante,
+     Glanzpunkt am Kopf. */
   return '<ellipse cx="1.1" cy="2.9" rx="3.9" ry="1.7" fill="url(#sch'+p+')"/>'+
     '<ellipse cx="0" cy="2.3" rx="3.1" ry="1.15" fill="rgba(0,0,0,.18)"/>'+
     '<path d="M-3.2 2.2 C-3.2 .2 -1.2 -1 -1.1 -2.4 L1.1 -2.4 C1.2 -1 3.2 .2 3.2 2.2 A3.2 1.25 0 0 1 -3.2 2.2 Z"'+
-      ' fill="url(#glas'+p+')" stroke="'+SPIELER[p].dunkel+'" stroke-width=".32" stroke-opacity=".75"/>'+
-    '<circle cx="0" cy="-3.9" r="2.3" fill="url(#kopf'+p+')" stroke="'+SPIELER[p].dunkel+'" stroke-width=".32" stroke-opacity=".75"/>'+
+      ' fill="url(#glas'+p+')" stroke="'+SPIELER[p].dunkel+'" stroke-width=".42"/>'+
+    '<circle cx="0" cy="-3.9" r="2.3" fill="url(#kopf'+p+')" stroke="'+SPIELER[p].dunkel+'" stroke-width=".42"/>'+
     '<path d="M-2.3 1.5 C-2.2 .1 -1 -.9 -.6 -2" stroke="#fff" stroke-opacity=".75" stroke-width=".45" fill="none" stroke-linecap="round"/>'+
     '<path d="M-2.2 2.9 A3 1 0 0 0 2.2 2.9" stroke="#fff" stroke-opacity=".45" stroke-width=".35" fill="none" stroke-linecap="round"/>'+
     '<ellipse cx="-.8" cy="-4.7" rx=".85" ry=".55" fill="#fff" fill-opacity=".92" transform="rotate(-25 -.8 -4.7)"/>'+
@@ -666,17 +667,17 @@ function glasFigur(p){
 function brettZeichnen(){
   var s = '<defs>', p, i;
   for (p=0;p<4;p++){
-    var f = SPIELER[p].farbe, d = SPIELER[p].dunkel, a = p === 3 ? .55 : .5;
+    var f = SPIELER[p].farbe, d = SPIELER[p].dunkel, a = p === 3 ? .88 : .85;
     s += '<linearGradient id="glas'+p+'" x1="0" x2="1" y1="0" y2="0">'+
-         '<stop offset="0" stop-color="'+d+'" stop-opacity=".9"/>'+
-         '<stop offset=".22" stop-color="'+f+'" stop-opacity="'+(a+.15)+'"/>'+
-         '<stop offset=".5" stop-color="'+f+'" stop-opacity="'+(a-.18)+'"/>'+
-         '<stop offset=".78" stop-color="'+f+'" stop-opacity="'+(a+.1)+'"/>'+
+         '<stop offset="0" stop-color="'+d+'" stop-opacity=".98"/>'+
+         '<stop offset=".22" stop-color="'+f+'" stop-opacity="'+(a+.1)+'"/>'+
+         '<stop offset=".5" stop-color="'+f+'" stop-opacity="'+(a-.15)+'"/>'+
+         '<stop offset=".78" stop-color="'+f+'" stop-opacity="'+(a+.08)+'"/>'+
          '<stop offset="1" stop-color="'+d+'" stop-opacity=".95"/></linearGradient>'+
          '<radialGradient id="kopf'+p+'" cx=".35" cy=".3" r=".75">'+
          '<stop offset="0" stop-color="#fff" stop-opacity=".85"/>'+
-         '<stop offset=".3" stop-color="'+f+'" stop-opacity="'+(a-.1)+'"/>'+
-         '<stop offset=".8" stop-color="'+f+'" stop-opacity="'+(a+.2)+'"/>'+
+         '<stop offset=".3" stop-color="'+f+'" stop-opacity="'+(a-.05)+'"/>'+
+         '<stop offset=".8" stop-color="'+f+'" stop-opacity="'+Math.min(1, a+.12)+'"/>'+
          '<stop offset="1" stop-color="'+d+'" stop-opacity=".95"/></radialGradient>'+
          '<radialGradient id="sch'+p+'"><stop offset="0" stop-color="'+f+'" stop-opacity=".55"/>'+
          '<stop offset="1" stop-color="'+f+'" stop-opacity="0"/></radialGradient>';
@@ -806,7 +807,7 @@ function gleiten(p, i, ziel, ms, fertig){
 }
 
 /* ==================================================================
-   Würfelschale: Anzeige, Schütteln, Finger
+   Würfelschale: Anzeige und Finger
    ================================================================== */
 var W = neuerWuerfel(8, 6), pxProEinheit = 28, $seiten = [];
 function wuerfelBauen(){
@@ -839,89 +840,11 @@ function wuerfelZeigen(){
     $seiten[k].style.background = 'rgb('+v+','+Math.round(v*.992)+','+Math.round(v*.965)+')';
   }
   var hoehe = Math.max(0, W.p[2] - 1);
-  $schatten.style.transform = 'translate('+(x + hoehe*s*.35 + s*.12).toFixed(1)+'px,'+(y + hoehe*s*.5 + s*.18).toFixed(1)+'px) scale('+(1 + hoehe*.08).toFixed(3)+')';
-  $schatten.style.opacity = Math.max(.12, .9 - hoehe*.12).toFixed(2);
+  /* Weicher Fleck direkt unter dem Würfel - je höher er fliegt, desto blasser */
+  $schatten.style.transform = 'translate('+(x + s*.08).toFixed(1)+'px,'+(y + s*.12).toFixed(1)+'px) scale('+(1.35 + hoehe*.06).toFixed(3)+')';
+  $schatten.style.opacity = Math.max(0, 1 - hoehe*.3).toFixed(2);
 }
 
-/* Schütteln: Beschleunigung des Handys, ohne Schwerkraft, in Bildschirmrichtungen */
-var ruck = { x:0, y:0, z:0, t:0, geht:false, gx:0, gy:0, gz:0 };
-function bildschirmWinkel(){
-  var a = (screen.orientation && typeof screen.orientation.angle === 'number') ? screen.orientation.angle : (window.orientation || 0);
-  return a * Math.PI / 180;
-}
-window.addEventListener('devicemotion', function(e){
-  var a = e.acceleration, ax, ay, az;
-  if (a && a.x !== null && a.x !== undefined){ ax = a.x; ay = a.y; az = a.z; }
-  else if (e.accelerationIncludingGravity && e.accelerationIncludingGravity.x !== null){
-    /* ohne Gyroskop: Schwerkraft mit einem Tiefpass herausrechnen */
-    var g = e.accelerationIncludingGravity;
-    ruck.gx += (g.x - ruck.gx)*.1; ruck.gy += (g.y - ruck.gy)*.1; ruck.gz += (g.z - ruck.gz)*.1;
-    ax = g.x - ruck.gx; ay = g.y - ruck.gy; az = g.z - ruck.gz;
-  } else return;
-  var w = bildschirmWinkel(), c = Math.cos(w), s = Math.sin(w);
-  ruck.x = ax*c - ay*s;
-  ruck.y = -(ax*s + ay*c);
-  ruck.z = az || 0;
-  ruck.t = performance.now();
-  if (!ruck.geht){ ruck.geht = true; hinweisSetzen(); }
-  if (!schuettelnAktiv()){ schuettel.an = false; return; }
-  var staerke = Math.sqrt(ruck.x*ruck.x + ruck.y*ruck.y + ruck.z*ruck.z), jetzt = ruck.t;
-  if (staerke > 6){
-    if (!schuettel.an){ schuettel.an = true; schuettel.start = jetzt; schuettel.spitze = 0; }
-    schuettel.spitze = Math.max(schuettel.spitze, staerke);
-    schuettel.ruhigSeit = 0;
-    if (Math.abs(ruck.x) + Math.abs(ruck.y) > 3) schuettel.richtung = [-ruck.x, -ruck.y];
-    wecken();
-  } else if (schuettel.an){
-    if (!schuettel.ruhigSeit) schuettel.ruhigSeit = jetzt;
-    else if (jetzt - schuettel.ruhigSeit > 220) schuettelnVorbei();
-  }
-});
-/* Schütteln wie mit einem Würfelbecher: Solange du schüttelst, klappert der
-   Würfel in der Schale. Hältst du still, wird er aus dieser Lage heraus mit
-   dem Schwung deiner letzten Bewegung ausgekippt - erst das ist der Wurf. */
-var schuettel = { an:false, start:0, spitze:0, ruhigSeit:0, richtung:[0,0] };
-function schuettelnAktiv(){
-  return cfg.schuetteln && G.laeuft && G.phase === 'wuerfeln' && istMensch(G.dran) &&
-         !wurfAktiv && !W.gehalten && !$veil.classList.contains('on');
-}
-function schuettelnVorbei(){
-  var s = schuettel;
-  s.an = false;
-  if (!schuettelnAktiv()) return;
-  if (s.spitze < 11 || (s.ruhigSeit || ruck.t) - s.start < 150){
-    meldung('Kräftiger schütteln!', 1500, 'warn');
-    return;
-  }
-  /* Nach dem Schütteln klebt der Würfel meist an einer Wand - er fliegt
-     deshalb Richtung Mitte, von der letzten Bewegung zur Seite gelenkt. */
-  var rl = Math.sqrt(s.richtung[0]*s.richtung[0] + s.richtung[1]*s.richtung[1]) || 1;
-  var mx = W.breite/2 - W.p[0], my = W.tiefe/2 - W.p[1], ml = Math.sqrt(mx*mx + my*my) || 1;
-  var rx = mx/ml + .6*s.richtung[0]/rl, ry = my/ml + .6*s.richtung[1]/rl, rr = Math.sqrt(rx*rx + ry*ry) || 1;
-  var tempo = 40 + Math.min(1, (s.spitze - 11)/25) * 25;
-  var v = [rx/rr*tempo, ry/rr*tempo];
-  fingerWurf(W, v, zufall);
-  wurfAktiv = true;
-  wecken();
-}
-function scheinkraft(){
-  if (!schuettel.an || !schuettelnAktiv() || performance.now() - ruck.t > 150) return [0,0,0];
-  var k = -70;                       /* Die Schale bewegt sich, der Würfel will liegen bleiben */
-  return [ruck.x*k, ruck.y*k, ruck.z*k];
-}
-var bewegungGefragt = false;
-function bewegungErlauben(){
-  if (bewegungGefragt || !cfg.schuetteln) return;
-  bewegungGefragt = true;
-  if (window.DeviceMotionEvent && typeof DeviceMotionEvent.requestPermission === 'function'){
-    DeviceMotionEvent.requestPermission().then(function(r){
-      if (r !== 'granted') meldung('Schütteln nicht erlaubt', 2600, 'warn');
-    }).catch(function(){});
-  }
-}
-/* iOS fragt nur nach einem Antippen - also beim ersten Tipp irgendwo */
-document.addEventListener('touchend', bewegungErlauben);
-document.addEventListener('click', bewegungErlauben);
 
 /* ---------- Der Lauf der Würfelphysik ---------- */
 var laeuft = false, zuletzt = 0, vorrat = 0, zeitfaktor = 1, wurfAktiv = false, klackZeit = 0;
@@ -942,9 +865,9 @@ function schleife(t){
   var dt = Math.min(.05, (t - zuletzt)/1000) * zeitfaktor;
   zuletzt = t;
   if (!W.gehalten){
-    var aussen = scheinkraft(), n = 0;
+    var n = 0;
     vorrat += dt;
-    while (vorrat >= PH.DT && n < 20){ schritt(W, PH.DT, aussen); vorrat -= PH.DT; n++; }
+    while (vorrat >= PH.DT && n < 20){ schritt(W, PH.DT); vorrat -= PH.DT; n++; }
     if (ruhePruefen(W, dt, zufall)) wuerfelLiegt();
   } else {
     /* In der Hand: dreht sich ein wenig mit der Bewegung */
@@ -952,9 +875,7 @@ function schleife(t){
     W.q = qNorm([q[0]+.5*dq[0]*dt, q[1]+.5*dq[1]*dt, q[2]+.5*dq[2]*dt, q[3]+.5*dq[3]*dt]);
   }
   wuerfelZeigen();
-  /* Kommen keine Bewegungsdaten mehr, ist das Schütteln auch vorbei */
-  if (schuettel.an && performance.now() - ruck.t > 300) schuettelnVorbei();
-  if (W.wach || W.gehalten || schuettel.an) requestAnimationFrame(schleife);
+  if (W.wach || W.gehalten) requestAnimationFrame(schleife);
   else laeuft = false;
 }
 function wuerfelLiegt(){
@@ -1205,7 +1126,9 @@ function lupeAuf(e, pt, nah){
   lupeFenster = [pt[0] - fw/2, pt[1] - fw/2, fw, fw];
   lupeWahl = nah;
   $lupeSvg.setAttribute('viewBox', lupeFenster.join(' '));
-  $lupeSvg.innerHTML = $brett.innerHTML;
+  /* Eigene Kennungen für die Kopie: Sonst holen sich die Figuren auf dem Brett
+     ihre Glasfüllung aus der Lupe - und die ist nach dem Schließen unsichtbar. */
+  $lupeSvg.innerHTML = $brett.innerHTML.replace(/id="/g, 'id="lupe-').replace(/url\(#/g, 'url(#lupe-');
   /* über dem Finger, damit er nichts verdeckt - aber im Bild bleiben */
   var x = e.clientX - r.left - groesse/2, y = e.clientY - r.top - groesse - 24;
   if (y < 4) y = Math.min(r.height - groesse - 4, e.clientY - r.top + 24);
@@ -1214,7 +1137,7 @@ function lupeAuf(e, pt, nah){
   $lupe.classList.add('on');
   ton(620, .04);
 }
-function lupeZu(){ if ($lupe) $lupe.classList.remove('on'); }
+function lupeZu(){ if ($lupe && $lupe.classList.contains('on')){ $lupe.classList.remove('on'); $lupeSvg.innerHTML = ''; } }
 $lupe.addEventListener('pointerdown', function(e){
   e.stopPropagation();
   var pt = brettPunkt(e, $lupeSvg, lupeFenster);
@@ -1243,7 +1166,6 @@ function hinweisOhneTeam(){
   if (!istMensch(G.dran)) return G.phase === 'wuerfeln' ? name(G.dran)+' würfelt …' : '';
   if (G.phase === 'wuerfeln'){
     var v = G.versuche > 1 ? ' ('+G.versuche+' Versuche für eine Sechs)' : '';
-    if (cfg.schuetteln && ruck.geht) return 'Schüttle das Handy und halte dann still – oder wirf den Würfel mit dem Finger'+v;
     return 'Wirf den Würfel mit dem Finger – oder tippe auf „Würfeln“'+v;
   }
   if (G.phase === 'ziehen')
@@ -1349,7 +1271,7 @@ function spielLaden(){
 }
 /* Ein Wurf, der beim Wechsel noch rollt, gehört nicht ins neue Spiel */
 function wurfVergessen(){
-  wurfAktiv = false; W.gehalten = false; griff = null; schuettel.an = false; zeitfaktor = 1;
+  wurfAktiv = false; W.gehalten = false; griff = null; zeitfaktor = 1;
   lupeZu();
 }
 function neuesSpiel(){
@@ -1410,7 +1332,7 @@ $dlg.addEventListener('click', function(e){
   ton(500,.05);
   if (a === 'zu') zu();
   else if (a === 'neu') zeigeStart(true);
-  else if (a === 'los'){ bewegungErlauben(); zu(); neuesSpiel(); }
+  else if (a === 'los'){ if (!anzahl(cfg.sitze, 'mensch')){ zeigeStart(startNurNeu); return; } zu(); neuesSpiel(); }
   else if (a === 'sitz'){
     cfg.sitze[parseInt(n.getAttribute('data-p'), 10)] = v;
     if (anzahl(cfg.sitze, 'frei') > 0) cfg.team = false;
@@ -1427,7 +1349,6 @@ $dlg.addEventListener('click', function(e){
     cfg[f] = !cfg[f]; saveCfg();
     n.className = 'sw' + (cfg[f] ? ' on' : '');
     if (f === 'sound' && cfg.sound) ton(660,.08);
-    if (f === 'schuetteln' && cfg.schuetteln){ bewegungGefragt = false; bewegungErlauben(); }
     if (f === 'bestaetigen' || f === 'vorschau'){ if (f === 'bestaetigen') G.auswahl = null; markenZeigen(); }
     if (f === 'team') zeigeStart(startNurNeu);
   }
@@ -1472,10 +1393,15 @@ function zeigeStart(nurNeu){
   h += schalter('team', 'Team-Variante',
                 mit === 4 ? 'Rot + Gelb gegen Blau + Schwarz. Du darfst auch die Figuren deines Partners ziehen.'
                           : 'Nur mit vier Mitspielern.', mit !== 4);
-  h += schalter('schuetteln', 'Würfeln durch Schütteln', 'Sonst wirfst du den Würfel mit dem Finger.');
-  h += '<div class="row"><button class="btn go" data-act="los"'+(mit >= 2 ? '' : ' disabled')+'>'+
+  h += '<h3>Hilfen</h3>';
+  h += schalter('vorschau', 'Zughilfe', 'Zeigt, welche Figuren ziehen können, und mit einer blassen Glasfigur, wo sie landen.');
+  h += schalter('bestaetigen', 'Zug bestätigen', 'Erst Figur antippen, dann nochmal tippen zum Ziehen.');
+  /* Mindestens zwei Mitspieler, und mindestens einer davon ein Mensch */
+  var menschen = anzahl(cfg.sitze, 'mensch'), geht = mit >= 2 && menschen >= 1;
+  h += '<div class="row"><button class="btn go" data-act="los"'+(geht ? '' : ' disabled')+'>'+
        '<span class="ico">&#9654;</span>Los geht’s</button></div>';
   if (mit < 2) h += '<p class="klein" style="color:var(--rot2)">Es müssen mindestens zwei mitspielen.</p>';
+  else if (!menschen) h += '<p class="klein" style="color:var(--rot2)">Teddy möchte nicht alleine spielen.</p>';
   h += '<div class="row">'+
        '<button class="btn" data-act="hilfe"><span class="ico">?</span>Regeln</button>'+
        '<button class="btn" data-act="bilanz"><span class="ico">&#9733;</span>Bilanz</button>';
@@ -1498,7 +1424,6 @@ function zeigeOptionen(){
   var h = '<h2>Einstellungen</h2>';
   h += schalter('bestaetigen', 'Zug bestätigen', 'Erst Figur antippen, dann nochmal tippen zum Ziehen.');
   h += schalter('vorschau', 'Zughilfe', 'Zeigt, welche Figuren ziehen können, und mit einer blassen Glasfigur, wo sie landen.');
-  h += schalter('schuetteln', 'Würfeln durch Schütteln');
   h += schalter('sound', 'Ton');
   h += schalter('vibrate', 'Vibration');
   if (G.laeuft)
@@ -1545,9 +1470,8 @@ function zeigeErgebnis(gewinner, b){
 function zeigeHilfe(){
   auf('<h2>Regeln</h2>'+
   '<h3>Ziel</h3><p>Bring alle vier Figuren deiner Farbe einmal um das Brett herum in deine vier Zielfelder. Wer zuerst alle vier im Ziel hat, gewinnt.</p>'+
-  '<h3>Mitspieler</h3><p>Im Startbild legst du für jede Farbe fest, ob ein Mensch, ein Teddy oder niemand sie spielt. Menschen können ihren Namen eintragen. Mehrere Menschen würfeln und ziehen reihum am selben Gerät. Die Teddys gibt es in vier Stärken, von Gemütlich bis Meister.</p>'+
+  '<h3>Mitspieler</h3><p>Im Startbild legst du für jede Farbe fest, ob ein Mensch, ein Teddy oder niemand sie spielt – mindestens ein Mensch muss dabei sein. Menschen können ihren Namen eintragen. Mehrere Menschen würfeln und ziehen reihum am selben Gerät. Die Teddys gibt es in vier Stärken, von Gemütlich bis Meister.</p>'+
   '<h3>Würfeln</h3><ul>'+
-  '<li><b>Schütteln:</b> Schüttle das Handy und halte dann still – der Würfel wird wie aus einem Becher ausgekippt. Wo er liegen bleibt, zählt die obere Seite.</li>'+
   '<li><b>Mit dem Finger:</b> Greif den Würfel in der Schale, zieh ihn und lass ihn im Schwung los – wie ein echter Wurf.</li>'+
   '<li><b>Knopf „Würfeln“:</b> wirft den Würfel für dich.</li>'+
   '<li>Bleibt er schief an der Wand liegen, kippt er von selbst um.</li></ul>'+
