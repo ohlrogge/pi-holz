@@ -20,7 +20,7 @@
   --schrift:"Arial Rounded MT Bold","Arial Rounded MT",ui-rounded,"SF Pro Rounded","Helvetica Rounded","Nunito","Trebuchet MS",sans-serif;
   --grund:#e4d3b2;
   --dunkel:#3b2314; --tinte:#2e1b0f;
-  --rot:#8c1419; --rot2:#6e0f13;
+  --rot:#8e151b; --rot2:#6e0f13;
   --beige:#f1e2c0;
   --brett:#cfa86e; --linie:#4a2b17;
 }
@@ -65,16 +65,12 @@ body{
 .stein.neu{animation:setzen .18s ease-out;}
 @keyframes setzen{from{transform:scale(.35); opacity:0;} to{transform:scale(1); opacity:1;}}
 .stein.weg{transition:opacity .28s, transform .28s; opacity:0; transform:scale(.4);}
-/* Stein 1: beige mit dunkler Muehle, Stein 2: dunkel mit beiger Muehle */
-.k1{fill:#f1e2c0; stroke:#9c7743; stroke-width:2.5;}
-.k2{fill:#4a2b17; stroke:#241208; stroke-width:2.5;}
-.r1{fill:none; stroke:#dcc79d; stroke-width:2;}
-.r2{fill:none; stroke:#5e3a21; stroke-width:2;}
-.m1{color:#4a2b17; --st:#f1e2c0;}
-.m2{color:#ead3a2; --st:#4a2b17;}
-.h1{color:#fffaf0; --st:#fffaf0; opacity:.75;}
-.h2{color:#1c0d05; --st:#1c0d05; opacity:.6;}
-.ring{fill:none; stroke:var(--rot); stroke-width:6;}
+/* In den Farben des Logos: Stein 1 weiss mit roter Muehle, Stein 2 rot mit weisser Muehle */
+.k1{fill:#fff; stroke:#b9aea0; stroke-width:2.5;}
+.k2{fill:#8e151b; stroke:#5a0c10; stroke-width:2.5;}
+.m1{color:#8e151b;}
+.m2{color:#fff;}
+.ring{fill:none; stroke:var(--dunkel); stroke-width:6;}
 .ring.weg{stroke-dasharray:14 9; animation:kreisen 1.2s linear infinite;}
 @keyframes kreisen{to{stroke-dashoffset:-46;}}
 .ziel{fill:rgba(140,20,25,.55);}
@@ -139,7 +135,7 @@ table.sc tr.me{background:rgba(140,20,25,.14);}
 
 /* ---------- Startbild ---------- */
 #title{text-align:center; margin-bottom:12px;}
-#title svg{width:96px; height:96px; display:block; margin:0 auto 8px;}
+#title svg{width:120px; height:95px; display:block; margin:0 auto 8px;}
 #title .nm{font-size:34px; line-height:1.05; color:var(--rot); letter-spacing:.5px;}
 #title .streifen{height:6px; margin:10px 18px 0; background:var(--dunkel);}
 
@@ -161,25 +157,11 @@ table.sc tr.me{background:rgba(140,20,25,.14);}
 </style>
 </head>
 <body>
-<!-- Die Windmuehle als Gravur, frei nach dem Logo der Goetzberger Windmuehle.
-     Fuellung = currentColor, die Luecke zwischen Fluegeln und Rumpf in --st. -->
+<!-- Die Windmuehle aus dem Logo der Goetzberger Windmuehle, aus dem Original nachgezeichnet.
+     Fuellung = currentColor. -->
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
-  <symbol id="muehle" viewBox="0 0 100 100">
-    <path d="M30 89 H70 V97 H30 Z" fill="currentColor"/>
-    <path d="M34 90 C39 80 41 70 42 60 L58 60 C59 70 61 80 66 90 Z" fill="currentColor"/>
-    <path d="M39 61 C39 44 61 44 61 61 Z" fill="currentColor"/>
-    <g transform="translate(50 50)" fill="currentColor" style="stroke:var(--st,#000); stroke-width:5; paint-order:stroke;">
-      <g transform="rotate(-52)">
-        <rect x="-47" y="-2.4" width="94" height="4.8"/>
-        <rect x="13" y="-14" width="34" height="9"/>
-        <rect x="-47" y="5" width="34" height="9"/>
-      </g>
-      <g transform="rotate(34)">
-        <rect x="-47" y="-2.4" width="94" height="4.8"/>
-        <rect x="13" y="-14" width="34" height="9"/>
-        <rect x="-47" y="5" width="34" height="9"/>
-      </g>
-    </g>
+  <symbol id="muehle" viewBox="143 96 481 481">
+    <path fill="currentColor" d="M388 300 L464 180 L466 174 L485 146 L510 103 L515 96 L522 99 L525 104 L487 163 L470 193 L464 200 L462 206 L430 255 L428 261 L422 268 L400 306 L396 309 L390 305Z M435 266 L454 238 L532 110 L536 108 L564 125 L567 128 L566 131 L470 286 L468 288 L462 286 L455 280 L438 271Z M172 167 L190 138 L193 136 L260 179 L290 196 L297 202 L303 204 L348 232 L352 235 L352 238 L334 267 L330 268 L194 184 L187 178 L173 171Z M160 187 L166 178 L176 183 L262 238 L268 240 L296 259 L302 261 L317 272 L323 274 L338 285 L368 302 L373 306 L372 309 L367 316 L362 314Z M359 284 L374 278 L390 279 L379 297 L373 295Z M406 313 L419 292 L423 292 L441 314 L447 328 L448 339 L444 339Z M320 335 L323 323 L332 307 L361 324 L360 329 L344 354 L322 353 L320 351Z M395 331 L402 323 L608 452 L602 461 L598 460 L413 344 L407 342 L400 336 L396 335Z M242 536 L369 331 L371 330 L379 335 L379 340 L352 381 L255 540 L250 543Z M382 352 L386 345 L391 342 L406 353Z M201 509 L297 354 L301 351 L332 370 L332 374 L313 402 L235 530 L231 531 L227 529 L220 523 L203 514Z M278 520 L353 401 L373 366 L375 364 L425 364 L426 367 L424 371 L409 394 L407 393 L407 388 L404 386 L400 386 L397 390 L404 460 L412 492 L421 512 L350 512 L360 483 L368 443 L373 389 L370 386 L366 386 L363 390 L361 419 L353 470 L340 512 L337 514Z M415 402 L436 370 L472 394 L594 468 L596 471 L577 502 L574 503Z M409 414 L414 414 L460 443 L472 481 L485 506 L496 519 L495 522 L434 514 L431 511 L424 496 L415 465Z M263 545 L268 536 L273 532 L339 523 L432 523 L456 526 L505 534 L505 577 L265 578 L263 576Z"/>
   </symbol>
 </svg>
 <div id="wrap">
@@ -208,7 +190,7 @@ table.sc tr.me{background:rgba(140,20,25,.14);}
    Götzberger Mühle - das Brettspiel Mühle mit Teddy als Mitspieler
    Eine Datei, keine Bibliotheken, kein Netz.
    Gewidmet der Götzberger Windmühle in Henstedt-Ulzburg; die Steine
-   tragen ihre Mühle als Gravur. Die Spielregeln sind die klassischen
+   tragen ihr Logo in dessen Farben. Die Spielregeln sind die klassischen
    von Mühle (9 Steine, setzen, ziehen, springen).
    ================================================================== */
 
@@ -465,10 +447,8 @@ var SVGNS = 'http://www.w3.org/2000/svg';
 function px(idx){ return 50 + 100 * PUNKTE[idx][0]; }
 function py(idx){ return 50 + 100 * PUNKTE[idx][1]; }
 function steinInhalt(s){
-  var h = s === 1 ? 'h1' : 'h2', d = s === 1 ? 1.4 : -1.2;
-  return '<circle r="40" class="k'+s+'"/><circle r="34" class="r'+s+'"/>'+
-    '<use href="#muehle" x="'+(-27+d)+'" y="'+(-29+d)+'" width="54" height="54" class="'+h+'"/>'+
-    '<use href="#muehle" x="-27" y="-29" width="54" height="54" class="m'+s+'"/>';
+  return '<circle r="41" class="k'+s+'"/>'+
+    '<use href="#muehle" x="-31" y="-33" width="62" height="62" class="m'+s+'"/>';
 }
 function brettZeichnen(){
   var s = '';
@@ -786,8 +766,8 @@ $dlg.addEventListener('click', function(e){
 });
 
 function muehlenLogo(){
-  return '<svg viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="48" fill="#8c1419"/>'+
-    '<use href="#muehle" x="14" y="12" width="72" height="72" style="color:#fff; --st:#8c1419;"/></svg>';
+  return '<svg viewBox="30 20 709 560" aria-hidden="true"><path d="M93 577 A353 353 0 1 1 675 577 Z" fill="#8e151b"/>'+
+    '<use href="#muehle" x="143" y="96" width="481" height="481" style="color:#fff;"/></svg>';
 }
 function stufenListe(aktionName){
   var h = '<div class="lvl">';
@@ -866,7 +846,7 @@ function zeigeErgebnis(gewinner, grund, sieger, bilanz){
 function zeigeHilfe(){
   auf('<h2>Mühle – Regeln</h2>'+
   '<h3>Ziel</h3><p>Nimm dem Gegner so viele Steine weg, dass er nur noch zwei hat – oder sperre ihn so ein, dass er nicht mehr ziehen kann.</p>'+
-  '<h3>Setzen</h3><p>Jede Seite hat <b>neun Steine</b>. Abwechselnd setzt ihr sie auf freie Punkte. Du hast die hellen Steine und fängst an.</p>'+
+  '<h3>Setzen</h3><p>Jede Seite hat <b>neun Steine</b>. Abwechselnd setzt ihr sie auf freie Punkte. Du hast die weißen Steine und fängst an.</p>'+
   '<h3>Ziehen</h3><p>Sind alle Steine gesetzt, schiebt ihr abwechselnd einen eigenen Stein entlang einer Linie auf einen freien Nachbarpunkt. '+
   'Tippe erst deinen Stein an, dann das Ziel.</p>'+
   '<h3>Springen</h3><p>Wer nur noch <b>drei Steine</b> hat, darf mit einem davon auf jeden freien Punkt springen.</p>'+
