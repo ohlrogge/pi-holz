@@ -36,9 +36,17 @@
       text-align: center;
     }
     p.subtitle {
-      margin: 0 0 36px;
+      margin: 0 0 18px;
       opacity: 0.7;
       text-align: center;
+    }
+    .wer {
+      display: flex; align-items: center; gap: 10px; justify-content: center;
+      margin: 0 0 30px; font-size: 15px; opacity: 0.85;
+    }
+    .wer input {
+      font: inherit; width: 9em; padding: 7px 10px; color: inherit;
+      background: #fff; border: 2px solid rgba(0,0,0,0.25); border-radius: 9px;
     }
     .grid {
       display: grid;
@@ -99,6 +107,7 @@
     @media (prefers-color-scheme: dark) {
       body { background: #1e1a15; color: #f1e9dc; }
       .card { background: #2a251e; box-shadow: 0 4px 14px rgba(0,0,0,0.4); }
+      .wer input { background: #2a251e; border-color: rgba(255,255,255,0.22); }
       .stand.weiter { color: #7cd47c; }
     }
   </style>
@@ -106,6 +115,9 @@
 <body>
   <h1>🧸 Teddys Spieleecke</h1>
   <p class="subtitle">Einfach ein Spiel auswählen</p>
+  <!-- Gilt in allen Spielen als Vorgabe; jedes Spiel darf einen eigenen Namen behalten. -->
+  <p class="wer"><label for="wer">Wer spielt?</label>
+    <input id="wer" type="text" maxlength="14" autocomplete="off" placeholder="Dein Name"></p>
   <div class="grid">
     <div class="card">
       <a class="card-link" href="teddikub.html">
@@ -202,7 +214,7 @@
       </a>
     </div>
     <div class="card">
-      <a class="card-link" href="teddyaergert.html">
+      <a class="card-link" href="teddyaergertdichnicht.html">
         <span class="icon"><svg viewBox="0 0 72 72" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
           <defs><linearGradient id="aergerGlas" x1="0" x2="1" y1="0" y2="0">
             <stop offset="0" stop-color="#7d0d12" stop-opacity=".98"/><stop offset=".3" stop-color="#d8232b" stop-opacity=".95"/>
@@ -252,6 +264,12 @@
 <script>
 /* Jedes Spiel legt in seinem Spielstand ein kurzes Feld "fortsetzen" ab.
    Die Ecke zeigt nur diesen Text, damit sie kein Speicherformat kennen muss. */
+(function(){
+  var feld = document.getElementById('wer');
+  feld.value = meinName();
+  feld.addEventListener('input', function(){ meinNameSetzen(feld.value); });
+})();
+
 (function(){
   var felder = document.querySelectorAll('.stand');
   for (var i = 0; i < felder.length; i++){

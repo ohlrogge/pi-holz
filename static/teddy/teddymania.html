@@ -925,7 +925,7 @@ function finish(won){
     var box=document.createElement('div');
     box.innerHTML=msg+'<p>Eintrag in der Bestenliste – Name:</p>';
     var inp=document.createElement('input'); inp.type='text'; inp.maxLength=16;
-    inp.value=lsGet('teddy.mania.name','Spieler'); box.appendChild(inp);
+    inp.value=lsGet('teddy.mania.name', meinName() || 'Spieler'); box.appendChild(inp);
     dialog({ title:'Spiel beendet', body:box, buttons:[
       {label:'OK', fn:function(){
         var nm=(inp.value||'Spieler').substring(0,16);

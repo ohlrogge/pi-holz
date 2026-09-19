@@ -530,6 +530,8 @@ table.sc tr.me{background:rgba(255,210,58,.3);}
 var cfg = { v:2, minOut:30, ki:2, foes:2, vibrate:true, sortMode:'n', feld:'nacht', feldV:1,
             namen:['Du','Bello','Luna','Nero'] };
 var NAMEN_STD = ['Du','Bello','Luna','Nero'];
+/* Der eigene Platz heisst wie in der Spieleecke eingetragen. */
+function namensVorgabe(i){ return i === 0 ? (meinName() || NAMEN_STD[0]) : NAMEN_STD[i]; }
 var savedCfg = lsGet('teddy.kub.cfg', null);
 if (savedCfg){
   for (var ck in savedCfg) if (ck in cfg) cfg[ck] = savedCfg[ck];
@@ -575,7 +577,9 @@ function feldAnwenden(){
 }
 function spielerName(i){
   var n = (cfg.namen && cfg.namen[i] || '').toString().trim();
-  return n ? n.slice(0,14) : NAMEN_STD[i];
+  /* "Du" ist der Platzhalter des eigenen Platzes, kein eingetragener Name. */
+  if (i === 0 && n === NAMEN_STD[0]) n = '';
+  return n ? n.slice(0,14) : namensVorgabe(i);
 }
 function stufenKurz(){ return cfg.minOut + ' Punkte · ' + KI_NAMEN[cfg.ki]; }
 
@@ -2372,7 +2376,7 @@ function bindeRegler(){
     };
     f.onblur = function(){
       var i = parseInt(f.getAttribute('data-i'), 10);
-      if (!f.value.trim()){ cfg.namen[i] = NAMEN_STD[i]; f.value = NAMEN_STD[i]; saveCfg(); }
+      if (!f.value.trim()){ cfg.namen[i] = NAMEN_STD[i]; f.value = namensVorgabe(i); saveCfg(); }
     };
   })(felder[q]);
   var rm = el('regMin'), rk = el('regKi');
@@ -2432,7 +2436,7 @@ function zeigeOptionen(){
   for (var q=0;q<=cfg.foes;q++)
     h += '<label><span>'+(q===0?'Du':'Gegner '+q)+'</span>'+
          '<input type="text" class="nam" data-i="'+q+'" maxlength="14" value="'+
-         spielerName(q).replace(/"/g,'&quot;')+'" placeholder="'+NAMEN_STD[q]+'"></label>';
+         spielerName(q).replace(/"/g,'&quot;')+'" placeholder="'+namensVorgabe(q)+'"></label>';
   h += '</div>';
   h += '<div class="opt"><label>Vibration</label><div class="sw'+(cfg.vibrate?' on':'')+'" data-act="sw" data-f="vibrate"><i></i></div></div>';
   h += '<p style="margin-top:12px;font-size:13px;opacity:.8;">Regler, Gegnerzahl und Namen gelten ab dem nächsten neuen Spiel.</p>';

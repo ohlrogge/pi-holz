@@ -577,7 +577,8 @@ function anzahl(sitze, art){ return sitze.filter(function(s){ return s === art; 
    einzelner Mensch "Du"; sonst heißen alle nach ihrer Farbe. */
 function name(p){
   if (istMensch(p) && G.namen[p]) return G.namen[p];
-  return istMensch(p) && anzahl(G.sitze, 'mensch') === 1 ? 'Du' : SPIELER[p].wort;
+  if (istMensch(p) && anzahl(G.sitze, 'mensch') === 1) return meinName() || 'Du';
+  return SPIELER[p].wort;
 }
 function esc(t){ return String(t).replace(/[&<>"]/g, function(c){ return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]; }); }
 function namenAufraeumen(namen){

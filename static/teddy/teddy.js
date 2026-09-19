@@ -51,6 +51,16 @@ function lsDel(k){
   try{ localStorage.removeItem(k); }catch(e){}
 }
 
+/* ---------- Der Name des Hauptspielers ----------
+   Wird in der Spieleecke eingetragen und gilt in allen Spielen als Vorgabe.
+   Ein Spiel darf ihn fuer sich ueberschreiben; dann gewinnt der eigene Name. */
+function meinName(){
+  return String(lsGet('teddy.name', '') || '').replace(/\s+/g, ' ').trim().slice(0, 14);
+}
+function meinNameSetzen(n){
+  lsSet('teddy.name', String(n || '').replace(/\s+/g, ' ').trim().slice(0, 14));
+}
+
 /* Sichern gehoert nicht in den Zeichenweg. Die Spiele melden nach einem Zug
    nur an, dass sich etwas geaendert hat; geschrieben wird einmal in der
    naechsten Ruhepause - oder sofort, wenn die Seite weggeht. */

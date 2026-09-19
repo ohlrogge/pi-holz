@@ -51,7 +51,7 @@ body{
 /* ---------- Spielfeld ---------- */
 #boardframe{
   flex:1 1 auto; min-height:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
-  gap:8px; padding:8px;
+  gap:6px; padding:4px;
 }
 /* Geschlagene Steine: hochkant oben und unten, quer links und rechts */
 #boardframe.quer{flex-direction:row;}
@@ -126,6 +126,24 @@ body{
   background:var(--beige); color:var(--tinte); font-family:var(--schrift);
 }
 .lvl button.an{background:var(--rot); color:#fff;}
+.feld{font-size:14px; opacity:.85; margin-top:12px;}
+.seg{display:flex; gap:6px; margin-top:5px;}
+.seg button{
+  flex:1 1 0; min-width:0; cursor:pointer; text-align:center;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  border:2px solid var(--dunkel); border-radius:10px; padding:9px 3px; font-size:15px;
+  background:var(--beige); color:var(--tinte); font-family:var(--schrift);
+}
+.seg button.an{background:var(--rot); color:#fff;}
+.seg button:active{opacity:.75;}
+.seg em{display:block; font-style:normal; font-size:11px; opacity:.7; margin-top:2px;}
+.hint{font-size:13px; opacity:.8; margin:5px 0 0;}
+.namen{display:flex; flex-direction:column; gap:6px; margin-top:5px;}
+.namen input{
+  width:100%; font-family:var(--schrift); font-size:16px; padding:8px 10px;
+  color:var(--tinte); background:var(--beige); border:2px solid var(--dunkel); border-radius:10px;
+}
+.namen input::placeholder{color:#8d8a82;}
 .lvl button:active{opacity:.75;}
 .lvl b{flex:1 1 auto; font-weight:normal;}
 .lvl span{font-size:12px; opacity:.8; display:block; margin-top:1px;}
@@ -135,6 +153,7 @@ table.sc td.n{text-align:right;}
 table.sc tr.me{background:rgba(140,20,25,.14);}
 .opt{display:flex; align-items:center; justify-content:space-between; gap:10px; padding:8px 0; border-bottom:2px solid rgba(0,0,0,.12);}
 .opt label{font-size:15px;}
+.opt label span{display:block; font-size:12px; opacity:.75; margin-top:2px;}
 .sw{
   width:52px; height:28px; border-radius:14px; border:2px solid var(--dunkel); background:#c9b99a;
   position:relative; cursor:pointer; flex:0 0 auto;
@@ -145,7 +164,7 @@ table.sc tr.me{background:rgba(140,20,25,.14);}
 
 /* ---------- Startbild ---------- */
 #title{text-align:center; margin-bottom:12px;}
-#title svg{width:120px; height:95px; display:block; margin:0 auto 8px;}
+#title svg{width:104px; height:104px; display:block; margin:0 auto 8px;}
 #title .nm{font-size:34px; line-height:1.05; color:var(--rot); letter-spacing:.5px;}
 #title .streifen{height:6px; margin:10px 18px 0; background:var(--dunkel);}
 
@@ -153,6 +172,7 @@ table.sc tr.me{background:rgba(140,20,25,.14);}
   .btn{min-width:50px; min-height:50px; font-size:12px;}
   .btn .ico{font-size:19px;}
   .lvl button{padding:13px 14px; font-size:17px;}
+  .seg button{padding:12px 3px; min-height:50px;}
   .row .btn{min-height:50px; font-size:16px;}
   .dlg p,.dlg li{font-size:15px;}
   .sw{width:58px; height:32px; border-radius:16px;}
@@ -195,7 +215,7 @@ table.sc tr.me{background:rgba(140,20,25,.14);}
     <svg id="dranStein" class="aus" viewBox="-43 -42 86 86"></svg>
     <span id="statusTxt">Götzberger Mühle</span>
   </div>
-  <div id="boardframe"><div class="ablage" id="ablage2"></div><svg id="brett" viewBox="0 0 700 700" xmlns="http://www.w3.org/2000/svg">
+  <div id="boardframe"><div class="ablage" id="ablage2"></div><svg id="brett" viewBox="-26 -26 752 752" xmlns="http://www.w3.org/2000/svg">
     <rect x="4" y="4" width="692" height="692" rx="22" fill="var(--brett)" stroke="var(--dunkel)" stroke-width="8"/>
     <g id="linien"></g><g id="marken"></g><g id="steine"></g><g id="ringe"></g>
   </svg><div class="ablage" id="ablage1"></div></div>
@@ -220,9 +240,10 @@ table.sc tr.me{background:rgba(140,20,25,.14);}
    ================================================================== */
 
 /* ---------- Einstellungen ---------- */
-var cfg = { v:1, stufe:1, modus:'ki', vibrate:true, sound:false, hinweise:true };
+var cfg = { v:1, stufe:1, modus:'ki', anfang:'wechsel', zuletzt:0, namen:['','',''], vibrate:true, sound:false, hinweise:true, wegRinge:true };
 var saved = lsGet('teddy.muehle.cfg', null);
 if (saved) for (var ck in saved) if (ck in cfg) cfg[ck] = saved[ck];
+if (!(cfg.namen instanceof Array) || cfg.namen.length !== 3) cfg.namen = ['','',''];
 function saveCfg(){ lsSet('teddy.muehle.cfg', cfg); }
 
 var STUFEN = [
@@ -458,15 +479,23 @@ var G = {
   wahl:-1, wegnehmen:false, wegZiel:-1, ohneWeg:0, verlauf:{}
 };
 function istKI(s){ return G.modus !== 'zweit' && s === 2; }
-function spielerName(s){
-  if (s === 1) return 'Du';
-  return G.modus === 'zweit' ? 'Spieler 2' : 'Teddy';
+/* Ein eigener Name schlaegt den aus der Spieleecke, der schlaegt "Du".
+   Teddy behaelt seinen Namen. */
+function nameFuer(s, modus){
+  var eigen = String(cfg.namen[s] || '').trim();
+  if (eigen) return eigen;
+  if (s === 1) return meinName() || 'Du';
+  return modus === 'zweit' ? 'Spieler 2' : 'Teddy';
 }
+function spielerName(s){ return nameFuer(s, G.modus); }
+function esc(t){ return String(t).replace(/[&<>"]/g, function(c){ return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]; }); }
 function el(id){ return document.getElementById(id); }
 var $brett = el('brett'), $steine = el('steine'), $marken = el('marken'), $ringe = el('ringe'),
     $status = el('status'), $statusTxt = el('statusTxt'), $veil = el('veil'), $dlg = el('dlg'),
     $frame = el('boardframe');
 var SVGNS = 'http://www.w3.org/2000/svg';
+/* Muss zur viewBox von #brett passen. */
+var VB_ECKE = -26, VB_WEITE = 752;
 
 /* ---------- Zeichnen ---------- */
 function px(idx){ return 50 + 100 * PUNKTE[idx][0]; }
@@ -497,8 +526,11 @@ function steinInhalt(s){
 }
 function brettZeichnen(){
   var s = '';
-  [[50,650],[150,550],[250,450]].forEach(function(q){
-    s += '<rect class="linie" x="'+q[0]+'" y="'+q[0]+'" width="'+(q[1]-q[0])+'" height="'+(q[1]-q[0])+'"/>';
+  /* Nur der aeussere Rand des Spielfelds ist an den Ecken gebrochen, die
+     Linien im Feld bleiben scharf. */
+  [[50,650],[150,550],[250,450]].forEach(function(q, i){
+    s += '<rect class="linie"'+(i === 0 ? ' rx="3"' : '')+' x="'+q[0]+'" y="'+q[0]+
+         '" width="'+(q[1]-q[0])+'" height="'+(q[1]-q[0])+'"/>';
   });
   s += '<path class="linie" d="M350 50V250M350 450V650M50 350H250M450 350H650"/>';
   /* Die Vereinsmuehle blass im leeren Mittelfeld */
@@ -526,7 +558,9 @@ function markenZeichnen(){
   var m = '', r = '', i;
   if (G.laeuft){
     if (G.wegnehmen){
-      var ziele = istKI(G.dran) ? (G.wegZiel >= 0 ? [G.wegZiel] : []) : wegnehmbar(G.brett, gegner(G.dran));
+      /* Teddys Ziel wird immer gezeigt, das ist Rueckmeldung und keine Hilfe. */
+      var ziele = istKI(G.dran) ? (G.wegZiel >= 0 ? [G.wegZiel] : [])
+                                : (cfg.wegRinge ? wegnehmbar(G.brett, gegner(G.dran)) : []);
       for (i=0;i<ziele.length;i++) r += '<circle class="ring weg" cx="'+px(ziele[i])+'" cy="'+py(ziele[i])+'" r="46"/>';
     } else if (!G.warten && !istKI(G.dran) && G.wahl >= 0){
       r += '<circle class="ring" cx="'+px(G.wahl)+'" cy="'+py(G.wahl)+'" r="46"/>';
@@ -549,11 +583,11 @@ function zielpunkte(von){
    und unter dem Brett, quer links und rechts davon. */
 var MINI = 0.12;
 function brettGroesse(){
-  var breite = $frame.clientWidth - 16, hoehe = $frame.clientHeight - 16, quer = breite > hoehe;
+  var breite = $frame.clientWidth - 8, hoehe = $frame.clientHeight - 8, quer = breite > hoehe;
   $frame.classList.toggle('quer', quer);
   var lang = quer ? breite : hoehe, kurz = quer ? hoehe : breite;
-  var seite = Math.floor(Math.min(kurz, (lang - 16) / (1 + 2 * MINI)));
-  seite = Math.max(180, Math.min(720, seite));
+  var seite = Math.floor(Math.min(kurz, (lang - 12) / (1 + 2 * MINI)));
+  seite = Math.max(180, Math.min(780, seite));
   $brett.style.width = seite + 'px'; $brett.style.height = seite + 'px';
   document.documentElement.style.setProperty('--seite', seite + 'px');
   document.documentElement.style.setProperty('--mini', Math.floor(seite * MINI) + 'px');
@@ -564,10 +598,10 @@ beiGroessenwechsel(brettGroesse);
 function statusText(){
   if (!G.laeuft) return { t:'Götzberger Mühle', k:'' };
   var wer = spielerName(G.dran), du = G.dran === 1 && wer === 'Du';
-  if (G.dreht) return { t:wer + (du ? ' hast' : ' hat') + ' eine Mühle!', k:'warn' };
   if (G.wegnehmen) return istKI(G.dran)
     ? { t:wer + ' nimmt einen Stein weg', k:'warn' }
     : { t:'Mühle! ' + (du ? 'Nimm' : wer + ' nimmt') + ' einen Stein weg', k:'warn' };
+  if (G.dreht) return { t:wer + (du ? ' hast' : ' hat') + ' eine Mühle!', k:'warn' };
   if (G.warten) return { t:wer + ' überlegt …', k:'' };
   var ph = phaseVon(G.brett, G.vorrat, G.dran);
   if (ph === 'setzen') return { t:wer + ' setzt – noch ' + G.vorrat[G.dran], k:'' };
@@ -646,16 +680,29 @@ function spielLaden(){
   return true;
 }
 
+/* Wer beginnt. Bei 'wechsel' die Seite, die zuletzt nicht dran war. */
+function anfaenger(){
+  if (cfg.anfang === 'du') return 1;
+  if (cfg.anfang === 'gegner') return 2;
+  return cfg.zuletzt === 1 ? 2 : 1;
+}
 function neuesSpiel(){
-  saveCfg();
   G.modus = cfg.modus;
+  G.dran = anfaenger();
+  cfg.zuletzt = G.dran;
+  saveCfg();
   G.brett = []; for (var i=0;i<24;i++) G.brett.push(0);
-  G.vorrat = [0, 9, 9]; G.dran = 1; G.laeuft = true; G.warten = false;
+  G.vorrat = [0, 9, 9]; G.laeuft = true; G.warten = false;
   G.wahl = -1; G.wegnehmen = false; G.wegZiel = -1; G.ohneWeg = 0; G.verlauf = {};
   G.spielNr = (G.spielNr||0) + 1; G.dreht = false; ablageAlt = [0, -1, -1];
   steineAufbauen();
-  meldung('');
+  meldung(G.dran === 1 ? 'Los geht\u2019s \u2013 du f\u00e4ngst an!' : 'Los geht\u2019s \u2013 ' + spielerName(2) + ' f\u00e4ngt an!', 1800);
   aktualisieren();
+  if (istKI(G.dran)){
+    var nr = G.spielNr;
+    G.warten = true; aktualisieren();
+    setTimeout(function(){ teddyZug(nr); }, 700);
+  }
 }
 
 /* ---------- Rundenlauf ---------- */
@@ -702,12 +749,17 @@ function muehlenSteine(idx){
   }
   return out;
 }
-/* Eine geschlossene Muehle: erst den Zug zu Ende laufen lassen, dann drehen die
-   Fluegel aller Steine der Muehle einmal ganz herum (links herum, wie bei einer
-   echten Windmuehle). Erst danach geht es weiter. */
+/* Eine geschlossene Muehle: die Fluegel aller Steine der Muehle drehen einmal
+   ganz herum, links herum wie bei einer echten Windmuehle. Wer selbst am Zug
+   ist, darf waehrenddessen schon den Stein wegnehmen - gesperrt wird nur, wenn
+   ohnehin niemand etwas tun kann. */
 var DREH_DAUER = 1400;
-function muehleDrehen(nach, nr, danach){
-  G.dreht = true; G.warten = true; aktualisieren();
+var drehZaehler = 0;
+function muehleDrehen(nach, nr, sperren, danach){
+  var meine = ++drehZaehler;
+  G.dreht = true;
+  if (sperren) G.warten = true;
+  aktualisieren();
   setTimeout(function(){
     if (nr !== G.spielNr) return;
     var steine = muehlenSteine(nach).map(function(i){ return steinEl[i] && steinEl[i].firstChild; })
@@ -726,7 +778,12 @@ function muehleDrehen(nach, nr, danach){
       if (k < 1){ setTimeout(schritt, 16); return; }
       for (i=0;i<fluegel.length;i++) fluegel[i].removeAttribute('transform');
       for (i=0;i<steine.length;i++) steine[i].classList.remove('dreht');
-      setTimeout(function(){ if (nr === G.spielNr){ G.dreht = false; danach(); } }, 250);
+      setTimeout(function(){
+        if (nr !== G.spielNr) return;
+        if (meine === drehZaehler) G.dreht = false;
+        if (sperren) G.warten = false;
+        danach();
+      }, 250);
     }
     schritt();
   }, 340);
@@ -750,8 +807,9 @@ function steinWegnehmen(idx, danach){
   }
   if (!g || !ziel){ fertig(); return; }
   var br = $brett.getBoundingClientRect(), zr = ziel.getBoundingClientRect();
-  var x = (zr.left + zr.width/2 - br.left) / br.width * 700, y = (zr.top + zr.height/2 - br.top) / br.height * 700;
-  var k = zr.width * 700 / (92 * br.width);
+  var x = VB_ECKE + (zr.left + zr.width/2 - br.left) / br.width * VB_WEITE;
+  var y = VB_ECKE + (zr.top + zr.height/2 - br.top) / br.height * VB_WEITE;
+  var k = zr.width * VB_WEITE / (92 * br.width);
   $steine.appendChild(g);
   g.getBoundingClientRect();                         /* Umhaengen abschliessen, sonst springt er */
   g.style.transition = 'transform '+FLUG_DAUER+'ms cubic-bezier(.45,0,.3,1)';
@@ -784,11 +842,14 @@ function feldGetippt(idx){
   }
   G.wahl = -1;
   var nr = G.spielNr;
-  if (steinZiehen(von, idx, s)) muehleDrehen(idx, nr, function(){
-    G.warten = false;
-    if (wegnehmbar(G.brett, gegner(s)).length){ G.wegnehmen = true; aktualisieren(); }
-    else zugFertig(false);
-  });
+  if (steinZiehen(von, idx, s)){
+    var offen = wegnehmbar(G.brett, gegner(s)).length > 0;
+    if (offen) G.wegnehmen = true;
+    muehleDrehen(idx, nr, !offen, function(){
+      if (offen) aktualisieren();
+      else zugFertig(false);
+    });
+  }
   else zugFertig(false);
 }
 function teddyZug(nr){
@@ -814,7 +875,7 @@ function teddyZug(nr){
   var z = teddyWahl(G.brett, G.vorrat, stufe);
   if (!z){ spielEnde(gegner(s), 'blockiert'); return; }
   if (steinZiehen(z.von, z.nach, s)){
-    muehleDrehen(z.nach, nr, function(){
+    muehleDrehen(z.nach, nr, true, function(){
       if (z.weg < 0){ zugFertig(false); return; }
       G.wegnehmen = true; G.wegZiel = z.weg; G.warten = true; aktualisieren();
       setTimeout(function(){
@@ -834,7 +895,8 @@ var tapEvt = window.PointerEvent ? 'pointerdown' : 'mousedown';
 $brett.addEventListener(tapEvt, function(e){
   if (e.pointerType === 'mouse' && e.button !== 0) return;
   var r = $brett.getBoundingClientRect();
-  var x = (e.clientX - r.left) / r.width * 700, y = (e.clientY - r.top) / r.height * 700;
+  var x = VB_ECKE + (e.clientX - r.left) / r.width * VB_WEITE;
+  var y = VB_ECKE + (e.clientY - r.top) / r.height * VB_WEITE;
   var best = -1, bd = 60 * 60;
   for (var i=0;i<24;i++){
     var dx = px(i) - x, dy = py(i) - y, d = dx*dx + dy*dy;
@@ -869,6 +931,19 @@ function spielEnde(gewinner, grund){
 function auf(html){ $dlg.innerHTML = html; $veil.className = 'on'; $dlg.scrollTop = 0; }
 function zu(){ $veil.className = ''; }
 $veil.addEventListener('click', function(e){ if (e.target === $veil && G.laeuft) zu(); });
+/* Namen gleich mitschreiben. Der Dialog wird dabei nicht neu gebaut, sonst
+   waere der Fokus weg; die beiden Stellen, die den Namen zeigen, ziehen nach. */
+$dlg.addEventListener('input', function(e){
+  var n = e.target;
+  if (!n.classList || !n.classList.contains('namefeld')) return;
+  var p = parseInt(n.getAttribute('data-p'), 10);
+  cfg.namen[p] = n.value;
+  saveCfg();
+  var knopf = $dlg.querySelector('.seg button[data-act="anfang"][data-v="' + (p === 1 ? 'du' : 'gegner') + '"]');
+  if (knopf && knopf.firstChild) knopf.firstChild.nodeValue = nameFuer(p, cfg.modus);
+  var satz = el('anfangHint');
+  if (satz) satz.textContent = anfangSatz();
+});
 $dlg.addEventListener('click', function(e){
   var n = e.target;
   while (n && n !== $dlg && !(n.getAttribute && n.getAttribute('data-act'))) n = n.parentNode;
@@ -877,8 +952,10 @@ $dlg.addEventListener('click', function(e){
   ton(500, .05);
   if (a === 'zu') zu();
   else if (a === 'neu') zeigeStart(true);
-  else if (a === 'start'){ cfg.modus = 'ki'; if (v != null) cfg.stufe = parseInt(v, 10); zu(); neuesSpiel(); }
-  else if (a === 'zweit'){ cfg.modus = 'zweit'; zu(); neuesSpiel(); }
+  else if (a === 'los'){ zu(); neuesSpiel(); }
+  else if (a === 'gegner'){ cfg.modus = v; saveCfg(); zeigeStart(true); }
+  else if (a === 'anfang'){ cfg.anfang = v; saveCfg(); zeigeStart(true); }
+  else if (a === 'stufeStart'){ cfg.stufe = parseInt(v, 10); saveCfg(); zeigeStart(true); }
   else if (a === 'hilfe') zeigeHilfe();
   else if (a === 'opt') zeigeOptionen();
   else if (a === 'menu') zeigeMenu();
@@ -890,7 +967,7 @@ $dlg.addEventListener('click', function(e){
     cfg[f] = !cfg[f]; saveCfg();
     n.className = 'sw' + (cfg[f] ? ' on' : '');
     if (f === 'sound' && cfg.sound) ton(660, .08);
-    if (f === 'hinweise') markenZeichnen();
+    if (f === 'hinweise' || f === 'wegRinge') markenZeichnen();
   }
   else if (a === 'reset'){
     lsSet('teddy.muehle.bilanz', { du:0, teddy:0, unentschieden:0 });
@@ -899,22 +976,71 @@ $dlg.addEventListener('click', function(e){
   }
 });
 
+/* Im Startbild steht der rote Spielstein selbst, derselbe wie auf dem Brett. */
 function muehlenLogo(){
-  return '<svg viewBox="30 20 709 560" aria-hidden="true"><path d="M93 577 A353 353 0 1 1 675 577 Z" fill="#8e151b"/>'+
-    '<use href="#muehle" x="143" y="96" width="481" height="481" style="color:#fff;"/></svg>';
+  return '<svg viewBox="-46 -46 92 92" aria-hidden="true">'+steinInhalt(2)+'</svg>';
 }
-function stufenListe(aktionName){
+function stufenListe(){
   var h = '<div class="lvl">';
   for (var i=0;i<STUFEN.length;i++)
-    h += '<button data-act="'+aktionName+'" data-v="'+i+'" class="'+(cfg.stufe === i ? 'an' : '')+'">'+
+    h += '<button data-act="stufe" data-v="'+i+'" class="'+(cfg.stufe === i ? 'an' : '')+'">'+
          '<b>'+STUFEN[i].name+'<span>'+STUFEN[i].txt+'</span></b></button>';
   return h + '</div>';
 }
+function schalter(f, titel, unter){
+  return '<div class="opt"><label>'+titel+'<span>'+unter+'</span></label>'+
+         '<div class="sw'+(cfg[f] ? ' on' : '')+'" data-act="sw" data-f="'+f+'"><i></i></div></div>';
+}
+/* Eine Reihe gleich breiter Knoepfe, von denen einer angewaehlt ist. */
+function segZeile(titel, aktion, werte, aktiv){
+  var h = '<div class="feld">'+titel+'</div><div class="seg">';
+  for (var i=0;i<werte.length;i++){
+    var w = werte[i];
+    h += '<button data-act="'+aktion+'" data-v="'+w.v+'" class="'+(w.v === aktiv ? 'an' : '')+'">'+
+         w.name + (w.unten ? '<em>'+w.unten+'</em>' : '') + '</button>';
+  }
+  return h + '</div>';
+}
+/* Das Startbild stellt nur ein; gestartet wird allein mit "Spielen". */
+function anfangSatz(){
+  var meiner = nameFuer(1, cfg.modus);
+  if (anfaenger() === 1) return meiner === 'Du' ? 'Diesmal fängst du an.' : 'Diesmal fängt ' + meiner + ' an.';
+  return 'Diesmal fängt ' + nameFuer(2, cfg.modus) + ' an.';
+}
 function zeigeStart(nurNeu){
+  var zweit = cfg.modus === 'zweit';
+  var meiner = nameFuer(1, cfg.modus), gegnerName = nameFuer(2, cfg.modus);
   var h = '<div id="title">'+muehlenLogo()+'<div class="nm">Götzberger Mühle</div><div class="streifen"></div></div>';
-  h += '<h3>Gegen Teddy</h3>' + stufenListe('start');
-  h += '<div class="row"><button class="btn" data-act="zweit" style="flex:1 1 100%;">'+
-       '<span class="ico">&#128101;</span>Zu zweit spielen (ohne Teddy)</button></div>';
+
+  h += segZeile('Gegner', 'gegner', [{v:'ki', name:'Teddy'}, {v:'zweit', name:'Zu zweit'}], cfg.modus);
+
+  h += '<div class="feld">Namen</div><div class="namen">'+
+       '<input class="namefeld" data-p="1" type="text" maxlength="14" autocomplete="off" placeholder="'+
+       esc(meinName() || 'Du')+'" value="'+esc(cfg.namen[1] || '')+'">'+
+       (zweit ? '<input class="namefeld" data-p="2" type="text" maxlength="14" autocomplete="off"'+
+                ' placeholder="Spieler 2" value="'+esc(cfg.namen[2] || '')+'">' : '')+
+       '</div>';
+
+  if (!zweit){
+    var stufen = [];
+    for (var i=0;i<STUFEN.length;i++) stufen.push({ v:String(i), name:STUFEN[i].name });
+    h += segZeile('Stufe', 'stufeStart', stufen, String(cfg.stufe));
+    h += '<p class="hint">'+STUFEN[cfg.stufe].txt+'</p>';
+  }
+
+  h += segZeile('Anfang', 'anfang', [
+    { v:'du',      name:esc(meiner),     unten: cfg.zuletzt === 1 ? 'zuletzt' : '' },
+    { v:'gegner',  name:esc(gegnerName), unten: cfg.zuletzt === 2 ? 'zuletzt' : '' },
+    { v:'wechsel', name:'Abwechselnd' }
+  ], cfg.anfang);
+  h += '<p class="hint" id="anfangHint">'+esc(anfangSatz())+'</p>';
+
+  h += '<div class="feld">Hilfen</div>';
+  h += schalter('hinweise', 'Mögliche Züge zeigen', 'Markiert die Punkte, auf die der angetippte Stein ziehen kann.');
+  h += schalter('wegRinge', 'Wegnehmbare Steine einkreisen', 'Ringelt nach einer Mühle die gegnerischen Steine ein, die frei sind.');
+
+  h += '<div class="row"><button class="btn go" data-act="los" style="flex:1 1 100%;">'+
+       '<span class="ico">&#9654;</span>Spielen</button></div>';
   h += '<div class="row">'+
        '<button class="btn" data-act="opt"><span class="ico">&#9881;</span>Mehr</button>'+
        '<button class="btn" data-act="hilfe"><span class="ico">?</span>Regeln</button>';
@@ -932,8 +1058,9 @@ function zeigeMenu(){
     '<button data-act="ecke"><b>Zur Spieleecke</b></button></div>');
 }
 function zeigeOptionen(){
-  var h = '<h2>Einstellungen</h2><h3>Schwierigkeit</h3>' + stufenListe('stufe');
-  h += '<div class="opt"><label>Mögliche Züge anzeigen</label><div class="sw'+(cfg.hinweise?' on':'')+'" data-act="sw" data-f="hinweise"><i></i></div></div>';
+  var h = '<h2>Einstellungen</h2><h3>Schwierigkeit</h3>' + stufenListe();
+  h += schalter('hinweise', 'Mögliche Züge zeigen', 'Markiert die Punkte, auf die der angetippte Stein ziehen kann.');
+  h += schalter('wegRinge', 'Wegnehmbare Steine einkreisen', 'Ringelt nach einer Mühle die gegnerischen Steine ein, die frei sind.');
   h += '<div class="opt"><label>Ton</label><div class="sw'+(cfg.sound?' on':'')+'" data-act="sw" data-f="sound"><i></i></div></div>';
   h += '<div class="opt"><label>Vibration</label><div class="sw'+(cfg.vibrate?' on':'')+'" data-act="sw" data-f="vibrate"><i></i></div></div>';
   h += '<p style="margin-top:10px;font-size:13px;opacity:.8;">Die Schwierigkeit gilt ab dem nächsten neuen Spiel.</p>';
@@ -944,12 +1071,12 @@ function zeigeOptionen(){
 function zeigeBilanz(){
   var bk = bilanzLesen('ki'), bz = bilanzLesen('zweit');
   var h = '<h2>Bilanz</h2><h3>Gegen Teddy</h3><table class="sc">'+
-    '<tr class="me"><td>Du</td><td class="n">'+bk.du+'</td></tr>'+
-    '<tr><td>Teddy</td><td class="n">'+bk.teddy+'</td></tr>'+
+    '<tr class="me"><td>'+esc(nameFuer(1, 'ki'))+'</td><td class="n">'+bk.du+'</td></tr>'+
+    '<tr><td>'+esc(nameFuer(2, 'ki'))+'</td><td class="n">'+bk.teddy+'</td></tr>'+
     '<tr><td>Unentschieden</td><td class="n">'+bk.unentschieden+'</td></tr></table>';
   h += '<h3>Zu zweit</h3><table class="sc">'+
-    '<tr class="me"><td>Du</td><td class="n">'+bz.du+'</td></tr>'+
-    '<tr><td>Spieler 2</td><td class="n">'+(bz.spieler2||0)+'</td></tr>'+
+    '<tr class="me"><td>'+esc(nameFuer(1, 'zweit'))+'</td><td class="n">'+bz.du+'</td></tr>'+
+    '<tr><td>'+esc(nameFuer(2, 'zweit'))+'</td><td class="n">'+(bz.spieler2||0)+'</td></tr>'+
     '<tr><td>Unentschieden</td><td class="n">'+bz.unentschieden+'</td></tr></table>';
   h += '<div class="row"><button class="btn" data-act="'+(G.laeuft?'zu':'neu')+'">Zurück</button></div>';
   auf(h);
@@ -957,8 +1084,10 @@ function zeigeBilanz(){
 function zeigeErgebnis(gewinner, grund, sieger, bilanz){
   var zweit = G.modus === 'zweit', verlierer = gegner(gewinner);
   var bild = gewinner === 1 ? teddyJubel() : (gewinner === 0 ? teddyStaunt() : teddyRuhig());
-  var titel = gewinner === 1 ? 'Gewonnen!' : (gewinner === 0 ? 'Unentschieden' : spielerName(2) + ' gewinnt');
-  var wer = spielerName(verlierer), du = verlierer === 1;
+  var meiner = spielerName(1), ichHeisse = meiner !== 'Du';
+  var titel = gewinner === 1 ? (ichHeisse ? 'Gewonnen, ' + esc(meiner) + '!' : 'Gewonnen!')
+            : (gewinner === 0 ? 'Unentschieden' : esc(spielerName(2)) + ' gewinnt');
+  var wer = esc(spielerName(verlierer)), du = verlierer === 1 && !ichHeisse;
   var warum = grund === 'steine' ? wer + (du ? ' hast' : ' hat') + ' nur noch zwei Steine.'
             : grund === 'blockiert' ? wer + (du ? ' kannst' : ' kann') + ' nicht mehr ziehen.'
             : grund === 'wiederholung' ? 'Dreimal dieselbe Stellung.'
@@ -967,12 +1096,14 @@ function zeigeErgebnis(gewinner, grund, sieger, bilanz){
           '<div style="width:110px;margin:0 auto;">'+bild+'</div>'+
           '<h2 style="margin:2px 0 0;">'+titel+'</h2>'+
           '<p style="margin:2px 0 0;">'+warum+'</p>'+
-          '<p style="margin:0;opacity:.75;font-size:13px;">'+(zweit ? 'Zu zweit' : STUFEN[cfg.stufe].name)+'</p></div>';
-  h += '<p style="font-size:13px;opacity:.75;margin-top:8px;text-align:center;">Bilanz: Du '+bilanz.du+' &middot; '+spielerName(2)+' '+
+          '<p style="margin:0;opacity:.75;font-size:13px;">'+(zweit ? 'Zu zweit' : STUFEN[cfg.stufe].name)+
+          ' &middot; '+(cfg.zuletzt === 2 ? 'Angefangen hat '+esc(spielerName(2))
+                        : (ichHeisse ? 'Angefangen hat '+esc(meiner) : 'Angefangen hast du'))+'</p></div>';
+  h += '<p style="font-size:13px;opacity:.75;margin-top:8px;text-align:center;">Bilanz: '+esc(meiner)+' '+bilanz.du+' &middot; '+esc(spielerName(2))+' '+
        (zweit ? (bilanz.spieler2||0) : bilanz.teddy)+' &middot; Unentschieden '+bilanz.unentschieden+'</p>';
-  h += '<div class="row"><button class="btn go" data-act="'+(zweit ? 'zweit' : 'start')+'" data-v="'+cfg.stufe+'">'+
+  h += '<div class="row"><button class="btn go" data-act="los">'+
        '<span class="ico">&#9654;</span>Nochmal</button>'+
-       '<button class="btn" data-act="neu">'+(zweit ? 'Zurück' : 'Stufe wechseln')+'</button>'+
+       '<button class="btn" data-act="neu">Einstellen</button>'+
        eckeKnopf()+'</div>';
   auf(h);
   ton(gewinner === 1 ? 720 : 240, gewinner === 1 ? .1 : .2, gewinner === 1 ? 'triangle' : 'square');
@@ -980,7 +1111,7 @@ function zeigeErgebnis(gewinner, grund, sieger, bilanz){
 function zeigeHilfe(){
   auf('<h2>Mühle – Regeln</h2>'+
   '<h3>Ziel</h3><p>Nimm dem Gegner so viele Steine weg, dass er nur noch zwei hat – oder sperre ihn so ein, dass er nicht mehr ziehen kann.</p>'+
-  '<h3>Setzen</h3><p>Jede Seite hat <b>neun Steine</b>. Abwechselnd setzt ihr sie auf freie Punkte. Du hast die weißen Steine und fängst an. Geschlagene Steine landen neben dem Brett.</p>'+
+  '<h3>Setzen</h3><p>Jede Seite hat <b>neun Steine</b>. Abwechselnd setzt ihr sie auf freie Punkte. Du hast die weißen Steine. Wer beginnt, stellst du im Startbild unter <b>Anfang</b> ein. Geschlagene Steine landen neben dem Brett.</p>'+
   '<h3>Ziehen</h3><p>Sind alle Steine gesetzt, schiebt ihr abwechselnd einen eigenen Stein entlang einer Linie auf einen freien Nachbarpunkt. '+
   'Tippe erst deinen Stein an, dann das Ziel.</p>'+
   '<h3>Springen</h3><p>Wer nur noch <b>drei Steine</b> hat, darf mit einem davon auf jeden freien Punkt springen.</p>'+
@@ -989,7 +1120,7 @@ function zeigeHilfe(){
   '<li>Steine, die selbst in einer Mühle stehen, sind geschützt – außer der Gegner hat nur noch solche.</li>'+
   '<li>Eine Mühle öffnen und wieder schließen gilt jedes Mal neu. Wer zwei Mühlen so nebeneinander hat, dass ein Zug die eine öffnet und die andere schließt, hat eine <b>Zwickmühle</b>.</li></ul>'+
   '<h3>Unentschieden</h3><p>Wenn dieselbe Stellung zum dritten Mal auf dem Brett steht oder 50 Züge lang kein Stein weggenommen wird.</p>'+
-  '<h3>Zu zweit</h3><p>Im Startbild <b>Zu zweit spielen</b> wählen – dann spielen zwei Menschen abwechselnd auf demselben Gerät.</p>'+
+  '<h3>Zu zweit</h3><p>Im Startbild bei <b>Gegner</b> auf <b>Zu zweit</b> tippen – dann spielen zwei Menschen abwechselnd auf demselben Gerät.</p>'+
   '<p style="opacity:.7;font-size:13px;margin-top:14px;">Die Steine tragen die Götzberger Windmühle aus Henstedt-Ulzburg. '+
   'Mehr über die Mühle und ihren Verein: <a href="https://vereingoetzbergerwindmuehle.de/" target="_blank" rel="noopener">vereingoetzbergerwindmuehle.de</a></p>'+
   '<div class="row"><button class="btn" data-act="'+(G.laeuft?'zu':'neu')+'">Zurück</button></div>');
