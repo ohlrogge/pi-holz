@@ -802,7 +802,8 @@ function countOf(v){ var n=0; for(var i=0;i<81;i++) if(board[i]===v) n++; return
 function spielSpeichern(){
   if(!board || solved) return;
   lsSet('sud.spiel', {user:cfg.user, level:diffLevel, puzzle:puzzle, solution:solution,
-    board:board, undo:undoStack, seconds:seconds});
+    board:board, undo:undoStack, seconds:seconds,
+    fortsetzen: cfg.user + ' \u00b7 Stufe ' + diffLevel + ' \u00b7 ' + fmt(seconds)});
 }
 function spielLoeschen(){ lsSet('sud.spiel', null); }
 function gespeichertesSpiel(){

@@ -616,7 +616,8 @@ function meldung(txt, dauer, art){
 /* ---------- Spielstand sichern ---------- */
 function spielSpeichern(){
   if (!G.laeuft) return;
-  lsSet('teddyversi.spiel', { brett:G.brett, dran:G.dran, modus:G.modus, stufe:cfg.stufe });
+  lsSet('teddyversi.spiel', { brett:G.brett, dran:G.dran, modus:G.modus, stufe:cfg.stufe,
+    fortsetzen: (G.modus === 'zweit' ? 'Zu zweit' : STUFEN[cfg.stufe].name) });
 }
 function spielLaden(){
   var d = lsGet('teddyversi.spiel', null);

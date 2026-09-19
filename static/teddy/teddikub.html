@@ -2409,6 +2409,7 @@ function spielSpeichern(){
   if (!G.laeuft) return;
   try{
     lsSet('teddi.spiel', {
+      fortsetzen: 'Runde ' + (G.runde + 1) + ' \u00b7 ' + stufenKurz(),
       deck:G.deck, dran:G.dran, minOut:G.minOut, kiStufe:G.kiStufe,
       passen:G.passen, runde:G.runde,
       saetze:G.saetze.map(function(s){ return { t:s.tiles, x:s.x, y:s.y }; }),

@@ -785,7 +785,8 @@ function update(){
 function spielSpeichern(){
   if(!running || moves===0){ lsSet('clicko.spiel', null); return; }
   lsSet('clicko.spiel', { g:snapshot().g, score:score, moves:moves, cols:COLS, rows:ROWS,
-    colors:cfg.colors, level:cfg.level, undo:undoStack.slice(-50) });
+    colors:cfg.colors, level:cfg.level, undo:undoStack.slice(-50),
+    fortsetzen: 'Stufe ' + cfg.level + ' \u00b7 ' + score + ' Punkte' });
 }
 function spielLaden(){
   var d=lsGet('clicko.spiel', null);
