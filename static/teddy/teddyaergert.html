@@ -43,7 +43,7 @@ body{
 #main{flex:1 1 auto; min-height:0; position:relative;}
 #brett{position:absolute; display:block; touch-action:none;}
 #schale{
-  position:absolute; overflow:hidden; touch-action:none; cursor:grab;
+  position:absolute; overflow:hidden; touch-action:none; cursor:pointer;
   background:#e9e7e0; border:4px solid var(--schwarz); border-radius:4px;
   perspective:1100px;
 }
@@ -275,37 +275,24 @@ function ton(f, d, typ, laut){
 }
 function summ(ms){ if (cfg.vibrate && navigator.vibrate) try{ navigator.vibrate(ms); }catch(e){} }
 
-/* PHYSIK-ANFANG ======================================================
-   Der Würfel als starrer Körper: Kantenlänge 2 (Einheit = halbe Kante),
-   Masse 1. Koordinaten wie im Bildschirm: x nach rechts, y nach unten,
-   z aus dem Bildschirm heraus. Die Schale ist ein Kasten mit Boden (z=0),
-   vier Wänden und einem unsichtbaren Glasdeckel.
-   Stöße werden an den acht Ecken als Impulse aufgelöst; das Ergebnis ist
-   die Seite, die am Ende nach oben zeigt.
+/* ==================================================================
+   Der Würfel
+   ------------------------------------------------------------------
+   Die Augenzahl zieht der Zufall des Geräts - jede ist exakt gleich
+   wahrscheinlich. Danach rollt der Würfel in einer von zehn ruhigen
+   Bewegungen auf diese Zahl. Koordinaten wie im Bildschirm: x nach
+   rechts, y nach unten, z aus dem Bildschirm heraus; die Einheit ist
+   die halbe Kantenlänge, der liegende Würfel hat also z = 1.
    ================================================================== */
-var PH = {
-  G: 250,            /* Schwerkraft in Einheiten/s² (gemächlicher als echt, damit man zusehen kann) */
-  DT: 1/240,
-  DECKE: 5,
-  REIB: 0.25,
-  STOSS: 0.55,
-  INV_I: 1.5         /* 1 / (m·a²/6) mit a = 2 */
-};
 /* Seiten: Normale im Würfel und Augenzahl; Gegenseiten ergeben 7 */
 var SEITEN = [
   { n:[0,0,1],  z:1 }, { n:[0,0,-1], z:6 },
   { n:[1,0,0],  z:2 }, { n:[-1,0,0], z:5 },
   { n:[0,1,0],  z:3 }, { n:[0,-1,0], z:4 }
 ];
-var ECKEN = [];
-(function(){ for (var i=0;i<8;i++) ECKEN.push([i&1?1:-1, i&2?1:-1, i&4?1:-1]); })();
-
 function neuerWuerfel(breite, tiefe){
-  return { p:[breite/2, tiefe/2, 1], v:[0,0,0], q:[1,0,0,0], om:[0,0,0],
-           breite:breite, tiefe:tiefe, gehalten:false, wach:false, ruhe:0,
-           aufprall:null };
+  return { p:[breite/2, tiefe/2, 1], q:[1,0,0,0], breite:breite, tiefe:tiefe };
 }
-function kreuz(a,b){ return [a[1]*b[2]-a[2]*b[1], a[2]*b[0]-a[0]*b[2], a[0]*b[1]-a[1]*b[0]]; }
 function punkt(a,b){ return a[0]*b[0]+a[1]*b[1]+a[2]*b[2]; }
 function laenge(a){ return Math.sqrt(punkt(a,a)); }
 function qMal(a,b){
@@ -326,126 +313,70 @@ function drehen(R, v){
           R[1][0]*v[0]+R[1][1]*v[1]+R[1][2]*v[2],
           R[2][0]*v[0]+R[2][1]*v[1]+R[2][2]*v[2]];
 }
-/* Welche Seite zeigt nach oben, und wie gerade liegt sie? */
-function obenAuf(W){
-  var R = matrix(W.q), best = null, bz = -2;
-  for (var i=0;i<6;i++){
-    var nz = R[2][0]*SEITEN[i].n[0] + R[2][1]*SEITEN[i].n[1] + R[2][2]*SEITEN[i].n[2];
-    if (nz > bz){ bz = nz; best = SEITEN[i].z; }
-  }
-  return { zahl:best, gerade:bz };
-}
 /* Lage, in der die Seite `zahl` oben liegt, um `gier` um die Hochachse gedreht */
 function lageFuer(zahl, gier){
   var c = Math.SQRT1_2, basis = { 1:[1,0,0,0], 6:[0,1,0,0], 2:[c,0,-c,0], 5:[c,0,c,0], 3:[c,c,0,0], 4:[c,-c,0,0] }[zahl];
   return qMal([Math.cos(gier/2),0,0,Math.sin(gier/2)], basis);
 }
-
-function stossAnEcke(W, r, n){
-  var u = [W.v[0] + W.om[1]*r[2]-W.om[2]*r[1], W.v[1] + W.om[2]*r[0]-W.om[0]*r[2], W.v[2] + W.om[0]*r[1]-W.om[1]*r[0]];
-  var vn = punkt(u, n);
-  if (vn >= 0) return;
-  var e = vn < -2 ? PH.STOSS : 0;
-  var rn = kreuz(r, n);
-  var j = -(1+e) * vn / (1 + PH.INV_I * punkt(rn, rn));
-  W.v[0] += j*n[0]; W.v[1] += j*n[1]; W.v[2] += j*n[2];
-  W.om[0] += PH.INV_I*j*rn[0]; W.om[1] += PH.INV_I*j*rn[1]; W.om[2] += PH.INV_I*j*rn[2];
-  if (W.aufprall && vn < -12) W.aufprall(-vn);
-  /* Reibung entlang der Fläche, höchstens REIB mal der Stoß */
-  u = [W.v[0] + W.om[1]*r[2]-W.om[2]*r[1], W.v[1] + W.om[2]*r[0]-W.om[0]*r[2], W.v[2] + W.om[0]*r[1]-W.om[1]*r[0]];
-  var un = punkt(u, n), ut = [u[0]-un*n[0], u[1]-un*n[1], u[2]-un*n[2]], lt = laenge(ut);
-  if (lt < 1e-7) return;
-  var t = [ut[0]/lt, ut[1]/lt, ut[2]/lt], rt = kreuz(r, t);
-  var jt = -lt / (1 + PH.INV_I * punkt(rt, rt));
-  if (jt < -PH.REIB*j) jt = -PH.REIB*j;
-  W.v[0] += jt*t[0]; W.v[1] += jt*t[1]; W.v[2] += jt*t[2];
-  W.om[0] += PH.INV_I*jt*rt[0]; W.om[1] += PH.INV_I*jt*rt[1]; W.om[2] += PH.INV_I*jt*rt[2];
+function achsenDrehung(achse, winkel){
+  var s = Math.sin(winkel/2);
+  return [Math.cos(winkel/2), achse[0]*s, achse[1]*s, achse[2]*s];
+}
+/* Gleichmäßig von Lage a nach Lage b, den kürzeren Weg */
+function slerp(a, b, t){
+  var d = a[0]*b[0]+a[1]*b[1]+a[2]*b[2]+a[3]*b[3];
+  if (d < 0){ b = [-b[0],-b[1],-b[2],-b[3]]; d = -d; }
+  if (d > .9995) return qNorm([a[0]+(b[0]-a[0])*t, a[1]+(b[1]-a[1])*t, a[2]+(b[2]-a[2])*t, a[3]+(b[3]-a[3])*t]);
+  var w = Math.acos(d), s = Math.sin(w), fa = Math.sin((1-t)*w)/s, fb = Math.sin(t*w)/s;
+  return [a[0]*fa+b[0]*fb, a[1]*fa+b[1]*fb, a[2]*fa+b[2]*fb, a[3]*fa+b[3]*fb];
 }
 
-/* Ein Zeitschritt */
-function schritt(W, dt){
-  var i, k, it;
-  W.v[2] -= PH.G*dt;
-  var dl = 1 - 0.15*dt, dw = 1 - 0.3*dt;
-  for (i=0;i<3;i++){ W.v[i] *= dl; W.om[i] *= dw; }
-  W.p[0] += W.v[0]*dt; W.p[1] += W.v[1]*dt; W.p[2] += W.v[2]*dt;
-  var om = W.om, q = W.q;
-  var dq = qMal([0, om[0], om[1], om[2]], q);
-  W.q = qNorm([q[0]+.5*dq[0]*dt, q[1]+.5*dq[1]*dt, q[2]+.5*dq[2]*dt, q[3]+.5*dq[3]*dt]);
-
-  var ebenen = [[[0,0,1],0], [[1,0,0],0], [[-1,0,0],-W.breite], [[0,1,0],0], [[0,-1,0],-W.tiefe], [[0,0,-1],-PH.DECKE]];
-  var R = matrix(W.q), rs = [];
-  for (k=0;k<8;k++) rs.push(drehen(R, ECKEN[k]));
-  var amBoden = false;
-  for (it=0; it<3; it++){
-    for (i=0;i<ebenen.length;i++){
-      var n = ebenen[i][0], d = ebenen[i][1], tief = 0;
-      for (k=0;k<8;k++){
-        var pen = d - (n[0]*(W.p[0]+rs[k][0]) + n[1]*(W.p[1]+rs[k][1]) + n[2]*(W.p[2]+rs[k][2]));
-        if (pen > 0){
-          stossAnEcke(W, rs[k], n);
-          if (pen > tief) tief = pen;
-          if (i === 0) amBoden = true;
-        }
-      }
-      if (tief > 0 && it === 0){ W.p[0] += n[0]*tief; W.p[1] += n[1]*tief; W.p[2] += n[2]*tief; }
-    }
+/* Zehn Bewegungen. dauer in Sekunden; drehungen = ganze Überschläge zusätzlich
+   zum Weg in die Ziellage; achse: quer (rollt in Laufrichtung), hoch (kreiselt)
+   oder schraeg; huepfer mit hoehe; bogen und zickzack lenken zur Seite; weg ist
+   die Strecke als Anteil der Schale. */
+var WUERFE = [
+  { dauer:1.1, drehungen:1, achse:'quer',    huepfer:0, hoehe:.25, bogen:0,    zickzack:0,  weg:.45 },
+  { dauer:1.8, drehungen:2, achse:'quer',    huepfer:0, hoehe:.25, bogen:0,    zickzack:0,  weg:.6  },
+  { dauer:1.3, drehungen:1, achse:'quer',    huepfer:2, hoehe:.8,  bogen:0,    zickzack:0,  weg:.45 },
+  { dauer:1.3, drehungen:1, achse:'quer',    huepfer:1, hoehe:.6,  bogen:.3,   zickzack:0,  weg:.5  },
+  { dauer:1.3, drehungen:1, achse:'quer',    huepfer:1, hoehe:.6,  bogen:-.3,  zickzack:0,  weg:.5  },
+  { dauer:1.4, drehungen:1, achse:'hoch',    huepfer:0, hoehe:.2,  bogen:0,    zickzack:0,  weg:.2  },
+  { dauer:1.3, drehungen:1, achse:'schraeg', huepfer:1, hoehe:.7,  bogen:.12,  zickzack:0,  weg:.45 },
+  { dauer:1.4, drehungen:1, achse:'quer',    huepfer:1, hoehe:1.3, bogen:0,    zickzack:0,  weg:.25 },
+  { dauer:1.4, drehungen:1, achse:'quer',    huepfer:2, hoehe:.45, bogen:0,    zickzack:.25, weg:.5 },
+  { dauer:1.6, drehungen:0, achse:'quer',    huepfer:0, hoehe:.15, bogen:.1,   zickzack:0,  weg:.35 }
+];
+var RAND = 1.5;
+function wurfPlanen(W, zahl, rnd, letzte){
+  var art;
+  do { art = (rnd()*WUERFE.length)|0; } while (art === letzte);
+  var b = WUERFE[art], weg = b.weg * Math.min(W.breite, W.tiefe) + 1, von = [W.p[0], W.p[1]], nach = null;
+  /* eine Richtung, in der die Schale Platz hat - sonst Richtung Mitte */
+  for (var v=0; v<16 && !nach; v++){
+    var a = rnd()*Math.PI*2, x = von[0] + Math.cos(a)*weg, y = von[1] + Math.sin(a)*weg;
+    if (x > RAND && x < W.breite-RAND && y > RAND && y < W.tiefe-RAND) nach = [x, y];
   }
-  /* Rollwiderstand auf dem Filz */
-  if (amBoden){ var rw = 1 - 1.2*dt; for (i=0;i<3;i++) W.om[i] *= rw; }
+  if (!nach) nach = [W.breite/2, W.tiefe/2];
+  var dx = nach[0]-von[0], dy = nach[1]-von[1], l = Math.sqrt(dx*dx+dy*dy);
+  var dir = l > .01 ? [dx/l, dy/l] : [1, 0];
+  var quer = [-dir[1], dir[0], 0];
+  var achse = b.achse === 'hoch' ? [0,0,1] :
+              b.achse === 'schraeg' ? (function(){ var s = [quer[0], quer[1], .8], n = laenge(s); return [s[0]/n, s[1]/n, s[2]/n]; })() : quer;
+  return { art:art, b:b, zahl:zahl, von:von, nach:nach, l:l, dir:dir, achse:achse,
+           q0:W.q.slice(), q1:lageFuer(zahl, rnd()*Math.PI*2), dauer:b.dauer };
 }
-
-/* Ruht der Würfel? Liegt er schief (an der Wand gelehnt), wird er leicht angestupst. */
-function ruhePruefen(W, dt, rnd){
-  if (laenge(W.v) < 2.5 && laenge(W.om) < 1.2) W.ruhe += dt; else W.ruhe = 0;
-  if (W.ruhe < 0.18) return false;
-  var o = obenAuf(W);
-  if (o.gerade > 0.96){ W.v = [0,0,0]; W.om = [0,0,0]; W.wach = false; return true; }
-  var mx = W.breite/2 - W.p[0], my = W.tiefe/2 - W.p[1], ml = Math.sqrt(mx*mx+my*my) || 1;
-  W.v = [mx/ml*8, my/ml*8, 7];
-  W.om = [(rnd()-.5)*14, (rnd()-.5)*14, (rnd()-.5)*6];
-  W.ruhe = 0;
-  return false;
+/* Stand des Wurfs bei f = 0..1 */
+function wurfStand(W, w, f){
+  var b = w.b, e = 1 - Math.pow(1-f, 3);            /* rollt sanft aus */
+  var seit = b.bogen * w.l * Math.sin(Math.PI*e) + b.zickzack * w.l * Math.sin(4*Math.PI*e) * (1-e);
+  var x = w.von[0] + (w.nach[0]-w.von[0])*e - w.dir[1]*seit;
+  var y = w.von[1] + (w.nach[1]-w.von[1])*e + w.dir[0]*seit;
+  var z = b.huepfer ? b.hoehe * Math.abs(Math.sin(Math.PI*b.huepfer*e)) * Math.pow(1-e, .6)
+                    : b.hoehe * Math.sin(Math.PI*e);
+  W.p = [Math.max(1.2, Math.min(W.breite-1.2, x)), Math.max(1.2, Math.min(W.tiefe-1.2, y)), 1 + z];
+  W.q = qMal(achsenDrehung(w.achse, 2*Math.PI*b.drehungen*e), slerp(w.q0, w.q1, e));
 }
-
-/* In der Hand wird der Würfel durchgemischt: Er verlässt sie in
-   einer ganz zufälligen Lage. Weil der Würfel symmetrisch ist, wird dadurch
-   jede Augenzahl exakt gleich wahrscheinlich - welche es wird, entscheidet
-   dann der Flug durch die Schale, also Richtung und Schwung des Wurfs. */
-function gemischteLage(rnd){
-  var u1 = rnd(), u2 = rnd()*Math.PI*2, u3 = rnd()*Math.PI*2, a = Math.sqrt(1-u1), b = Math.sqrt(u1);
-  return [a*Math.sin(u2), a*Math.cos(u2), b*Math.sin(u3), b*Math.cos(u3)];
-}
-/* Ein Wurf aus der Hand: Schwung in zufälliger Richtung, kräftiger Drall. */
-function zufallsWurf(W, rnd){
-  var a = rnd()*Math.PI*2, sp = 30 + 25*rnd();
-  W.p[2] = Math.max(W.p[2], 2.4);
-  W.q = gemischteLage(rnd);
-  W.v = [Math.cos(a)*sp, Math.sin(a)*sp, 18 + 12*rnd()];
-  W.om = [(rnd()-.5)*80, (rnd()-.5)*80, (rnd()-.5)*40];
-  W.wach = true; W.ruhe = 0;
-}
-/* Ein Wurf mit dem Finger: v ist die Geschwindigkeit beim Loslassen. */
-function fingerWurf(W, v, rnd){
-  var sp = Math.sqrt(v[0]*v[0]+v[1]*v[1]);
-  if (sp < 8){                           /* nur angetippt: in zufällige Richtung */
-    var a = rnd()*Math.PI*2;
-    v = [Math.cos(a), Math.sin(a)]; sp = 1;
-  }
-  /* Richtung vom Finger, Schwung mindestens so viel, dass er sicher kullert */
-  var ziel = Math.max(40, Math.min(65, sp));
-  v = [v[0]/sp*ziel, v[1]/sp*ziel]; sp = ziel;
-  W.p[2] = Math.max(W.p[2], 2.6);        /* aus der Hand: er fällt erst */
-  W.q = gemischteLage(rnd);
-  W.v = [v[0], v[1], 18 + sp*0.2];
-  /* Rollen in Wurfrichtung, dazu ein Hauch Luftwirbel */
-  var om = [-v[1]*0.9 + (rnd()-.5)*30, v[0]*0.9 + (rnd()-.5)*30, (rnd()-.5)*24];
-  var ol = laenge(om);
-  if (ol < 60){ om = [om[0]*60/ol, om[1]*60/ol, om[2]*60/ol]; }
-  W.om = om;
-  W.gehalten = false; W.wach = true; W.ruhe = 0;
-}
-/* PHYSIK-ENDE ======================================================= */
 
 /* ==================================================================
    Das Brett
@@ -846,95 +777,36 @@ function wuerfelZeigen(){
 }
 
 
-/* ---------- Der Lauf der Würfelphysik ---------- */
-var laeuft = false, zuletzt = 0, vorrat = 0, zeitfaktor = 1, wurfAktiv = false, klackZeit = 0;
-W.aufprall = function(staerke){
-  var jetzt = performance.now();
-  if (jetzt - klackZeit < 45) return;
-  klackZeit = jetzt;
-  ton(900 + zufall()*500, .03, 'square', Math.min(.12, .02 + staerke/400));
-  if (istMensch(G.dran) && staerke > 20) summ(6);
-};
-function wecken(){
-  W.wach = true;
-  if (laeuft) return;
-  laeuft = true; zuletzt = performance.now(); vorrat = 0;
-  requestAnimationFrame(schleife);
-}
-function schleife(t){
-  var dt = Math.min(.05, (t - zuletzt)/1000) * zeitfaktor;
-  zuletzt = t;
-  if (!W.gehalten){
-    var n = 0;
-    vorrat += dt;
-    while (vorrat >= PH.DT && n < 20){ schritt(W, PH.DT); vorrat -= PH.DT; n++; }
-    if (ruhePruefen(W, dt, zufall)) wuerfelLiegt();
-  } else {
-    /* In der Hand: dreht sich ein wenig mit der Bewegung */
-    var om = W.om, q = W.q, dq = qMal([0, om[0], om[1], om[2]], q);
-    W.q = qNorm([q[0]+.5*dq[0]*dt, q[1]+.5*dq[1]*dt, q[2]+.5*dq[2]*dt, q[3]+.5*dq[3]*dt]);
+/* ---------- Ein Wurf: Zahl ziehen, dann gemütlich ausrollen ---------- */
+var wurf = null, letzteArt = -1;
+function wuerfelWerfen(){               /* Antippen, Knopf "Würfeln" und die Teddys */
+  if (G.phase !== 'wuerfeln' || wurf) return;
+  var zahl = 1 + Math.floor(zufall()*6), nr = G.spielNr, start = null, aufsetzer = 0;
+  wurf = wurfPlanen(W, zahl, zufall, letzteArt);
+  letzteArt = wurf.art;
+  G.phase = 'rollen'; aktualisieren();
+  function frame(t){
+    if (!wurf || nr !== G.spielNr){ wurf = null; return; }
+    if (start === null) start = t;
+    var f = Math.min(1, (t - start) / (wurf.dauer*1000));
+    wurfStand(W, wurf, f);
+    wuerfelZeigen();
+    /* leises Klacken, wenn er nach einem Hüpfer aufsetzt */
+    var h = wurf.b.huepfer, n = h ? Math.floor((1 - Math.pow(1-f, 3)) * h) : 0;
+    if (n > aufsetzer){ aufsetzer = n; ton(900 + zufall()*300, .03, 'square', .05); }
+    if (f < 1){ requestAnimationFrame(frame); return; }
+    wurf = null;
+    ton(700, .04, 'square', .06);
+    if (istMensch(G.dran)) summ(8);
+    wurfErgebnis(zahl);
   }
-  wuerfelZeigen();
-  if (W.wach || W.gehalten) requestAnimationFrame(schleife);
-  else laeuft = false;
-}
-function wuerfelLiegt(){
-  if (!wurfAktiv) return;
-  wurfAktiv = false;
-  zeitfaktor = 1;
-  if (G.phase !== 'wuerfeln') return;
-  wurfErgebnis(obenAuf(W).zahl);
-}
-function wuerfelWerfen(){               /* Knopf "Würfeln" und die Teddys */
-  if (G.phase !== 'wuerfeln') return;
-  W.gehalten = false;
-  zufallsWurf(W, zufall);
-  wurfAktiv = true;
-  zeitfaktor = istTeddy(G.dran) ? 1.3 : 1;
-  wecken();
-}
-
-/* Finger: Würfel greifen, ziehen, loslassen */
-var griff = null;
-function schalePunkt(e){
-  var r = $schale.getBoundingClientRect(), b = 4;
-  return [(e.clientX - r.left - b)/pxProEinheit, (e.clientY - r.top - b)/pxProEinheit];
-}
-function begrenzen(x, y){
-  return [Math.max(1.3, Math.min(W.breite-1.3, x)), Math.max(1.3, Math.min(W.tiefe-1.3, y))];
+  requestAnimationFrame(frame);
 }
 $schale.addEventListener('pointerdown', function(e){
   if (!G.laeuft || G.phase !== 'wuerfeln' || !istMensch(G.dran)) return;
   if (e.pointerType === 'mouse' && e.button !== 0) return;
-  try{ $schale.setPointerCapture(e.pointerId); }catch(er){}
-  var pt = begrenzen.apply(null, schalePunkt(e));
-  griff = { id:e.pointerId, spur:[[pt[0], pt[1], performance.now()]] };
-  W.gehalten = true; W.wach = true;
-  W.p = [pt[0], pt[1], 2.6]; W.v = [0,0,0]; W.om = [0,0,0];
-  wurfAktiv = false;
-  wecken();
+  wuerfelWerfen();
 });
-$schale.addEventListener('pointermove', function(e){
-  if (!griff || e.pointerId !== griff.id) return;
-  var pt = begrenzen.apply(null, schalePunkt(e)), jetzt = performance.now();
-  var alt = griff.spur[griff.spur.length-1], dt = Math.max(.008, (jetzt - alt[2])/1000);
-  W.om = [-(pt[1]-alt[1])/dt*.25, (pt[0]-alt[0])/dt*.25, 0];
-  W.p[0] = pt[0]; W.p[1] = pt[1];
-  griff.spur.push([pt[0], pt[1], jetzt]);
-  while (griff.spur.length > 2 && jetzt - griff.spur[0][2] > 90) griff.spur.shift();
-});
-function loslassen(e){
-  if (!griff || e.pointerId !== griff.id) return;
-  var spur = griff.spur, a = spur[0], b = spur[spur.length-1], dt = (b[2]-a[2])/1000;
-  var v = dt > .005 && performance.now() - b[2] < 120 ? [(b[0]-a[0])/dt, (b[1]-a[1])/dt] : [0,0];
-  griff = null;
-  if (!G.laeuft || G.phase !== 'wuerfeln' || !istMensch(G.dran)){ W.gehalten = false; return; }
-  fingerWurf(W, v, zufall);
-  wurfAktiv = true;
-  wecken();
-}
-$schale.addEventListener('pointerup', loslassen);
-$schale.addEventListener('pointercancel', loslassen);
 
 /* ==================================================================
    Ablauf einer Runde
@@ -945,7 +817,6 @@ function zugBeginnen(){
 }
 function wuerfelnLassen(){
   G.phase = 'wuerfeln'; G.wurf = 0; G.zuege = [];
-  wurfAktiv = false;
   aktualisieren();
   if (istTeddy(G.dran)){
     var nr = G.spielNr;
@@ -1166,7 +1037,7 @@ function hinweisOhneTeam(){
   if (!istMensch(G.dran)) return G.phase === 'wuerfeln' ? name(G.dran)+' würfelt …' : '';
   if (G.phase === 'wuerfeln'){
     var v = G.versuche > 1 ? ' ('+G.versuche+' Versuche für eine Sechs)' : '';
-    return 'Wirf den Würfel mit dem Finger – oder tippe auf „Würfeln“'+v;
+    return 'Tippe auf den Würfel – oder auf „Würfeln“'+v;
   }
   if (G.phase === 'ziehen')
     return cfg.bestaetigen && G.auswahl ? 'Nochmal tippen zum Ziehen – oder eine andere Figur wählen.' :
@@ -1271,7 +1142,7 @@ function spielLaden(){
 }
 /* Ein Wurf, der beim Wechsel noch rollt, gehört nicht ins neue Spiel */
 function wurfVergessen(){
-  wurfAktiv = false; W.gehalten = false; griff = null; zeitfaktor = 1;
+  wurf = null;
   lupeZu();
 }
 function neuesSpiel(){
@@ -1471,10 +1342,8 @@ function zeigeHilfe(){
   auf('<h2>Regeln</h2>'+
   '<h3>Ziel</h3><p>Bring alle vier Figuren deiner Farbe einmal um das Brett herum in deine vier Zielfelder. Wer zuerst alle vier im Ziel hat, gewinnt.</p>'+
   '<h3>Mitspieler</h3><p>Im Startbild legst du für jede Farbe fest, ob ein Mensch, ein Teddy oder niemand sie spielt – mindestens ein Mensch muss dabei sein. Menschen können ihren Namen eintragen. Mehrere Menschen würfeln und ziehen reihum am selben Gerät. Die Teddys gibt es in vier Stärken, von Gemütlich bis Meister.</p>'+
-  '<h3>Würfeln</h3><ul>'+
-  '<li><b>Mit dem Finger:</b> Greif den Würfel in der Schale, zieh ihn und lass ihn im Schwung los – wie ein echter Wurf.</li>'+
-  '<li><b>Knopf „Würfeln“:</b> wirft den Würfel für dich.</li>'+
-  '<li>Bleibt er schief an der Wand liegen, kippt er von selbst um.</li></ul>'+
+  '<h3>Würfeln</h3><p>Tippe auf den Würfel oder auf den Knopf „Würfeln“. Die Zahl bestimmt der Zufall – jede ist gleich wahrscheinlich –, '+
+  'dann rollt der Würfel gemütlich aus.</p>'+
   '<h3>Ziehen</h3><ul>'+
   '<li>Mit einer <b>6</b> kommt eine Figur aus dem Haus auf dein Startfeld. Nach einer 6 darfst du nochmal würfeln.</li>'+
   '<li>Hast du keine Figur, die ziehen kann, hast du <b>drei Versuche</b> für eine 6.</li>'+
