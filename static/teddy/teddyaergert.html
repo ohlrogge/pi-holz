@@ -1,0 +1,1593 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta name="robots" content="noindex, nofollow">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="icon" href="favicon-32.png" sizes="32x32" type="image/png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Spieleecke">
+<script>if('serviceWorker' in navigator && location.protocol.indexOf('http')===0) navigator.serviceWorker.register('sw.js');</script>
+<script src="teddy.js"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+<meta name="theme-color" content="#161616">
+<title>Teddy ärgert dich nicht</title>
+<style>
+:root{
+  --schrift:"Arial Rounded MT Bold","Arial Rounded MT",ui-rounded,"SF Pro Rounded","Helvetica Rounded","Nunito","Trebuchet MS",sans-serif;
+  --stein-grau:#a9ada2;
+  --schwarz:#161616; --tinte:#1c1c1c;
+  --rot:#d8232b; --rot2:#a8141b;
+  --blau:#1f4fa8; --gelb:#f2b200;
+  --weiss:#f6f4ee;
+  --wuerfel:56px;
+}
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+html,body{height:100%;}
+body{
+  margin:0; position:fixed; inset:0; overflow:hidden;
+  background:var(--stein-grau);
+  font-family:var(--schrift);
+  color:var(--tinte); user-select:none; -webkit-user-select:none;
+  -webkit-touch-callout:none; touch-action:manipulation; overscroll-behavior:none;
+}
+#wrap{position:absolute; inset:0; display:flex; flex-direction:column; padding-top:env(safe-area-inset-top);}
+
+.kugel{border-radius:50%; box-shadow:inset -3px -3px 5px rgba(0,0,0,.35), inset 3px 3px 5px rgba(255,255,255,.55);}
+.k0{background:var(--rot);} .k1{background:var(--blau);} .k2{background:var(--gelb);} .k3{background:#3a3a3a; outline:1.5px solid #777;}
+
+/* ---------- Spielfläche: Brett und Würfelschale ---------- */
+#main{flex:1 1 auto; min-height:0; position:relative;}
+#brett{position:absolute; display:block; touch-action:none;}
+#schale{
+  position:absolute; overflow:hidden; touch-action:none; cursor:grab;
+  background:#e9e7e0; border:4px solid var(--schwarz); border-radius:4px;
+  perspective:1100px;
+}
+#schale::before{  /* Bauhaus-Viertelkreis in der Ecke */
+  content:""; position:absolute; right:-38%; bottom:-38%; width:76%; aspect-ratio:1; border-radius:50%;
+  background:var(--dran, var(--rot)); opacity:.9; transition:background .35s;
+}
+#schale::after{
+  content:""; position:absolute; left:10px; top:10px; width:18%; height:6px; background:var(--schwarz);
+}
+#schale.dran{box-shadow:0 0 0 3px var(--weiss), 0 0 0 6px var(--dran, var(--rot));}
+#schatten{
+  position:absolute; left:0; top:0; width:var(--wuerfel); height:var(--wuerfel);
+  margin:calc(var(--wuerfel) / -2) 0 0 calc(var(--wuerfel) / -2);
+  border-radius:28%; background:rgba(0,0,0,.34); filter:blur(5px); pointer-events:none;
+}
+#wuerfel{
+  position:absolute; left:0; top:0; width:var(--wuerfel); height:var(--wuerfel);
+  margin:calc(var(--wuerfel) / -2) 0 0 calc(var(--wuerfel) / -2);
+  transform-style:preserve-3d; pointer-events:none;
+}
+#wuerfel .seite{
+  position:absolute; inset:0; border-radius:16%;
+  background:var(--weiss); box-shadow:inset 0 0 0 1.5px rgba(0,0,0,.28);
+}
+#wuerfel .auge{position:absolute; width:19%; height:19%; margin:-9.5% 0 0 -9.5%; border-radius:50%; background:var(--schwarz);}
+/* Kommentare mitten in der Schale, unter dem Würfel */
+#kommentar{
+  position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:6px; padding:18px 14px; text-align:center; pointer-events:none;
+  color:var(--tinte); text-shadow:0 0 4px #e9e7e0, 0 0 10px #e9e7e0, 0 0 14px #e9e7e0;
+}
+#statusTxt{font-size:19px; line-height:1.2; letter-spacing:.3px;}
+#kommentar.warn #statusTxt{color:var(--rot2);}
+#hinweis{font-size:13px; line-height:1.3; opacity:.72; max-width:30em;}
+
+/* Markierungen auf dem Brett */
+.ring{fill:none; stroke:var(--schwarz); stroke-width:1.1; stroke-dasharray:2.2 1.6; animation:laufen 1s linear infinite;}
+.ring.ziel{stroke-width:.8; stroke-dasharray:1.6 1.2; animation:laufen 1.4s linear infinite reverse;}
+.ring.fest{stroke-dasharray:none; animation:none; stroke-width:1.5;}
+.ring.blass{opacity:.3;}
+#geister{pointer-events:none;}
+#lupe{position:absolute; display:none; z-index:20; border-radius:50%; overflow:hidden; touch-action:none;
+  border:4px solid var(--schwarz); background:#f6f4ee; box-shadow:0 10px 28px rgba(0,0,0,.4);}
+#lupe.on{display:block; animation:auf .12s ease-out;}
+@keyframes auf{from{transform:scale(.6); opacity:0;}}
+#lupe svg{width:100%; height:100%; display:block;}
+#lupeTxt{position:absolute; left:0; right:0; bottom:9%; text-align:center; font-size:12px; pointer-events:none;
+  color:var(--tinte); text-shadow:0 0 3px #fff, 0 0 6px #fff;}
+@keyframes laufen{to{stroke-dashoffset:-7.6;}}
+
+/* ---------- Symbolleiste ---------- */
+#bar{
+  flex:0 0 auto; display:flex; align-items:stretch; gap:6px;
+  padding:6px 6px calc(6px + env(safe-area-inset-bottom));
+  background:var(--schwarz); box-shadow:0 -3px 0 var(--rot);
+}
+.btn{
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  min-width:46px; padding:3px 9px; cursor:pointer; flex:1 1 0;
+  border:2px solid #111; border-radius:10px;
+  background:var(--weiss); color:var(--tinte);
+  font-family:var(--schrift); font-size:11px; line-height:1.15; white-space:nowrap;
+}
+.btn:active{opacity:.75;}
+.btn[disabled]{opacity:.42; pointer-events:none;}
+.btn .ico{font-size:16px; line-height:1;}
+.ecke-ico{width:1.25em; height:1.25em; border-radius:22%; display:block; margin:0 auto;}
+.btn.go{background:var(--rot); color:#fff; flex:1.6 1 0;}
+
+/* ---------- Dialoge ---------- */
+#veil{position:absolute; inset:0; background:rgba(10,10,10,.62); display:none; z-index:40;
+  align-items:center; justify-content:center; padding:14px; overflow:auto;}
+#veil.on{display:flex;}
+.dlg{
+  background:#e8e9e3; color:var(--tinte); border-radius:14px;
+  border:4px solid var(--schwarz);
+  max-width:480px; width:100%; max-height:100%; overflow:auto; padding:16px 18px 18px;
+}
+.dlg h2{margin:0 0 8px; font-size:24px; color:var(--rot); letter-spacing:.5px;}
+.dlg h3{margin:14px 0 4px; font-size:16px; color:var(--tinte);}
+.dlg p,.dlg li{font-size:14px; line-height:1.5; margin:5px 0; font-family:var(--schrift);}
+.dlg ul{margin:4px 0; padding-left:20px;}
+.row{display:flex; gap:8px; flex-wrap:wrap; margin-top:12px;}
+.row .btn{flex:1 1 auto; min-height:42px; font-size:15px;}
+.lvl{display:flex; flex-direction:column; gap:8px; margin-top:10px;}
+.lvl button{
+  display:flex; align-items:center; gap:10px; text-align:left; cursor:pointer;
+  border:2px solid var(--schwarz); border-radius:10px; padding:9px 12px; font-size:16px;
+  background:var(--weiss); color:var(--tinte); font-family:var(--schrift);
+}
+.lvl button.an{background:var(--rot); color:#fff;}
+.lvl button:active{opacity:.75;}
+.lvl b{flex:1 1 auto; font-weight:normal;}
+.lvl span{font-size:12px; opacity:.8; display:block; margin-top:1px;}
+table.sc{width:100%; border-collapse:collapse; margin-top:8px; font-size:15px;}
+table.sc th,table.sc td{padding:6px; border-bottom:2px solid rgba(0,0,0,.15); text-align:left;}
+table.sc td.n{text-align:right;}
+table.sc tr.me{background:rgba(216,35,43,.16);}
+.opt{display:flex; align-items:center; justify-content:space-between; gap:10px; padding:8px 0; border-bottom:2px solid rgba(0,0,0,.12);}
+.opt label{font-size:15px;}
+.opt label span{display:block; font-size:12px; opacity:.7;}
+.sw{
+  width:52px; height:28px; border-radius:14px; border:2px solid var(--schwarz); background:#bdb9b0;
+  position:relative; cursor:pointer; flex:0 0 auto;
+}
+.sw i{position:absolute; top:1px; left:1px; width:22px; height:22px; border-radius:50%;
+  background:var(--weiss); box-shadow:0 0 0 2px #111 inset; transition:left .14s;}
+.sw.on{background:var(--rot);} .sw.on i{left:25px;}
+.sw.aus{opacity:.35; pointer-events:none;}
+p.klein{font-size:13px; opacity:.8; margin:6px 0 2px;}
+.sitz{display:flex; align-items:center; gap:10px; padding:5px 0;}
+.sitz .kugel{width:24px; height:24px; flex:0 0 auto;}
+.sitz b{flex:1 1 auto; font-weight:normal; font-size:16px;}
+.seg{display:flex; flex:0 0 auto; border:2px solid var(--schwarz); border-radius:10px; overflow:hidden;}
+.seg button{border:0; border-left:2px solid var(--schwarz); background:var(--weiss); color:var(--tinte);
+  font-family:var(--schrift); font-size:14px; padding:8px 10px; cursor:pointer;}
+.seg button:first-child{border-left:0;}
+.seg button.an{background:var(--rot); color:#fff;}
+.seg.breit button, .sitz .seg button{flex:1 1 0; padding-left:2px; padding-right:2px;}
+.sitz .seg{flex:0 0 176px; width:176px;}
+.sitz b{min-width:0; overflow:hidden; text-overflow:ellipsis;}
+.namezeile{padding:0 0 6px 34px;}
+.teamblock{border:2px solid var(--schwarz); border-left-width:8px; border-radius:12px; padding:4px 10px 4px 10px; margin:8px 0;}
+.teamkopf{display:flex; align-items:center; gap:4px; font-size:14px; padding:4px 0 2px;}
+.teamkopf .kugel{width:14px; height:14px;}
+.teamkopf .kugel + .kugel{margin-right:6px;}
+.namefeld{width:100%; font-family:var(--schrift); font-size:16px; padding:8px 10px; color:var(--tinte);
+  border:2px solid var(--schwarz); border-radius:10px; background:#fff; user-select:text; -webkit-user-select:text;}
+.namefeld::placeholder{color:#8d8a82;}
+.seg.aus{opacity:.4; pointer-events:none;}
+
+/* ---------- Startbild ---------- */
+#title{text-align:center; margin-bottom:6px;}
+#title .nm{font-size:34px; line-height:1.05; color:var(--rot); letter-spacing:.5px;}
+#title .streifen{height:6px; margin:10px 18px 0; background:var(--schwarz);}
+#title svg{width:64px; height:67px; display:block; margin:0 auto 4px;}
+
+@media (pointer:coarse){
+  .btn{min-width:50px; min-height:50px; font-size:12px;}
+  .btn .ico{font-size:19px;}
+  .lvl button{padding:13px 14px; font-size:17px;}
+  .row .btn{min-height:50px; font-size:16px;}
+  .dlg p,.dlg li{font-size:15px;}
+  .sw{width:58px; height:32px; border-radius:16px;}
+  .sw i{width:26px; height:26px;} .sw.on i{left:27px;}
+  .seg button{padding:11px 11px; font-size:15px;}
+}
+@media (max-width:420px){
+  #statusTxt{font-size:17px;}
+  #title .nm{font-size:29px;}
+}
+</style>
+</head>
+<body>
+<div id="wrap">
+  <div id="main">
+    <svg id="brett" viewBox="-3 -3 116 116" xmlns="http://www.w3.org/2000/svg"></svg>
+    <div id="schale">
+      <div id="kommentar"><div id="statusTxt">Teddy ärgert dich nicht</div><div id="hinweis"></div></div>
+      <div id="schatten"></div>
+      <div id="wuerfel"></div>
+    </div>
+    <div id="lupe"><svg id="lupeSvg" xmlns="http://www.w3.org/2000/svg"></svg><div id="lupeTxt">Welche Figur?</div></div>
+  </div>
+  <div id="bar">
+    <button class="btn" id="bEcke"><span class="ico"><img class="ecke-ico" src="favicon.svg" alt=""></span><span class="lbl">Spieleecke</span></button>
+    <button class="btn" id="bMenu"><span class="ico">&#9776;</span><span class="lbl">Menü</span></button>
+    <button class="btn" id="bHilfe"><span class="ico">?</span><span class="lbl">Regeln</span></button>
+    <div style="flex:1 1 auto;"></div>
+    <button class="btn go" id="bWurf"><span class="ico">&#9861;</span><span class="lbl">Würfeln</span></button>
+  </div>
+</div>
+<div id="veil"><div class="dlg" id="dlg"></div></div>
+<script>
+"use strict";
+
+/* ==================================================================
+   Teddy ärgert dich nicht - nach dem Vorbild von "Mensch ärgere dich
+   nicht": Du gegen drei Teddys. Eine Datei, keine Bibliotheken, kein Netz.
+   Der Würfel ist ein kleiner Physik-Körper in einer Schale: Schütteln
+   des Handys oder ein Wurf mit dem Finger bestimmen, wie er fällt.
+   ================================================================== */
+
+/* ---------- Einstellungen ---------- */
+var cfg = { v:2, stufe:2, schlagzwang:true, team:false, schuetteln:true, bestaetigen:false, vibrate:true, sound:false,
+            sitze:['mensch','teddy','teddy','teddy'], namen:['','','',''], vorschau:false };
+var saved = lsGet('teddy.aerger.cfg', null);
+/* Fassung 1 kannte nur zwei Stufen - deren Nummern bedeuten heute etwas anderes */
+if (saved) for (var ck in saved) if (ck in cfg && ck !== 'v' && (ck !== 'stufe' || saved.v === 2)) cfg[ck] = saved[ck];
+if (!(cfg.sitze instanceof Array) || cfg.sitze.length !== 4) cfg.sitze = ['mensch','teddy','teddy','teddy'];
+if (!(cfg.namen instanceof Array) || cfg.namen.length !== 4) cfg.namen = ['','','',''];
+function saveCfg(){ lsSet('teddy.aerger.cfg', cfg); }
+
+var STUFEN = [
+  { name:'Gemütlich', txt:'Die Teddys ziehen meist irgendeine Figur.' },
+  { name:'Normal',    txt:'Die Teddys schlagen, wenn es geht, und laufen sonst drauflos.' },
+  { name:'Gewitzt',   txt:'Die Teddys bringen sich in Sicherheit – und haben es besonders auf Menschen abgesehen.' },
+  { name:'Meister',   txt:'Die Teddys wägen ab, was auf dem Spiel steht, und spielen so gut, wie sie können.' }
+];
+/* Die Plätze liegen fest: Rot unten links, dann im Uhrzeigersinn */
+var SPIELER = [
+  { wort:'Rot',     farbe:'#d8232b', dunkel:'#7d0d12' },
+  { wort:'Blau',    farbe:'#1f4fa8', dunkel:'#0b2560' },
+  { wort:'Gelb',    farbe:'#f2b200', dunkel:'#8a6200' },
+  { wort:'Schwarz', farbe:'#2c2c2c', dunkel:'#000000' }
+];
+
+/* ---------- Zufall: vom Gerät, nicht vorhersagbar ---------- */
+function zufall(){
+  try{ var a = new Uint32Array(1); crypto.getRandomValues(a); return a[0] / 4294967296; }
+  catch(e){ return Math.random(); }
+}
+
+/* ---------- Ton und Vibration ---------- */
+var actx = null;
+function ton(f, d, typ, laut){
+  if (!cfg.sound) return;
+  try{
+    if (!actx) actx = new (window.AudioContext || window.webkitAudioContext)();
+    var o = actx.createOscillator(), g = actx.createGain();
+    o.type = typ || 'triangle'; o.frequency.value = f;
+    g.gain.setValueAtTime(.0001, actx.currentTime);
+    g.gain.exponentialRampToValueAtTime(laut || .16, actx.currentTime + .005);
+    g.gain.exponentialRampToValueAtTime(.0001, actx.currentTime + d);
+    o.connect(g); g.connect(actx.destination);
+    o.start(); o.stop(actx.currentTime + d + .02);
+  }catch(e){}
+}
+function summ(ms){ if (cfg.vibrate && navigator.vibrate) try{ navigator.vibrate(ms); }catch(e){} }
+
+/* PHYSIK-ANFANG ======================================================
+   Der Würfel als starrer Körper: Kantenlänge 2 (Einheit = halbe Kante),
+   Masse 1. Koordinaten wie im Bildschirm: x nach rechts, y nach unten,
+   z aus dem Bildschirm heraus. Die Schale ist ein Kasten mit Boden (z=0),
+   vier Wänden und einem unsichtbaren Glasdeckel.
+   Stöße werden an den acht Ecken als Impulse aufgelöst; das Ergebnis ist
+   die Seite, die am Ende nach oben zeigt.
+   ================================================================== */
+var PH = {
+  G: 250,            /* Schwerkraft in Einheiten/s² (gemächlicher als echt, damit man zusehen kann) */
+  DT: 1/240,
+  DECKE: 5,
+  REIB: 0.25,
+  STOSS: 0.55,
+  INV_I: 1.5         /* 1 / (m·a²/6) mit a = 2 */
+};
+/* Seiten: Normale im Würfel und Augenzahl; Gegenseiten ergeben 7 */
+var SEITEN = [
+  { n:[0,0,1],  z:1 }, { n:[0,0,-1], z:6 },
+  { n:[1,0,0],  z:2 }, { n:[-1,0,0], z:5 },
+  { n:[0,1,0],  z:3 }, { n:[0,-1,0], z:4 }
+];
+var ECKEN = [];
+(function(){ for (var i=0;i<8;i++) ECKEN.push([i&1?1:-1, i&2?1:-1, i&4?1:-1]); })();
+
+function neuerWuerfel(breite, tiefe){
+  return { p:[breite/2, tiefe/2, 1], v:[0,0,0], q:[1,0,0,0], om:[0,0,0],
+           breite:breite, tiefe:tiefe, gehalten:false, wach:false, ruhe:0,
+           aufprall:null };
+}
+function kreuz(a,b){ return [a[1]*b[2]-a[2]*b[1], a[2]*b[0]-a[0]*b[2], a[0]*b[1]-a[1]*b[0]]; }
+function punkt(a,b){ return a[0]*b[0]+a[1]*b[1]+a[2]*b[2]; }
+function laenge(a){ return Math.sqrt(punkt(a,a)); }
+function qMal(a,b){
+  return [a[0]*b[0]-a[1]*b[1]-a[2]*b[2]-a[3]*b[3],
+          a[0]*b[1]+a[1]*b[0]+a[2]*b[3]-a[3]*b[2],
+          a[0]*b[2]-a[1]*b[3]+a[2]*b[0]+a[3]*b[1],
+          a[0]*b[3]+a[1]*b[2]-a[2]*b[1]+a[3]*b[0]];
+}
+function qNorm(q){ var l = Math.sqrt(q[0]*q[0]+q[1]*q[1]+q[2]*q[2]+q[3]*q[3]); return [q[0]/l,q[1]/l,q[2]/l,q[3]/l]; }
+function matrix(q){
+  var w=q[0], x=q[1], y=q[2], z=q[3];
+  return [[1-2*(y*y+z*z), 2*(x*y-w*z),   2*(x*z+w*y)],
+          [2*(x*y+w*z),   1-2*(x*x+z*z), 2*(y*z-w*x)],
+          [2*(x*z-w*y),   2*(y*z+w*x),   1-2*(x*x+y*y)]];
+}
+function drehen(R, v){
+  return [R[0][0]*v[0]+R[0][1]*v[1]+R[0][2]*v[2],
+          R[1][0]*v[0]+R[1][1]*v[1]+R[1][2]*v[2],
+          R[2][0]*v[0]+R[2][1]*v[1]+R[2][2]*v[2]];
+}
+/* Welche Seite zeigt nach oben, und wie gerade liegt sie? */
+function obenAuf(W){
+  var R = matrix(W.q), best = null, bz = -2;
+  for (var i=0;i<6;i++){
+    var nz = R[2][0]*SEITEN[i].n[0] + R[2][1]*SEITEN[i].n[1] + R[2][2]*SEITEN[i].n[2];
+    if (nz > bz){ bz = nz; best = SEITEN[i].z; }
+  }
+  return { zahl:best, gerade:bz };
+}
+/* Lage, in der die Seite `zahl` oben liegt, um `gier` um die Hochachse gedreht */
+function lageFuer(zahl, gier){
+  var c = Math.SQRT1_2, basis = { 1:[1,0,0,0], 6:[0,1,0,0], 2:[c,0,-c,0], 5:[c,0,c,0], 3:[c,c,0,0], 4:[c,-c,0,0] }[zahl];
+  return qMal([Math.cos(gier/2),0,0,Math.sin(gier/2)], basis);
+}
+
+function stossAnEcke(W, r, n){
+  var u = [W.v[0] + W.om[1]*r[2]-W.om[2]*r[1], W.v[1] + W.om[2]*r[0]-W.om[0]*r[2], W.v[2] + W.om[0]*r[1]-W.om[1]*r[0]];
+  var vn = punkt(u, n);
+  if (vn >= 0) return;
+  var e = vn < -2 ? PH.STOSS : 0;
+  var rn = kreuz(r, n);
+  var j = -(1+e) * vn / (1 + PH.INV_I * punkt(rn, rn));
+  W.v[0] += j*n[0]; W.v[1] += j*n[1]; W.v[2] += j*n[2];
+  W.om[0] += PH.INV_I*j*rn[0]; W.om[1] += PH.INV_I*j*rn[1]; W.om[2] += PH.INV_I*j*rn[2];
+  if (W.aufprall && vn < -12) W.aufprall(-vn);
+  /* Reibung entlang der Fläche, höchstens REIB mal der Stoß */
+  u = [W.v[0] + W.om[1]*r[2]-W.om[2]*r[1], W.v[1] + W.om[2]*r[0]-W.om[0]*r[2], W.v[2] + W.om[0]*r[1]-W.om[1]*r[0]];
+  var un = punkt(u, n), ut = [u[0]-un*n[0], u[1]-un*n[1], u[2]-un*n[2]], lt = laenge(ut);
+  if (lt < 1e-7) return;
+  var t = [ut[0]/lt, ut[1]/lt, ut[2]/lt], rt = kreuz(r, t);
+  var jt = -lt / (1 + PH.INV_I * punkt(rt, rt));
+  if (jt < -PH.REIB*j) jt = -PH.REIB*j;
+  W.v[0] += jt*t[0]; W.v[1] += jt*t[1]; W.v[2] += jt*t[2];
+  W.om[0] += PH.INV_I*jt*rt[0]; W.om[1] += PH.INV_I*jt*rt[1]; W.om[2] += PH.INV_I*jt*rt[2];
+}
+
+/* Ein Zeitschritt; `aussen` ist die Scheinkraft aus dem Schütteln (Einheiten/s²). */
+function schritt(W, dt, aussen){
+  var i, k, it;
+  W.v[0] += aussen[0]*dt; W.v[1] += aussen[1]*dt; W.v[2] += (aussen[2] - PH.G)*dt;
+  var dl = 1 - 0.15*dt, dw = 1 - 0.3*dt;
+  for (i=0;i<3;i++){ W.v[i] *= dl; W.om[i] *= dw; }
+  W.p[0] += W.v[0]*dt; W.p[1] += W.v[1]*dt; W.p[2] += W.v[2]*dt;
+  var om = W.om, q = W.q;
+  var dq = qMal([0, om[0], om[1], om[2]], q);
+  W.q = qNorm([q[0]+.5*dq[0]*dt, q[1]+.5*dq[1]*dt, q[2]+.5*dq[2]*dt, q[3]+.5*dq[3]*dt]);
+
+  var ebenen = [[[0,0,1],0], [[1,0,0],0], [[-1,0,0],-W.breite], [[0,1,0],0], [[0,-1,0],-W.tiefe], [[0,0,-1],-PH.DECKE]];
+  var R = matrix(W.q), rs = [];
+  for (k=0;k<8;k++) rs.push(drehen(R, ECKEN[k]));
+  var amBoden = false;
+  for (it=0; it<3; it++){
+    for (i=0;i<ebenen.length;i++){
+      var n = ebenen[i][0], d = ebenen[i][1], tief = 0;
+      for (k=0;k<8;k++){
+        var pen = d - (n[0]*(W.p[0]+rs[k][0]) + n[1]*(W.p[1]+rs[k][1]) + n[2]*(W.p[2]+rs[k][2]));
+        if (pen > 0){
+          stossAnEcke(W, rs[k], n);
+          if (pen > tief) tief = pen;
+          if (i === 0) amBoden = true;
+        }
+      }
+      if (tief > 0 && it === 0){ W.p[0] += n[0]*tief; W.p[1] += n[1]*tief; W.p[2] += n[2]*tief; }
+    }
+  }
+  /* Rollwiderstand auf dem Filz */
+  if (amBoden){ var rw = 1 - 1.2*dt; for (i=0;i<3;i++) W.om[i] *= rw; }
+}
+
+/* Ruht der Würfel? Liegt er schief (an der Wand gelehnt), wird er leicht angestupst. */
+function ruhePruefen(W, dt, rnd){
+  if (laenge(W.v) < 2.5 && laenge(W.om) < 1.2) W.ruhe += dt; else W.ruhe = 0;
+  if (W.ruhe < 0.18) return false;
+  var o = obenAuf(W);
+  if (o.gerade > 0.96){ W.v = [0,0,0]; W.om = [0,0,0]; W.wach = false; return true; }
+  var mx = W.breite/2 - W.p[0], my = W.tiefe/2 - W.p[1], ml = Math.sqrt(mx*mx+my*my) || 1;
+  W.v = [mx/ml*8, my/ml*8, 7];
+  W.om = [(rnd()-.5)*14, (rnd()-.5)*14, (rnd()-.5)*6];
+  W.ruhe = 0;
+  return false;
+}
+
+/* In der Hand oder im Becher wird der Würfel durchgemischt: Er verlässt sie in
+   einer ganz zufälligen Lage. Weil der Würfel symmetrisch ist, wird dadurch
+   jede Augenzahl exakt gleich wahrscheinlich - welche es wird, entscheidet
+   dann der Flug durch die Schale, also Richtung und Schwung des Wurfs. */
+function gemischteLage(rnd){
+  var u1 = rnd(), u2 = rnd()*Math.PI*2, u3 = rnd()*Math.PI*2, a = Math.sqrt(1-u1), b = Math.sqrt(u1);
+  return [a*Math.sin(u2), a*Math.cos(u2), b*Math.sin(u3), b*Math.cos(u3)];
+}
+/* Ein Wurf aus der Hand: Schwung in zufälliger Richtung, kräftiger Drall. */
+function zufallsWurf(W, rnd){
+  var a = rnd()*Math.PI*2, sp = 30 + 25*rnd();
+  W.p[2] = Math.max(W.p[2], 2.4);
+  W.q = gemischteLage(rnd);
+  W.v = [Math.cos(a)*sp, Math.sin(a)*sp, 18 + 12*rnd()];
+  W.om = [(rnd()-.5)*80, (rnd()-.5)*80, (rnd()-.5)*40];
+  W.wach = true; W.ruhe = 0;
+}
+/* Ein Wurf mit dem Finger: v ist die Geschwindigkeit beim Loslassen. */
+function fingerWurf(W, v, rnd){
+  var sp = Math.sqrt(v[0]*v[0]+v[1]*v[1]);
+  if (sp < 8){                           /* nur angetippt: in zufällige Richtung */
+    var a = rnd()*Math.PI*2;
+    v = [Math.cos(a), Math.sin(a)]; sp = 1;
+  }
+  /* Richtung vom Finger, Schwung mindestens so viel, dass er sicher kullert */
+  var ziel = Math.max(40, Math.min(65, sp));
+  v = [v[0]/sp*ziel, v[1]/sp*ziel]; sp = ziel;
+  W.p[2] = Math.max(W.p[2], 2.6);        /* aus der Hand bzw. dem Becher: er fällt erst */
+  W.q = gemischteLage(rnd);
+  W.v = [v[0], v[1], 18 + sp*0.2];
+  /* Rollen in Wurfrichtung, dazu ein Hauch Luftwirbel */
+  var om = [-v[1]*0.9 + (rnd()-.5)*30, v[0]*0.9 + (rnd()-.5)*30, (rnd()-.5)*24];
+  var ol = laenge(om);
+  if (ol < 60){ om = [om[0]*60/ol, om[1]*60/ol, om[2]*60/ol]; }
+  W.om = om;
+  W.gehalten = false; W.wach = true; W.ruhe = 0;
+}
+/* PHYSIK-ENDE ======================================================= */
+
+/* ==================================================================
+   Das Brett
+   ------------------------------------------------------------------
+   11 × 11 Raster. Die Laufbahn hat 40 Felder; Feld 0 ist dein Start,
+   die Teddys starten jeweils 10 Felder weiter im Uhrzeigersinn.
+   Eine Figur zählt ihre Schritte relativ: -1 = im Haus, 0..39 auf der
+   Bahn, 40..43 im Ziel.
+   ================================================================== */
+var BAHN = [[4,10],[4,9],[4,8],[4,7],[4,6],[3,6],[2,6],[1,6],[0,6],[0,5],
+            [0,4],[1,4],[2,4],[3,4],[4,4],[4,3],[4,2],[4,1],[4,0],[5,0],
+            [6,0],[6,1],[6,2],[6,3],[6,4],[7,4],[8,4],[9,4],[10,4],[10,5],
+            [10,6],[9,6],[8,6],[7,6],[6,6],[6,7],[6,8],[6,9],[6,10],[5,10]];
+var ZIEL = [[[5,9],[5,8],[5,7],[5,6]], [[1,5],[2,5],[3,5],[4,5]],
+            [[5,1],[5,2],[5,3],[5,4]], [[9,5],[8,5],[7,5],[6,5]]];
+var HAUS = [[[0,9],[1,9],[0,10],[1,10]], [[0,0],[1,0],[0,1],[1,1]],
+            [[9,0],[10,0],[9,1],[10,1]], [[9,9],[10,9],[9,10],[10,10]]];
+var ECKE = [[-3,113], [-3,-3], [113,-3], [113,113]];
+
+function absolut(p, rel){ return (rel + 10*p) % 40; }
+function feldXY(p, i, rel){
+  var c = rel < 0 ? HAUS[p][i] : (rel < 40 ? BAHN[absolut(p, rel)] : ZIEL[p][rel-40]);
+  return [c[0]*10 + 5, c[1]*10 + 5];
+}
+
+/* ==================================================================
+   Spielregeln
+   ------------------------------------------------------------------
+   Ein Zug ist { p, i, von, nach, schlag }: Figur i von Spieler p.
+   Im Team-Spiel darf man auch die Figuren des Partners ziehen, die
+   schon draußen sind - rausholen darf jeder nur seine eigenen.
+   ================================================================== */
+/* Im Team-Spiel gehören die schräg gegenüberliegenden Farben zusammen */
+function partner(p, team){ return team ? (p+2) % 4 : -1; }
+function freunde(p, q, team){ return p === q || q === partner(p, team); }
+function besetzt(fig, feldAbs){
+  for (var q=0;q<4;q++) for (var i=0;i<4;i++){
+    var r = fig[q][i];
+    if (r >= 0 && r < 40 && absolut(q, r) === feldAbs) return { p:q, i:i };
+  }
+  return null;
+}
+function kannZiehen(fig, q, i, w, team){
+  var r = fig[q][i], nach, k;
+  if (r === -1){
+    if (w !== 6) return -1;
+    nach = 0;
+  } else {
+    nach = r + w;
+    if (nach > 43) return -1;
+    if (nach >= 40){
+      /* Im Ziel wird nicht übersprungen */
+      for (k = Math.max(r+1, 40); k <= nach; k++) if (fig[q].indexOf(k) >= 0) return -1;
+      return nach;
+    }
+  }
+  /* Auf eigene Figuren zieht man nicht; den Partner darf man schlagen */
+  if (fig[q].indexOf(nach) >= 0) return -1;
+  return nach;
+}
+function zuegeFuer(fig, p, w, team){
+  var liste = [], wer = team ? [p, partner(p, team)] : [p], eng;
+  wer.forEach(function(q){
+    for (var i=0;i<4;i++){
+      if (q !== p && fig[q][i] < 0) continue;
+      var nach = kannZiehen(fig, q, i, w, team);
+      if (nach < 0) continue;
+      liste.push({ p:q, i:i, von:fig[q][i], nach:nach, schlag: nach < 40 ? besetzt(fig, absolut(q, nach)) : null });
+    }
+  });
+  var imHaus = fig[p].indexOf(-1) >= 0, aufStart = fig[p].indexOf(0);
+  /* Pflicht 1: mit einer Sechs raus, wenn das Startfeld frei ist */
+  if (w === 6 && imHaus && aufStart < 0){
+    eng = liste.filter(function(z){ return z.p === p && z.von === -1; });
+    if (eng.length) liste = eng;
+  }
+  /* Pflicht 2: das Startfeld räumen, solange noch Figuren im Haus warten */
+  else if (imHaus && aufStart >= 0){
+    eng = liste.filter(function(z){ return z.p === p && z.i === aufStart; });
+    if (eng.length) liste = eng;
+  }
+  return liste;
+}
+/* Schlagzwang: Züge, die einen Gegner schlagen (den Partner schlagen muss man nie).
+   Wer einen davon hat und trotzdem anders zieht, verliert die Figur, die hätte
+   schlagen können - bei mehreren die am weitesten vorgerückte. */
+function schlagZuege(liste, p, team){
+  return liste.filter(function(z){ return z.schlag && !freunde(p, z.schlag.p, team); });
+}
+function pustFigur(fig, pflicht){
+  var best = null;
+  pflicht.forEach(function(z){
+    var r = fig[z.p][z.i];
+    if (r >= 0 && (!best || r > fig[best.p][best.i])) best = { p:z.p, i:z.i };
+  });
+  return best;
+}
+/* Dreimal würfeln darf, wer keine Figur mehr bewegen kann außer mit einer Sechs */
+function dreiVersuche(fig, p, team){
+  var wer = team ? [p, partner(p, team)] : [p];
+  for (var n=0;n<wer.length;n++) for (var i=0;i<4;i++){
+    var q = wer[n], r = fig[q][i];
+    if (r >= 0 && r < 40) return false;
+    if (r >= 40) for (var w=1; w<=3; w++) if (kannZiehen(fig, q, i, w, team) >= 0) return false;
+  }
+  return true;
+}
+function imZiel(fig, p){ var n=0; for (var i=0;i<4;i++) if (fig[p][i] >= 40) n++; return n; }
+function gewonnen(fig, p, team){
+  return team ? imZiel(fig, p) + imZiel(fig, partner(p, team)) === 8 : imZiel(fig, p) === 4;
+}
+
+/* ==================================================================
+   Die Teddys
+   ------------------------------------------------------------------
+   kx beschreibt die Runde: wer mitspielt (aktiv), wer Mensch ist, Team.
+   ================================================================== */
+/* Wie viele Gegner könnten dieses Feld im nächsten Zug treffen? */
+function bedrohung(fig, besitzer, feldAbs, kx){
+  var n = 0;
+  for (var q=0;q<4;q++){
+    if (!kx.aktiv[q] || freunde(besitzer, q, kx.team)) continue;
+    for (var i=0;i<4;i++){
+      var r = fig[q][i];
+      if (r < 0 || r >= 40) continue;
+      var d = (feldAbs - absolut(q, r) + 40) % 40;
+      if (r + d > 39) continue;
+      if (d >= 1 && d <= 6) n += kx.mensch[q] ? 1.2 : 1;
+    }
+    if (feldAbs === 10*q && fig[q].indexOf(-1) >= 0) n += 0.8;
+  }
+  return n;
+}
+function brettNach(fig, z){
+  var b = fig.map(function(a){ return a.slice(); });
+  b[z.p][z.i] = z.nach;
+  if (z.schlag) b[z.schlag.p][z.schlag.i] = -1;
+  return b;
+}
+/* Bewertung eines Zugs. Ab Gewitzt achten die Teddys auf Gefahr; der
+   Meister wiegt sie nach dem, was auf dem Spiel steht - je weiter eine
+   Figur schon ist, desto teurer wäre es, sie zu verlieren - drängt stärker
+   nach vorn und würfelt kaum noch aus dem Bauch. */
+function zugWert(fig, p, z, kx, stufe){
+  var meister = stufe === 3;
+  var w = z.nach * (meister ? .5 : .25) + zufall() * (meister ? .3 : 3);
+  if (z.von === -1) w += 30;
+  if (z.schlag && freunde(p, z.schlag.p, kx.team)) w -= 60;
+  else if (z.schlag){ w += 40 + fig[z.schlag.p][z.schlag.i]*0.6; if (stufe >= 2 && kx.mensch[z.schlag.p]) w += 18; }
+  if (z.nach >= 40) w += (z.von < 40 ? 35 : 0) + (z.nach-40)*3;
+  if (stufe >= 2){
+    var gewicht = function(r){ return meister ? .6 + r*.025 : 1; };
+    if (z.p === p && z.von === 0 && fig[p].indexOf(-1) >= 0) w += 12;
+    if (z.von >= 0 && z.von < 40) w += 10 * bedrohung(fig, z.p, absolut(z.p, z.von), kx) * gewicht(z.von);
+    if (z.nach < 40) w -= 12 * bedrohung(brettNach(fig, z), z.p, absolut(z.p, z.nach), kx) * gewicht(z.nach);
+  }
+  return w;
+}
+function teddyWahl(fig, p, liste, stufe, kx){
+  if (liste.length === 1) return liste[0];
+  /* Nur der gemütliche Teddy vergisst manchmal das Schlagen */
+  var pflicht = kx.schlagzwang ? schlagZuege(liste, p, kx.team) : [];
+  if (pflicht.length && stufe >= 1) liste = pflicht;
+  if (liste.length === 1) return liste[0];
+  if (zufall() < [0.7, 0.25, 0, 0][stufe]) return liste[(zufall()*liste.length)|0];
+  var best = null, bw = -1e9;
+  liste.forEach(function(z){
+    var w = zugWert(fig, p, z, kx, stufe);
+    if (w > bw){ bw = w; best = z; }
+  });
+  return best;
+}
+
+/* ==================================================================
+   Spielstand
+   ================================================================== */
+var G = { fig:null, dran:0, versuche:1, wurf:0, phase:'aus', zuege:[], laeuft:false,
+          spielNr:0, schlagzwang:true, stufe:2, team:false,
+          sitze:['mensch','teddy','teddy','teddy'], namen:['','','',''], meldung:'' };
+function istMensch(p){ return G.sitze[p] === 'mensch'; }
+function istTeddy(p){ return G.sitze[p] === 'teddy'; }
+function spielt(p){ return G.sitze[p] !== 'frei'; }
+function anzahl(sitze, art){ return sitze.filter(function(s){ return s === art; }).length; }
+/* Menschen heißen, wie sie sich eingetragen haben. Ohne Namen heißt ein
+   einzelner Mensch "Du"; sonst heißen alle nach ihrer Farbe. */
+function name(p){
+  if (istMensch(p) && G.namen[p]) return G.namen[p];
+  return istMensch(p) && anzahl(G.sitze, 'mensch') === 1 ? 'Du' : SPIELER[p].wort;
+}
+function esc(t){ return String(t).replace(/[&<>"]/g, function(c){ return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]; }); }
+function namenAufraeumen(namen){
+  return [0,1,2,3].map(function(p){ return String(namen[p] || '').replace(/\s+/g, ' ').trim().slice(0, 14); });
+}
+function kontext(){ return { team:G.team, schlagzwang:G.schlagzwang, aktiv:[0,1,2,3].map(spielt), mensch:[0,1,2,3].map(istMensch) }; }
+function el(id){ return document.getElementById(id); }
+var $main = el('main'), $brett = el('brett'), $schale = el('schale'), $wuerfel = el('wuerfel'),
+    $schatten = el('schatten'), $hinweis = el('hinweis'), $kommentar = el('kommentar'),
+    $statusTxt = el('statusTxt'), $veil = el('veil'), $dlg = el('dlg'), $bWurf = el('bWurf');
+
+function leeresBrett(){ return [[-1,-1,-1,-1],[-1,-1,-1,-1],[-1,-1,-1,-1],[-1,-1,-1,-1]]; }
+
+/* ---------- Brett zeichnen (einmal) ---------- */
+var SVGNS = 'http://www.w3.org/2000/svg';
+var $marken, $figuren, $geister, figEl = [], figPos = [];
+function glasFigur(p){
+  /* Kegel mit Kugelkopf aus getöntem Glas: Schatten in der Glasfarbe,
+     durchscheinender Körper, helle Lichtkante, Glanzpunkt am Kopf. */
+  return '<ellipse cx="1.1" cy="2.9" rx="3.9" ry="1.7" fill="url(#sch'+p+')"/>'+
+    '<ellipse cx="0" cy="2.3" rx="3.1" ry="1.15" fill="rgba(0,0,0,.18)"/>'+
+    '<path d="M-3.2 2.2 C-3.2 .2 -1.2 -1 -1.1 -2.4 L1.1 -2.4 C1.2 -1 3.2 .2 3.2 2.2 A3.2 1.25 0 0 1 -3.2 2.2 Z"'+
+      ' fill="url(#glas'+p+')" stroke="'+SPIELER[p].dunkel+'" stroke-width=".32" stroke-opacity=".75"/>'+
+    '<circle cx="0" cy="-3.9" r="2.3" fill="url(#kopf'+p+')" stroke="'+SPIELER[p].dunkel+'" stroke-width=".32" stroke-opacity=".75"/>'+
+    '<path d="M-2.3 1.5 C-2.2 .1 -1 -.9 -.6 -2" stroke="#fff" stroke-opacity=".75" stroke-width=".45" fill="none" stroke-linecap="round"/>'+
+    '<path d="M-2.2 2.9 A3 1 0 0 0 2.2 2.9" stroke="#fff" stroke-opacity=".45" stroke-width=".35" fill="none" stroke-linecap="round"/>'+
+    '<ellipse cx="-.8" cy="-4.7" rx=".85" ry=".55" fill="#fff" fill-opacity=".92" transform="rotate(-25 -.8 -4.7)"/>'+
+    '<circle cx="1.1" cy="-3.1" r=".45" fill="#fff" fill-opacity=".35"/>';
+}
+function brettZeichnen(){
+  var s = '<defs>', p, i;
+  for (p=0;p<4;p++){
+    var f = SPIELER[p].farbe, d = SPIELER[p].dunkel, a = p === 3 ? .55 : .5;
+    s += '<linearGradient id="glas'+p+'" x1="0" x2="1" y1="0" y2="0">'+
+         '<stop offset="0" stop-color="'+d+'" stop-opacity=".9"/>'+
+         '<stop offset=".22" stop-color="'+f+'" stop-opacity="'+(a+.15)+'"/>'+
+         '<stop offset=".5" stop-color="'+f+'" stop-opacity="'+(a-.18)+'"/>'+
+         '<stop offset=".78" stop-color="'+f+'" stop-opacity="'+(a+.1)+'"/>'+
+         '<stop offset="1" stop-color="'+d+'" stop-opacity=".95"/></linearGradient>'+
+         '<radialGradient id="kopf'+p+'" cx=".35" cy=".3" r=".75">'+
+         '<stop offset="0" stop-color="#fff" stop-opacity=".85"/>'+
+         '<stop offset=".3" stop-color="'+f+'" stop-opacity="'+(a-.1)+'"/>'+
+         '<stop offset=".8" stop-color="'+f+'" stop-opacity="'+(a+.2)+'"/>'+
+         '<stop offset="1" stop-color="'+d+'" stop-opacity=".95"/></radialGradient>'+
+         '<radialGradient id="sch'+p+'"><stop offset="0" stop-color="'+f+'" stop-opacity=".55"/>'+
+         '<stop offset="1" stop-color="'+f+'" stop-opacity="0"/></radialGradient>';
+  }
+  s += '</defs>';
+  /* Grund: helle Platte mit schwarzem Rahmen */
+  s += '<rect x="-2.2" y="-2.2" width="114.4" height="114.4" fill="#f6f4ee" stroke="#161616" stroke-width="1.6"/>';
+  s += '<clipPath id="platte"><rect x="-1.4" y="-1.4" width="112.8" height="112.8"/></clipPath><g clip-path="url(#platte)">';
+  /* Viertelkreise in den Ecken, darauf die Häuser */
+  for (p=0;p<4;p++) s += '<circle cx="'+ECKE[p][0]+'" cy="'+ECKE[p][1]+'" r="31" fill="'+SPIELER[p].farbe+'"/>';
+  s += '</g>';
+  /* Mitte: Teddi, wie der Joker in Teddikub */
+  s += teddiMarke().replace('<svg ', '<svg x="50.25" y="50.05" width="9.5" height="9.9" ');
+  /* Verbindungslinie der Laufbahn */
+  var pts = BAHN.map(function(c){ return (c[0]*10+5)+','+(c[1]*10+5); }).join(' ');
+  s += '<polygon points="'+pts+'" fill="none" stroke="#161616" stroke-width=".9"/>';
+  for (i=0;i<40;i++){
+    var c = BAHN[i], st = i % 10 === 0 ? i/10 : -1;
+    s += '<circle cx="'+(c[0]*10+5)+'" cy="'+(c[1]*10+5)+'" r="3.9" fill="'+(st >= 0 ? SPIELER[st].farbe : '#f6f4ee')+
+         '" stroke="#161616" stroke-width=".9"/>';
+  }
+  for (p=0;p<4;p++){
+    for (i=0;i<4;i++){
+      var z = ZIEL[p][i], h = HAUS[p][i];
+      s += '<circle cx="'+(z[0]*10+5)+'" cy="'+(z[1]*10+5)+'" r="3.9" fill="'+SPIELER[p].farbe+'" fill-opacity=".22" stroke="'+
+           SPIELER[p].farbe+'" stroke-width="1.3"/>';
+      s += '<circle cx="'+(h[0]*10+5)+'" cy="'+(h[1]*10+5)+'" r="3.9" fill="#f6f4ee" stroke="#161616" stroke-width=".9"/>';
+    }
+  }
+  s += '<g id="marken"></g><g id="figuren"></g><g id="geister"></g>';
+  $brett.innerHTML = s;
+  $marken = el('marken'); $figuren = el('figuren'); $geister = el('geister');
+  figEl = []; figPos = [];
+  for (p=0;p<4;p++){
+    figEl.push([]); figPos.push([]);
+    for (i=0;i<4;i++){
+      var g = document.createElementNS(SVGNS, 'g');
+      g.innerHTML = glasFigur(p);
+      $figuren.appendChild(g);
+      figEl[p].push(g); figPos[p].push([0,0]);
+    }
+  }
+}
+function figurStellen(p, i, x, y){
+  figPos[p][i] = [x, y];
+  figEl[p][i].setAttribute('transform', 'translate('+x.toFixed(2)+' '+(y-1.2).toFixed(2)+') scale(.92)');
+}
+/* Weiter unten Stehendes verdeckt weiter oben Stehendes */
+var letzteReihe = '';
+function tiefeOrdnen(){
+  var alle = [], p, i;
+  for (p=0;p<4;p++) for (i=0;i<4;i++) alle.push([figPos[p][i][1], p, i]);
+  alle.sort(function(a,b){ return a[0] - b[0]; });
+  var reihe = alle.map(function(a){ return a[1]*4+a[2]; }).join(',');
+  if (reihe === letzteReihe) return;
+  letzteReihe = reihe;
+  alle.forEach(function(a){ $figuren.appendChild(figEl[a[1]][a[2]]); });
+}
+function alleFigurenStellen(){
+  for (var p=0;p<4;p++) for (var i=0;i<4;i++){
+    figEl[p][i].style.display = spielt(p) ? '' : 'none';
+    var xy = feldXY(p, i, G.fig[p][i]);
+    figurStellen(p, i, xy[0], xy[1]);
+  }
+  tiefeOrdnen();
+}
+/* Ob eine Figur ziehen kann, verrät das Spiel nicht - man soll seine Chance
+   auch mal übersehen. Die gewählte Figur (bei "Zug bestätigen") ist fest
+   umrandet. Nur mit der Zughilfe sind die ziehbaren Figuren gestrichelt
+   umrandet, eine blasse Glasfigur zeigt ihr Ziel, die gewählte ihren Weg. */
+function gleicherZug(a, b){ return a && b && a.p === b.p && (a.i === b.i || (a.von === -1 && b.von === -1)); }
+function markenZeigen(){
+  var s = '', g = '', gezeigt = {};
+  if (!(G.laeuft && G.phase === 'ziehen' && istMensch(G.dran))){
+    G.auswahl = null; lupeZu(); $marken.innerHTML = ''; $geister.innerHTML = ''; return;
+  }
+  if (G.auswahl){
+    var w = feldXY(G.auswahl.p, G.auswahl.i, G.auswahl.von);
+    s += '<circle class="ring fest" cx="'+w[0]+'" cy="'+w[1]+'" r="4.9"/>';
+  }
+  if (cfg.vorschau) G.zuege.forEach(function(z){
+    var a = feldXY(z.p, z.i, z.von), b = feldXY(z.p, z.i, z.nach), f = SPIELER[z.p].farbe;
+    var gewaehlt = gleicherZug(G.auswahl, z), blass = G.auswahl && !gewaehlt, k;
+    if (!gewaehlt) s += '<circle class="ring'+(blass ? ' blass' : '')+'" cx="'+a[0]+'" cy="'+a[1]+'" r="4.9"/>';
+    if (gewaehlt && z.von >= 0) for (k = z.von+1; k < z.nach; k++){
+      var m = feldXY(z.p, z.i, k);
+      s += '<circle cx="'+m[0]+'" cy="'+m[1]+'" r="1.3" fill="'+f+'" stroke="#161616" stroke-width=".3"/>';
+    }
+    if (blass || gezeigt[b]) return;
+    gezeigt[b] = 1;
+    s += '<circle class="ring ziel" cx="'+b[0]+'" cy="'+b[1]+'" r="4.5" style="stroke:'+f+';fill:none"/>';
+    g += '<g transform="translate('+b[0]+' '+(b[1]-1.2)+') scale(.92)" opacity="'+(gewaehlt ? .72 : .42)+'">'+glasFigur(z.p)+'</g>';
+  });
+  $marken.innerHTML = s; $geister.innerHTML = g;
+}
+
+/* ---------- Animation einer Figur über mehrere Felder ---------- */
+function hopsen(p, i, punkte, msProSchritt, fertig){
+  var start = null, von = figPos[p][i].slice(), k = 0, nr = G.spielNr;
+  function frame(t){
+    if (nr !== G.spielNr) return;           /* inzwischen ein neues Spiel */
+    if (start === null) start = t;
+    var f = (t - start) / msProSchritt;
+    while (f >= 1 && k < punkte.length){
+      von = punkte[k]; k++; start += msProSchritt; f = (t - start) / msProSchritt;
+      ton(380 + k*30, .04, 'sine', .08);
+    }
+    if (k >= punkte.length){ figurStellen(p, i, von[0], von[1]); tiefeOrdnen(); fertig(); return; }
+    var nach = punkte[k], e = f < 0 ? 0 : f;
+    var x = von[0] + (nach[0]-von[0])*e, y = von[1] + (nach[1]-von[1])*e - Math.sin(Math.PI*e)*3.2;
+    figurStellen(p, i, x, y); tiefeOrdnen();
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+}
+function gleiten(p, i, ziel, ms, fertig){
+  var start = null, von = figPos[p][i].slice(), nr = G.spielNr;
+  function frame(t){
+    if (nr !== G.spielNr) return;
+    if (start === null) start = t;
+    var e = Math.min(1, (t-start)/ms), k = e*e*(3-2*e);
+    figurStellen(p, i, von[0] + (ziel[0]-von[0])*k, von[1] + (ziel[1]-von[1])*k - Math.sin(Math.PI*e)*9);
+    tiefeOrdnen();
+    if (e < 1) requestAnimationFrame(frame); else fertig();
+  }
+  requestAnimationFrame(frame);
+}
+
+/* ==================================================================
+   Würfelschale: Anzeige, Schütteln, Finger
+   ================================================================== */
+var W = neuerWuerfel(8, 6), pxProEinheit = 28, $seiten = [];
+function wuerfelBauen(){
+  var AUGEN = { 1:[4], 2:[0,8], 3:[0,4,8], 4:[0,2,6,8], 5:[0,2,4,6,8], 6:[0,2,3,5,6,8] };
+  var LAGE = { 1:'', 6:'rotateY(180deg) ', 2:'rotateY(90deg) ', 5:'rotateY(-90deg) ', 3:'rotateX(-90deg) ', 4:'rotateX(90deg) ' };
+  var s = '';
+  SEITEN.forEach(function(se){
+    s += '<div class="seite" data-lage="'+LAGE[se.z]+'">';
+    AUGEN[se.z].forEach(function(a){
+      s += '<i class="auge" style="left:'+[22,50,78][a%3]+'%;top:'+[22,50,78][(a/3)|0]+'%"></i>';
+    });
+    s += '</div>';
+  });
+  $wuerfel.innerHTML = s;
+  $seiten = Array.prototype.slice.call($wuerfel.children);
+}
+var LICHT = (function(){ var l = [-.35,-.5,1], n = laenge(l); return [l[0]/n,l[1]/n,l[2]/n]; })();
+function wuerfelZeigen(){
+  var R = matrix(W.q), s = pxProEinheit, h = s;
+  var x = W.p[0]*s, y = W.p[1]*s, z = W.p[2]*s;
+  $wuerfel.style.transform = 'matrix3d('+
+    R[0][0]+','+R[1][0]+','+R[2][0]+',0,'+
+    R[0][1]+','+R[1][1]+','+R[2][1]+',0,'+
+    R[0][2]+','+R[1][2]+','+R[2][2]+',0,'+
+    x.toFixed(2)+','+y.toFixed(2)+','+z.toFixed(2)+',1)';
+  for (var k=0;k<6;k++){
+    var n = drehen(R, SEITEN[k].n), hell = Math.max(0, punkt(n, LICHT));
+    var v = Math.round(150 + 96*hell);
+    $seiten[k].style.transform = $seiten[k].getAttribute('data-lage') + 'translateZ('+h+'px)';
+    $seiten[k].style.background = 'rgb('+v+','+Math.round(v*.992)+','+Math.round(v*.965)+')';
+  }
+  var hoehe = Math.max(0, W.p[2] - 1);
+  $schatten.style.transform = 'translate('+(x + hoehe*s*.35 + s*.12).toFixed(1)+'px,'+(y + hoehe*s*.5 + s*.18).toFixed(1)+'px) scale('+(1 + hoehe*.08).toFixed(3)+')';
+  $schatten.style.opacity = Math.max(.12, .9 - hoehe*.12).toFixed(2);
+}
+
+/* Schütteln: Beschleunigung des Handys, ohne Schwerkraft, in Bildschirmrichtungen */
+var ruck = { x:0, y:0, z:0, t:0, geht:false, gx:0, gy:0, gz:0 };
+function bildschirmWinkel(){
+  var a = (screen.orientation && typeof screen.orientation.angle === 'number') ? screen.orientation.angle : (window.orientation || 0);
+  return a * Math.PI / 180;
+}
+window.addEventListener('devicemotion', function(e){
+  var a = e.acceleration, ax, ay, az;
+  if (a && a.x !== null && a.x !== undefined){ ax = a.x; ay = a.y; az = a.z; }
+  else if (e.accelerationIncludingGravity && e.accelerationIncludingGravity.x !== null){
+    /* ohne Gyroskop: Schwerkraft mit einem Tiefpass herausrechnen */
+    var g = e.accelerationIncludingGravity;
+    ruck.gx += (g.x - ruck.gx)*.1; ruck.gy += (g.y - ruck.gy)*.1; ruck.gz += (g.z - ruck.gz)*.1;
+    ax = g.x - ruck.gx; ay = g.y - ruck.gy; az = g.z - ruck.gz;
+  } else return;
+  var w = bildschirmWinkel(), c = Math.cos(w), s = Math.sin(w);
+  ruck.x = ax*c - ay*s;
+  ruck.y = -(ax*s + ay*c);
+  ruck.z = az || 0;
+  ruck.t = performance.now();
+  if (!ruck.geht){ ruck.geht = true; hinweisSetzen(); }
+  if (!schuettelnAktiv()){ schuettel.an = false; return; }
+  var staerke = Math.sqrt(ruck.x*ruck.x + ruck.y*ruck.y + ruck.z*ruck.z), jetzt = ruck.t;
+  if (staerke > 6){
+    if (!schuettel.an){ schuettel.an = true; schuettel.start = jetzt; schuettel.spitze = 0; }
+    schuettel.spitze = Math.max(schuettel.spitze, staerke);
+    schuettel.ruhigSeit = 0;
+    if (Math.abs(ruck.x) + Math.abs(ruck.y) > 3) schuettel.richtung = [-ruck.x, -ruck.y];
+    wecken();
+  } else if (schuettel.an){
+    if (!schuettel.ruhigSeit) schuettel.ruhigSeit = jetzt;
+    else if (jetzt - schuettel.ruhigSeit > 220) schuettelnVorbei();
+  }
+});
+/* Schütteln wie mit einem Würfelbecher: Solange du schüttelst, klappert der
+   Würfel in der Schale. Hältst du still, wird er aus dieser Lage heraus mit
+   dem Schwung deiner letzten Bewegung ausgekippt - erst das ist der Wurf. */
+var schuettel = { an:false, start:0, spitze:0, ruhigSeit:0, richtung:[0,0] };
+function schuettelnAktiv(){
+  return cfg.schuetteln && G.laeuft && G.phase === 'wuerfeln' && istMensch(G.dran) &&
+         !wurfAktiv && !W.gehalten && !$veil.classList.contains('on');
+}
+function schuettelnVorbei(){
+  var s = schuettel;
+  s.an = false;
+  if (!schuettelnAktiv()) return;
+  if (s.spitze < 11 || (s.ruhigSeit || ruck.t) - s.start < 150){
+    meldung('Kräftiger schütteln!', 1500, 'warn');
+    return;
+  }
+  /* Nach dem Schütteln klebt der Würfel meist an einer Wand - er fliegt
+     deshalb Richtung Mitte, von der letzten Bewegung zur Seite gelenkt. */
+  var rl = Math.sqrt(s.richtung[0]*s.richtung[0] + s.richtung[1]*s.richtung[1]) || 1;
+  var mx = W.breite/2 - W.p[0], my = W.tiefe/2 - W.p[1], ml = Math.sqrt(mx*mx + my*my) || 1;
+  var rx = mx/ml + .6*s.richtung[0]/rl, ry = my/ml + .6*s.richtung[1]/rl, rr = Math.sqrt(rx*rx + ry*ry) || 1;
+  var tempo = 40 + Math.min(1, (s.spitze - 11)/25) * 25;
+  var v = [rx/rr*tempo, ry/rr*tempo];
+  fingerWurf(W, v, zufall);
+  wurfAktiv = true;
+  wecken();
+}
+function scheinkraft(){
+  if (!schuettel.an || !schuettelnAktiv() || performance.now() - ruck.t > 150) return [0,0,0];
+  var k = -70;                       /* Die Schale bewegt sich, der Würfel will liegen bleiben */
+  return [ruck.x*k, ruck.y*k, ruck.z*k];
+}
+var bewegungGefragt = false;
+function bewegungErlauben(){
+  if (bewegungGefragt || !cfg.schuetteln) return;
+  bewegungGefragt = true;
+  if (window.DeviceMotionEvent && typeof DeviceMotionEvent.requestPermission === 'function'){
+    DeviceMotionEvent.requestPermission().then(function(r){
+      if (r !== 'granted') meldung('Schütteln nicht erlaubt', 2600, 'warn');
+    }).catch(function(){});
+  }
+}
+/* iOS fragt nur nach einem Antippen - also beim ersten Tipp irgendwo */
+document.addEventListener('touchend', bewegungErlauben);
+document.addEventListener('click', bewegungErlauben);
+
+/* ---------- Der Lauf der Würfelphysik ---------- */
+var laeuft = false, zuletzt = 0, vorrat = 0, zeitfaktor = 1, wurfAktiv = false, klackZeit = 0;
+W.aufprall = function(staerke){
+  var jetzt = performance.now();
+  if (jetzt - klackZeit < 45) return;
+  klackZeit = jetzt;
+  ton(900 + zufall()*500, .03, 'square', Math.min(.12, .02 + staerke/400));
+  if (istMensch(G.dran) && staerke > 20) summ(6);
+};
+function wecken(){
+  W.wach = true;
+  if (laeuft) return;
+  laeuft = true; zuletzt = performance.now(); vorrat = 0;
+  requestAnimationFrame(schleife);
+}
+function schleife(t){
+  var dt = Math.min(.05, (t - zuletzt)/1000) * zeitfaktor;
+  zuletzt = t;
+  if (!W.gehalten){
+    var aussen = scheinkraft(), n = 0;
+    vorrat += dt;
+    while (vorrat >= PH.DT && n < 20){ schritt(W, PH.DT, aussen); vorrat -= PH.DT; n++; }
+    if (ruhePruefen(W, dt, zufall)) wuerfelLiegt();
+  } else {
+    /* In der Hand: dreht sich ein wenig mit der Bewegung */
+    var om = W.om, q = W.q, dq = qMal([0, om[0], om[1], om[2]], q);
+    W.q = qNorm([q[0]+.5*dq[0]*dt, q[1]+.5*dq[1]*dt, q[2]+.5*dq[2]*dt, q[3]+.5*dq[3]*dt]);
+  }
+  wuerfelZeigen();
+  /* Kommen keine Bewegungsdaten mehr, ist das Schütteln auch vorbei */
+  if (schuettel.an && performance.now() - ruck.t > 300) schuettelnVorbei();
+  if (W.wach || W.gehalten || schuettel.an) requestAnimationFrame(schleife);
+  else laeuft = false;
+}
+function wuerfelLiegt(){
+  if (!wurfAktiv) return;
+  wurfAktiv = false;
+  zeitfaktor = 1;
+  if (G.phase !== 'wuerfeln') return;
+  wurfErgebnis(obenAuf(W).zahl);
+}
+function wuerfelWerfen(){               /* Knopf "Würfeln" und die Teddys */
+  if (G.phase !== 'wuerfeln') return;
+  W.gehalten = false;
+  zufallsWurf(W, zufall);
+  wurfAktiv = true;
+  zeitfaktor = istTeddy(G.dran) ? 1.3 : 1;
+  wecken();
+}
+
+/* Finger: Würfel greifen, ziehen, loslassen */
+var griff = null;
+function schalePunkt(e){
+  var r = $schale.getBoundingClientRect(), b = 4;
+  return [(e.clientX - r.left - b)/pxProEinheit, (e.clientY - r.top - b)/pxProEinheit];
+}
+function begrenzen(x, y){
+  return [Math.max(1.3, Math.min(W.breite-1.3, x)), Math.max(1.3, Math.min(W.tiefe-1.3, y))];
+}
+$schale.addEventListener('pointerdown', function(e){
+  if (!G.laeuft || G.phase !== 'wuerfeln' || !istMensch(G.dran)) return;
+  if (e.pointerType === 'mouse' && e.button !== 0) return;
+  try{ $schale.setPointerCapture(e.pointerId); }catch(er){}
+  var pt = begrenzen.apply(null, schalePunkt(e));
+  griff = { id:e.pointerId, spur:[[pt[0], pt[1], performance.now()]] };
+  W.gehalten = true; W.wach = true;
+  W.p = [pt[0], pt[1], 2.6]; W.v = [0,0,0]; W.om = [0,0,0];
+  wurfAktiv = false;
+  wecken();
+});
+$schale.addEventListener('pointermove', function(e){
+  if (!griff || e.pointerId !== griff.id) return;
+  var pt = begrenzen.apply(null, schalePunkt(e)), jetzt = performance.now();
+  var alt = griff.spur[griff.spur.length-1], dt = Math.max(.008, (jetzt - alt[2])/1000);
+  W.om = [-(pt[1]-alt[1])/dt*.25, (pt[0]-alt[0])/dt*.25, 0];
+  W.p[0] = pt[0]; W.p[1] = pt[1];
+  griff.spur.push([pt[0], pt[1], jetzt]);
+  while (griff.spur.length > 2 && jetzt - griff.spur[0][2] > 90) griff.spur.shift();
+});
+function loslassen(e){
+  if (!griff || e.pointerId !== griff.id) return;
+  var spur = griff.spur, a = spur[0], b = spur[spur.length-1], dt = (b[2]-a[2])/1000;
+  var v = dt > .005 && performance.now() - b[2] < 120 ? [(b[0]-a[0])/dt, (b[1]-a[1])/dt] : [0,0];
+  griff = null;
+  if (!G.laeuft || G.phase !== 'wuerfeln' || !istMensch(G.dran)){ W.gehalten = false; return; }
+  fingerWurf(W, v, zufall);
+  wurfAktiv = true;
+  wecken();
+}
+$schale.addEventListener('pointerup', loslassen);
+$schale.addEventListener('pointercancel', loslassen);
+
+/* ==================================================================
+   Ablauf einer Runde
+   ================================================================== */
+function zugBeginnen(){
+  G.versuche = dreiVersuche(G.fig, G.dran, G.team) ? 3 : 1;
+  wuerfelnLassen();
+}
+function wuerfelnLassen(){
+  G.phase = 'wuerfeln'; G.wurf = 0; G.zuege = [];
+  wurfAktiv = false;
+  aktualisieren();
+  if (istTeddy(G.dran)){
+    var nr = G.spielNr;
+    setTimeout(function(){ if (nr === G.spielNr && G.phase === 'wuerfeln') wuerfelWerfen(); }, 420);
+  }
+}
+function wurfErgebnis(n){
+  G.wurf = n;
+  var nr = G.spielNr, wer = G.dran, mensch = istMensch(wer);
+  var liste = zuegeFuer(G.fig, wer, n, G.team);
+  if (!liste.length){
+    G.versuche--;
+    if (n === 6 || G.versuche > 0){
+      if (G.versuche > 0 && n !== 6)
+        meldung(mensch ? 'Keine Sechs – noch '+G.versuche+(G.versuche === 1 ? ' Versuch' : ' Versuche')+'.' :
+                         name(wer)+': noch '+G.versuche+' Versuch'+(G.versuche === 1 ? '' : 'e'), 1600);
+      if (n === 6) G.versuche = Math.max(G.versuche, 1);
+      setTimeout(function(){ if (nr === G.spielNr) wuerfelnLassen(); }, mensch ? 500 : 650);
+      G.phase = 'pause'; aktualisieren();
+    } else {
+      meldung(mensch ? 'Eine '+n+' – damit geht nichts.' : name(wer)+' kann nicht ziehen.', 1500);
+      G.phase = 'pause'; aktualisieren();
+      setTimeout(function(){ if (nr === G.spielNr) naechster(); }, mensch ? 1100 : 800);
+    }
+    return;
+  }
+  G.zuege = liste; G.phase = 'ziehen'; G.auswahl = null;
+  aktualisieren();
+  if (!mensch){
+    setTimeout(function(){
+      if (nr !== G.spielNr) return;
+      ausfuehren(teddyWahl(G.fig, wer, liste, G.stufe, kontext()));
+    }, 380);
+  } else {
+    /* Gibt es nur eine Möglichkeit (alle Haus-Figuren sind gleich), zieht sie von selbst */
+    var ziele = {};
+    liste.forEach(function(z){ ziele[z.von === -1 ? 'haus' : z.p+'-'+z.i] = 1; });
+    if (Object.keys(ziele).length === 1){
+      setTimeout(function(){ if (nr === G.spielNr && G.phase === 'ziehen') ausfuehren(liste[0]); }, 550);
+    }
+  }
+}
+function schlagMeldung(taeter, opfer){
+  var t = name(taeter), o = name(opfer);
+  if (o === 'Du') return t + ' schickt dich nach Hause!';
+  if (t === 'Du') return 'Erwischt! ' + o + ' muss nach Hause.';
+  return t + ' schickt ' + o + ' nach Hause.';
+}
+function ausfuehren(z){
+  var p = G.dran, q = z.p, nr = G.spielNr, punkte = [], k;
+  var pflicht = G.schlagzwang ? schlagZuege(G.zuege, p, G.team) : [];
+  var vergessen = pflicht.length && !(z.schlag && !freunde(p, z.schlag.p, G.team));
+  G.phase = 'laufen'; markenZeigen(); knoepfe();
+  if (z.von === -1) punkte.push(feldXY(q, z.i, 0));
+  else for (k = z.von+1; k <= z.nach; k++) punkte.push(feldXY(q, z.i, k));
+  hopsen(q, z.i, punkte, z.von === -1 ? 260 : 140, function(){
+    if (nr !== G.spielNr) return;
+    G.fig[q][z.i] = z.nach;
+    if (z.schlag){
+      var s = z.schlag;
+      G.fig[s.p][s.i] = -1;
+      meldung(schlagMeldung(p, s.p), 2000, istMensch(s.p) ? 'warn' : '');
+      ton(istMensch(p) ? 700 : 220, .15, istMensch(p) ? 'triangle' : 'square');
+      summ(istMensch(s.p) ? [30,40,30] : 20);
+      gleiten(s.p, s.i, feldXY(s.p, s.i, -1), 520, strafe);
+    } else strafe();
+  });
+  /* Schlagzwang verpasst: die Figur, die hätte schlagen können, muss nach Hause */
+  function strafe(){
+    if (nr !== G.spielNr) return;
+    var f = vergessen ? pustFigur(G.fig, pflicht) : null;
+    if (!f){ weiter(); return; }
+    G.fig[f.p][f.i] = -1;
+    var n = name(p);
+    meldung('Schlagzwang! ' + (n === 'Du' ? 'Du hättest' : n + ' hätte') + ' schlagen müssen – die Figur muss nach Hause.', 2600, 'warn');
+    ton(200, .25, 'square');
+    summ(istMensch(p) ? [40,30,40] : 20);
+    setTimeout(function(){ if (nr === G.spielNr) gleiten(f.p, f.i, feldXY(f.p, f.i, -1), 620, weiter); }, 350);
+  }
+  function weiter(){
+    if (nr !== G.spielNr) return;
+    spaeterSichern();
+    if (gewonnen(G.fig, p, G.team)){ spielEnde(p); return; }
+    if (G.wurf === 6){
+      if (istMensch(p)) meldung(name(p) === 'Du' ? 'Sechs – du darfst nochmal!' : 'Sechs – '+name(p)+' darf nochmal!', 1500);
+      zugBeginnen();
+    } else naechster();
+  }
+}
+function naechster(){
+  G.phase = 'pause'; aktualisieren();
+  var nr = G.spielNr, pause = istMensch(G.dran) ? 250 : 350;
+  setTimeout(function(){
+    if (nr !== G.spielNr) return;
+    do { G.dran = (G.dran + 1) % 4; } while (!spielt(G.dran));
+    zugBeginnen();
+  }, pause);
+}
+
+/* ==================================================================
+   Figur wählen: Tippen, Lupe, Bestätigen
+   ------------------------------------------------------------------
+   Ein eindeutiger Tipp zieht sofort. Liegen mehrere ziehbare Figuren
+   (oder ihre Ziele) unter dem Finger, öffnet sich eine Lupe. Mit
+   "Zug bestätigen" wählt der erste Tipp nur aus, der zweite zieht.
+   ================================================================== */
+var $lupe = el('lupe'), $lupeSvg = el('lupeSvg'), lupeFenster = null, lupeWahl = [];
+function brettPunkt(e, svg, fenster){
+  var r = svg.getBoundingClientRect();
+  return [fenster[0] + (e.clientX - r.left) / r.width * fenster[2],
+          fenster[1] + (e.clientY - r.top) / r.height * fenster[3]];
+}
+/* Antippen kann man alle eigenen Figuren - im Team auch die Partnerfiguren
+   draußen -, ob sie ziehen können oder nicht. Sonst verriete schon das
+   Tippen (oder die Lupe), welche Figur geht. */
+function tippbare(){
+  var p = G.dran, wer = G.team ? [p, partner(p, true)] : [p], aus = [];
+  wer.forEach(function(q){
+    for (var i=0;i<4;i++){
+      var r = G.fig[q][i], z = null;
+      if (q !== p && r < 0) continue;
+      G.zuege.forEach(function(m){
+        if (z || m.p !== q) return;
+        if (m.i === i) z = m;
+        /* Haus-Figuren sind gleichwertig: jede darf die Rauskomm-Figur sein */
+        else if (r === -1 && m.von === -1) z = { p:q, i:i, von:-1, nach:m.nach, schlag:m.schlag };
+      });
+      aus.push({ p:q, i:i, z:z });
+    }
+  });
+  return aus;
+}
+/* Abstand zur Figur - mit Zughilfe auch zu ihrem Ziel */
+function abstandZu(f, x, y){
+  var a = figPos[f.p][f.i], d = Math.hypot(a[0]-x, a[1]-1.5-y);
+  if (!cfg.vorschau || !f.z) return d;
+  var b = feldXY(f.z.p, f.z.i, f.z.nach);
+  return Math.min(d, Math.hypot(b[0]-x, b[1]-y));
+}
+/* Figuren im Haus zählen als ein Kandidat */
+function kandidaten(liste, x, y, radius){
+  var aus = [], gesehen = {};
+  liste.map(function(f){ return { f:f, d:abstandZu(f, x, y) }; })
+    .filter(function(k){ return k.d < radius; })
+    .sort(function(a, b){ return a.d - b.d; })
+    .forEach(function(k){
+      var key = G.fig[k.f.p][k.f.i] === -1 ? 'haus'+k.f.p : k.f.p+'-'+k.f.i;
+      if (!gesehen[key]){ gesehen[key] = 1; aus.push(k.f); }
+    });
+  return aus;
+}
+function waehlen(z){
+  if (!cfg.bestaetigen || gleicherZug(G.auswahl, z)){ G.auswahl = null; ausfuehren(z); return; }
+  G.auswahl = z; markenZeigen(); hinweisSetzen();
+  ton(520, .05);
+}
+function antippen(f){
+  if (f.z){ waehlen(f.z); return; }
+  G.auswahl = null; markenZeigen(); hinweisSetzen();
+  meldung('Diese Figur kann mit einer '+G.wurf+' nicht ziehen.', 1600, 'warn');
+  ton(180, .08, 'square');
+}
+$brett.addEventListener('pointerdown', function(e){
+  if (!G.laeuft || G.phase !== 'ziehen' || !istMensch(G.dran)) return;
+  if ($lupe.classList.contains('on')){ lupeZu(); return; }
+  var pt = brettPunkt(e, $brett, [-3, -3, 116, 116]);
+  var nah = kandidaten(tippbare(), pt[0], pt[1], 9.5);
+  if (!nah.length){ if (G.auswahl){ G.auswahl = null; markenZeigen(); hinweisSetzen(); } return; }
+  /* Ein Tipp auf die schon gewählte Figur bestätigt sie, auch wenn Nachbarn nah sind */
+  if (G.auswahl && gleicherZug(G.auswahl, nah[0].z)){ waehlen(nah[0].z); return; }
+  if (nah.length === 1){ antippen(nah[0]); return; }
+  lupeAuf(e, pt, nah);
+});
+function lupeAuf(e, pt, nah){
+  var r = $main.getBoundingClientRect(), br = $brett.getBoundingClientRect();
+  var groesse = Math.round(Math.min(240, br.width * .66));
+  var fw = 30;
+  lupeFenster = [pt[0] - fw/2, pt[1] - fw/2, fw, fw];
+  lupeWahl = nah;
+  $lupeSvg.setAttribute('viewBox', lupeFenster.join(' '));
+  $lupeSvg.innerHTML = $brett.innerHTML;
+  /* über dem Finger, damit er nichts verdeckt - aber im Bild bleiben */
+  var x = e.clientX - r.left - groesse/2, y = e.clientY - r.top - groesse - 24;
+  if (y < 4) y = Math.min(r.height - groesse - 4, e.clientY - r.top + 24);
+  x = Math.max(4, Math.min(r.width - groesse - 4, x));
+  $lupe.style.cssText = 'left:'+x+'px;top:'+y+'px;width:'+groesse+'px;height:'+groesse+'px;';
+  $lupe.classList.add('on');
+  ton(620, .04);
+}
+function lupeZu(){ if ($lupe) $lupe.classList.remove('on'); }
+$lupe.addEventListener('pointerdown', function(e){
+  e.stopPropagation();
+  var pt = brettPunkt(e, $lupeSvg, lupeFenster);
+  var nah = kandidaten(lupeWahl, pt[0], pt[1], 7);
+  lupeZu();
+  if (nah.length && G.phase === 'ziehen') antippen(nah[0]);
+});
+/* Tipp daneben schließt die Lupe */
+document.addEventListener('pointerdown', function(e){
+  if (!$lupe.classList.contains('on')) return;
+  if ($lupe.contains(e.target) || $brett.contains(e.target)) return;
+  lupeZu();
+});
+
+/* ==================================================================
+   Anzeige
+   ================================================================== */
+function hinweisText(){
+  var t = hinweisOhneTeam();
+  if (!G.laeuft || !G.team) return t;
+  var pn = name(partner(G.dran, true));
+  return (pn === 'Du' ? 'Im Team mit dir' : 'Im Team mit '+pn) + (t ? ' · ' + t : '');
+}
+function hinweisOhneTeam(){
+  if (!G.laeuft) return '';
+  if (!istMensch(G.dran)) return G.phase === 'wuerfeln' ? name(G.dran)+' würfelt …' : '';
+  if (G.phase === 'wuerfeln'){
+    var v = G.versuche > 1 ? ' ('+G.versuche+' Versuche für eine Sechs)' : '';
+    if (cfg.schuetteln && ruck.geht) return 'Schüttle das Handy und halte dann still – oder wirf den Würfel mit dem Finger'+v;
+    return 'Wirf den Würfel mit dem Finger – oder tippe auf „Würfeln“'+v;
+  }
+  if (G.phase === 'ziehen')
+    return cfg.bestaetigen && G.auswahl ? 'Nochmal tippen zum Ziehen – oder eine andere Figur wählen.' :
+           (cfg.vorschau ? 'Tippe auf eine markierte Figur.' : 'Tippe auf die Figur, die ziehen soll.');
+  return '';
+}
+function hinweisSetzen(){ $hinweis.textContent = hinweisText(); }
+function statusText(){
+  if (!G.laeuft) return 'Teddy ärgert dich nicht';
+  var n = name(G.dran), du = n === 'Du';
+  if (istMensch(G.dran) && G.phase === 'wuerfeln') return (du ? 'Du bist' : n+' ist')+' dran – würfeln!';
+  if (G.wurf && G.phase !== 'wuerfeln') return (du ? 'Du hast' : n+' hat')+' eine '+G.wurf;
+  return (du ? 'Du bist' : n+' ist')+' dran';
+}
+function renderStatus(){
+  if (G.meldung){ $statusTxt.textContent = G.meldung; $kommentar.className = G.meldungArt || ''; return; }
+  $statusTxt.textContent = statusText(); $kommentar.className = '';
+}
+function meldung(txt, dauer, art){
+  G.meldung = txt || ''; G.meldungArt = art || '';
+  if (G.meldTimer) clearTimeout(G.meldTimer);
+  if (txt) G.meldTimer = setTimeout(function(){ G.meldung = ''; renderStatus(); }, dauer || 2200);
+  renderStatus();
+}
+function knoepfe(){
+  var dran = G.laeuft && istMensch(G.dran) && G.phase === 'wuerfeln';
+  $bWurf.disabled = !dran;
+  $schale.classList.toggle('dran', dran);
+}
+function aktualisieren(){
+  /* Der Viertelkreis in der Würfelschale zeigt, wer dran ist */
+  $schale.style.setProperty('--dran', SPIELER[G.laeuft ? G.dran : 0].farbe);
+  renderStatus(); hinweisSetzen(); markenZeigen(); knoepfe();
+}
+
+/* ---------- Aufteilung: Brett und Schale ---------- */
+function aufteilen(){
+  var B = $main.clientWidth, H = $main.clientHeight, rand = 10, brett, sw, sh, bx, by, sx, sy;
+  if (H >= B * 1.15){
+    var minSchale = Math.max(120, Math.min(210, H*.26));
+    brett = Math.max(160, Math.min(B - 2*rand, H - minSchale - 3*rand));
+    sw = Math.min(B - 2*rand, brett); sh = Math.min(H - brett - 3*rand, sw*.75);
+    var gesamt = brett + rand + sh;
+    bx = (B - brett)/2; by = (H - gesamt)/2; sx = (B - sw)/2; sy = by + brett + rand;
+  } else {
+    var minBreite = Math.max(140, Math.min(260, B*.28));
+    brett = Math.max(160, Math.min(H - 2*rand, B - minBreite - 3*rand));
+    sw = Math.min(B - brett - 3*rand, brett*.8); sh = Math.min(H - 2*rand, brett);
+    var gb = brett + rand + sw;
+    bx = (B - gb)/2; by = (H - brett)/2; sx = bx + brett + rand; sy = (H - sh)/2;
+  }
+  $brett.style.cssText = 'left:'+bx+'px;top:'+by+'px;width:'+brett+'px;height:'+brett+'px;';
+  $schale.style.left = sx+'px'; $schale.style.top = sy+'px';
+  $schale.style.width = sw+'px'; $schale.style.height = sh+'px';
+  var innenB = sw - 8, innenH = sh - 8;
+  var wuerfelPx = Math.round(Math.max(36, Math.min(66, Math.min(innenB, innenH)/3.6)));
+  pxProEinheit = wuerfelPx/2;
+  document.documentElement.style.setProperty('--wuerfel', wuerfelPx+'px');
+  W.breite = innenB/pxProEinheit; W.tiefe = innenH/pxProEinheit;
+  W.p[0] = Math.max(1, Math.min(W.breite-1, W.p[0]));
+  W.p[1] = Math.max(1, Math.min(W.tiefe-1, W.p[1]));
+  wuerfelZeigen();
+}
+beiGroessenwechsel(aufteilen);
+
+/* ==================================================================
+   Spielstand sichern und laden
+   ================================================================== */
+function beschreibung(sitze, stufe, team){
+  var m = anzahl(sitze, 'mensch'), t = anzahl(sitze, 'teddy'), teile = [];
+  if (m) teile.push(m + (m === 1 ? ' Mensch' : ' Menschen'));
+  if (t) teile.push(t + (t === 1 ? ' Teddy' : ' Teddys') + ' (' + STUFEN[stufe].name + ')');
+  if (team) teile.push('Team');
+  return teile.join(' · ');
+}
+function spielSpeichern(){
+  if (!G.laeuft) return;
+  standSpeichern('teddy.aerger.spiel', {
+    fig:G.fig, dran:G.dran, versuche:G.versuche,
+    wurf: (G.phase === 'ziehen' && istMensch(G.dran)) ? G.wurf : 0,
+    schlagzwang:G.schlagzwang, stufe:G.stufe, team:G.team, sitze:G.sitze, namen:G.namen, q:W.q,
+    fortsetzen: beschreibung(G.sitze, G.stufe, G.team)
+  });
+}
+function spielLaden(){
+  var d = standLaden('teddy.aerger.spiel');
+  if (!d || !d.fig || d.fig.length !== 4) return false;
+  G.fig = d.fig; G.dran = d.dran; G.schlagzwang = !!d.schlagzwang;
+  G.stufe = Math.max(0, Math.min(3, d.stufe|0));
+  G.sitze = (d.sitze && d.sitze.length === 4) ? d.sitze : ['mensch','teddy','teddy','teddy'];
+  G.team = !!d.team && anzahl(G.sitze, 'frei') === 0;
+  G.namen = namenAufraeumen(d.namen || []);
+  G.laeuft = true; G.spielNr++; G.auswahl = null;
+  wurfVergessen();
+  if (d.q && d.q.length === 4) W.q = qNorm(d.q);
+  alleFigurenStellen(); wuerfelZeigen();
+  meldung('Spiel fortgesetzt.', 1600);
+  G.versuche = d.versuche || 1;
+  if (d.wurf && istMensch(d.dran)) wurfErgebnis(d.wurf);
+  else wuerfelnLassen();
+  return true;
+}
+/* Ein Wurf, der beim Wechsel noch rollt, gehört nicht ins neue Spiel */
+function wurfVergessen(){
+  wurfAktiv = false; W.gehalten = false; griff = null; schuettel.an = false; zeitfaktor = 1;
+  lupeZu();
+}
+function neuesSpiel(){
+  saveCfg();
+  wurfVergessen();
+  G.sitze = cfg.sitze.slice(); G.team = cfg.team && anzahl(G.sitze, 'frei') === 0;
+  G.namen = namenAufraeumen(cfg.namen);
+  G.fig = leeresBrett(); G.schlagzwang = cfg.schlagzwang; G.stufe = cfg.stufe;
+  /* Es fängt der erste Mensch an - oder, wenn nur Teddys spielen, der erste Teddy */
+  G.dran = G.sitze.indexOf('mensch');
+  if (G.dran < 0) for (G.dran = 0; !spielt(G.dran); G.dran++);
+  G.laeuft = true; G.spielNr++; G.meldung = ''; G.auswahl = null;
+  alleFigurenStellen();
+  var n = name(G.dran);
+  meldung(n === 'Du' ? 'Los geht’s – du fängst an!' : 'Los geht’s – ' + n + ' fängt an!', 1800);
+  zugBeginnen();
+  spaeterSichern();
+}
+
+/* ==================================================================
+   Ende und Bilanz
+   ================================================================== */
+function bilanzLesen(){
+  var b = lsGet('teddy.aerger.bilanz', { mensch:0, teddy:0 });
+  if (b.mensch === undefined){ b.mensch = b.du || 0; delete b.du; }
+  return b;
+}
+function spielEnde(sieger){
+  G.laeuft = false; G.phase = 'aus';
+  lsDel('teddy.aerger.spiel');
+  var gewinner = G.team ? [sieger, partner(sieger, true)] : [sieger];
+  var b = bilanzLesen();
+  if (gewinner.some(istMensch)) b.mensch++; else b.teddy++;
+  lsSet('teddy.aerger.bilanz', b);
+  aktualisieren();
+  setTimeout(function(){ zeigeErgebnis(gewinner, b); }, 400);
+}
+
+/* ==================================================================
+   Dialoge
+   ================================================================== */
+function auf(html){ $dlg.innerHTML = html; $veil.className = 'on'; $dlg.scrollTop = 0; }
+function zu(){ $veil.className = ''; aktualisieren(); }
+$veil.addEventListener('click', function(e){ if (e.target === $veil && G.laeuft) zu(); });
+var startNurNeu = false;
+/* Namen gleich mitschreiben, ohne den Dialog neu aufzubauen (der Fokus bliebe sonst nicht) */
+$dlg.addEventListener('input', function(e){
+  var n = e.target;
+  if (!n.classList || !n.classList.contains('namefeld')) return;
+  cfg.namen[parseInt(n.getAttribute('data-p'), 10)] = n.value;
+  saveCfg();
+});
+$dlg.addEventListener('click', function(e){
+  var n = e.target;
+  while (n && n !== $dlg && !n.getAttribute('data-act')) n = n.parentNode;
+  if (!n || n === $dlg) return;
+  var a = n.getAttribute('data-act'), v = n.getAttribute('data-v');
+  ton(500,.05);
+  if (a === 'zu') zu();
+  else if (a === 'neu') zeigeStart(true);
+  else if (a === 'los'){ bewegungErlauben(); zu(); neuesSpiel(); }
+  else if (a === 'sitz'){
+    cfg.sitze[parseInt(n.getAttribute('data-p'), 10)] = v;
+    if (anzahl(cfg.sitze, 'frei') > 0) cfg.team = false;
+    saveCfg(); zeigeStart(startNurNeu);
+  }
+  else if (a === 'stufe'){ cfg.stufe = parseInt(v, 10); saveCfg(); zeigeStart(startNurNeu); }
+  else if (a === 'hilfe') zeigeHilfe();
+  else if (a === 'opt') zeigeOptionen();
+  else if (a === 'menu') zeigeMenu();
+  else if (a === 'bilanz') zeigeBilanz();
+  else if (a === 'ecke') zurSpieleecke();
+  else if (a === 'sw'){
+    var f = n.getAttribute('data-f');
+    cfg[f] = !cfg[f]; saveCfg();
+    n.className = 'sw' + (cfg[f] ? ' on' : '');
+    if (f === 'sound' && cfg.sound) ton(660,.08);
+    if (f === 'schuetteln' && cfg.schuetteln){ bewegungGefragt = false; bewegungErlauben(); }
+    if (f === 'bestaetigen' || f === 'vorschau'){ if (f === 'bestaetigen') G.auswahl = null; markenZeigen(); }
+    if (f === 'team') zeigeStart(startNurNeu);
+  }
+  else if (a === 'reset'){ lsSet('teddy.aerger.bilanz', { mensch:0, teddy:0 }); zeigeBilanz(); }
+});
+function schalter(f, titel, unter, aus){
+  return '<div class="opt"><label>'+titel+(unter ? '<span>'+unter+'</span>' : '')+'</label>'+
+         '<div class="sw'+(cfg[f] && !aus ?' on':'')+(aus ? ' aus' : '')+'"'+(aus ? '' : ' data-act="sw"')+' data-f="'+f+'"><i></i></div></div>';
+}
+var SITZ_ARTEN = [['mensch','Mensch'], ['teddy','Teddy'], ['frei','frei']];
+function zeigeStart(nurNeu){
+  startNurNeu = nurNeu;
+  var alt = $veil.classList.contains('on') ? $dlg.scrollTop : 0;
+  var h = '<div id="title"><div>'+teddiMarke()+'</div><div class="nm">Teddy ärgert<br>dich nicht</div>'+
+          '<div class="streifen"></div></div>';
+  h += '<h3>Wer spielt mit?</h3>';
+  /* Mit Team-Variante stehen die Partner zusammen in einem Block */
+  var team = cfg.team && anzahl(cfg.sitze, 'frei') === 0;
+  var reihe = team ? [0, 2, 1, 3] : [0, 1, 2, 3];
+  for (var n=0;n<4;n++){
+    var p = reihe[n];
+    if (team && n % 2 === 0)
+      h += '<div class="teamblock"><div class="teamkopf"><span class="kugel k'+p+'"></span><span class="kugel k'+(p+2)+'"></span>'+
+           'Team '+(n/2+1)+': '+SPIELER[p].wort+' + '+SPIELER[p+2].wort+'</div>';
+    h += '<div class="sitz"><span class="kugel k'+p+'"></span><b>'+SPIELER[p].wort+'</b><div class="seg">';
+    SITZ_ARTEN.forEach(function(s){
+      h += '<button data-act="sitz" data-p="'+p+'" data-v="'+s[0]+'" class="'+(cfg.sitze[p] === s[0] ? 'an' : '')+'">'+s[1]+'</button>';
+    });
+    h += '</div></div>';
+    if (cfg.sitze[p] === 'mensch')
+      h += '<div class="namezeile"><input class="namefeld" data-p="'+p+'" type="text" maxlength="14" autocomplete="off"'+
+           ' placeholder="Name (sonst '+SPIELER[p].wort+')" value="'+esc(cfg.namen[p] || '')+'"></div>';
+    if (team && n % 2 === 1) h += '</div>';
+  }
+  var teddys = anzahl(cfg.sitze, 'teddy'), mit = 4 - anzahl(cfg.sitze, 'frei');
+  h += '<h3>Wie stark sind die Teddys?</h3><div class="seg breit'+(teddys ? '' : ' aus')+'">';
+  for (var i=0;i<STUFEN.length;i++)
+    h += '<button data-act="stufe" data-v="'+i+'" class="'+(cfg.stufe === i ? 'an' : '')+'">'+STUFEN[i].name+'</button>';
+  h += '</div><p class="klein">'+(teddys ? STUFEN[cfg.stufe].txt : 'Es spielen keine Teddys mit.')+'</p>';
+  h += '<h3>Regeln</h3>';
+  h += schalter('schlagzwang', 'Schlagzwang', 'Wer schlagen kann und es nicht tut, verliert die Figur, die hätte schlagen können.');
+  h += schalter('team', 'Team-Variante',
+                mit === 4 ? 'Rot + Gelb gegen Blau + Schwarz. Du darfst auch die Figuren deines Partners ziehen.'
+                          : 'Nur mit vier Mitspielern.', mit !== 4);
+  h += schalter('schuetteln', 'Würfeln durch Schütteln', 'Sonst wirfst du den Würfel mit dem Finger.');
+  h += '<div class="row"><button class="btn go" data-act="los"'+(mit >= 2 ? '' : ' disabled')+'>'+
+       '<span class="ico">&#9654;</span>Los geht’s</button></div>';
+  if (mit < 2) h += '<p class="klein" style="color:var(--rot2)">Es müssen mindestens zwei mitspielen.</p>';
+  h += '<div class="row">'+
+       '<button class="btn" data-act="hilfe"><span class="ico">?</span>Regeln</button>'+
+       '<button class="btn" data-act="bilanz"><span class="ico">&#9733;</span>Bilanz</button>';
+  if (G.laeuft && !nurNeu) h += '<button class="btn" data-act="zu"><span class="ico">&#10005;</span>Zurück</button>';
+  else h += eckeKnopf();
+  h += '</div>';
+  auf(h);
+  $dlg.scrollTop = alt;
+}
+function zeigeMenu(){
+  auf('<h2>Menü</h2><div class="lvl">'+
+    (G.laeuft ? '<button data-act="zu"><b>Weiterspielen</b></button>' : '')+
+    '<button data-act="neu"><b>Neues Spiel</b></button>'+
+    '<button data-act="bilanz"><b>Bilanz</b></button>'+
+    '<button data-act="hilfe"><b>Regeln und Bedienung</b></button>'+
+    '<button data-act="opt"><b>Einstellungen</b></button>'+
+    '<button data-act="ecke"><b>Zur Spieleecke</b></button></div>');
+}
+function zeigeOptionen(){
+  var h = '<h2>Einstellungen</h2>';
+  h += schalter('bestaetigen', 'Zug bestätigen', 'Erst Figur antippen, dann nochmal tippen zum Ziehen.');
+  h += schalter('vorschau', 'Zughilfe', 'Zeigt, welche Figuren ziehen können, und mit einer blassen Glasfigur, wo sie landen.');
+  h += schalter('schuetteln', 'Würfeln durch Schütteln');
+  h += schalter('sound', 'Ton');
+  h += schalter('vibrate', 'Vibration');
+  if (G.laeuft)
+    h += '<p style="margin-top:10px;font-size:13px;opacity:.8;">In diesem Spiel: Schlagzwang '+(G.schlagzwang ? 'an' : 'aus')+
+         ', Team-Variante '+(G.team ? 'an' : 'aus')+'. Das lässt sich beim nächsten neuen Spiel umstellen.</p>';
+  h += '<div class="row"><button class="btn" data-act="'+(G.laeuft?'zu':'neu')+'">Fertig</button></div>';
+  auf(h);
+}
+function zeigeBilanz(){
+  var b = bilanzLesen();
+  auf('<h2>Bilanz</h2><table class="sc">'+
+    '<tr class="me"><td>Ein Mensch gewinnt</td><td class="n">'+b.mensch+'</td></tr>'+
+    '<tr><td>Ein Teddy gewinnt</td><td class="n">'+b.teddy+'</td></tr></table>'+
+    '<p class="klein">Im Team-Spiel zählt der Sieg für die Menschen, sobald ein Mensch im Siegerteam ist.</p>'+
+    '<div class="row"><button class="btn" data-act="reset">Bilanz löschen</button>'+
+    '<button class="btn" data-act="'+(G.laeuft?'zu':'neu')+'">Zurück</button></div>');
+}
+function zeigeErgebnis(gewinner, b){
+  var mensch = gewinner.some(istMensch), du = mensch && anzahl(G.sitze, 'mensch') === 1, titel, unter;
+  if (du){
+    var ich = gewinner.filter(istMensch)[0];
+    titel = G.namen[ich] ? 'Gewonnen, '+esc(G.namen[ich])+'!' : 'Gewonnen!';
+    unter = G.team ? 'Zusammen mit '+esc(name(gewinner[istMensch(gewinner[0]) ? 1 : 0]))+'.' : 'Alle vier Figuren sind im Ziel.';
+  } else if (G.team){
+    titel = 'Team '+esc(name(gewinner[0]))+' & '+esc(name(gewinner[1]))+' gewinnt';
+    unter = 'Alle acht Figuren sind im Ziel.';
+  } else {
+    titel = esc(name(gewinner[0]))+' gewinnt';
+    unter = mensch ? 'Alle vier Figuren sind im Ziel.' : 'Ärgere dich nicht – nächstes Mal!';
+  }
+  var h = '<div style="text-align:center;margin-bottom:6px;">'+
+          '<div style="width:110px;margin:0 auto;">'+(mensch ? teddyJubel() : teddyRuhig())+'</div>'+
+          '<h2 style="margin:2px 0 0;">'+titel+'</h2>'+
+          '<p style="margin:0;opacity:.75;font-size:13px;">'+unter+'</p></div>';
+  h += '<table class="sc">';
+  for (var p=0;p<4;p++) if (spielt(p))
+    h += '<tr'+(gewinner.indexOf(p) >= 0 ? ' class="me"' : '')+'><td>'+esc(name(p))+'</td><td class="n">'+imZiel(G.fig,p)+' im Ziel</td></tr>';
+  h += '</table><p style="font-size:13px;opacity:.75;margin-top:8px;">Bilanz: Menschen '+b.mensch+' &middot; Teddys '+b.teddy+'</p>';
+  h += '<div class="row"><button class="btn go" data-act="los"><span class="ico">&#9654;</span>Nochmal</button>'+
+       '<button class="btn" data-act="neu">Mitspieler</button>'+eckeKnopf()+'</div>';
+  auf(h);
+  ton(mensch ? 720 : 240, mensch ? .12 : .2, mensch ? 'triangle' : 'square');
+}
+function zeigeHilfe(){
+  auf('<h2>Regeln</h2>'+
+  '<h3>Ziel</h3><p>Bring alle vier Figuren deiner Farbe einmal um das Brett herum in deine vier Zielfelder. Wer zuerst alle vier im Ziel hat, gewinnt.</p>'+
+  '<h3>Mitspieler</h3><p>Im Startbild legst du für jede Farbe fest, ob ein Mensch, ein Teddy oder niemand sie spielt. Menschen können ihren Namen eintragen. Mehrere Menschen würfeln und ziehen reihum am selben Gerät. Die Teddys gibt es in vier Stärken, von Gemütlich bis Meister.</p>'+
+  '<h3>Würfeln</h3><ul>'+
+  '<li><b>Schütteln:</b> Schüttle das Handy und halte dann still – der Würfel wird wie aus einem Becher ausgekippt. Wo er liegen bleibt, zählt die obere Seite.</li>'+
+  '<li><b>Mit dem Finger:</b> Greif den Würfel in der Schale, zieh ihn und lass ihn im Schwung los – wie ein echter Wurf.</li>'+
+  '<li><b>Knopf „Würfeln“:</b> wirft den Würfel für dich.</li>'+
+  '<li>Bleibt er schief an der Wand liegen, kippt er von selbst um.</li></ul>'+
+  '<h3>Ziehen</h3><ul>'+
+  '<li>Mit einer <b>6</b> kommt eine Figur aus dem Haus auf dein Startfeld. Nach einer 6 darfst du nochmal würfeln.</li>'+
+  '<li>Hast du keine Figur, die ziehen kann, hast du <b>drei Versuche</b> für eine 6.</li>'+
+  '<li>Das Startfeld muss frei gemacht werden, solange noch Figuren im Haus warten.</li>'+
+  '<li>Landest du auf einer fremden Figur, fliegt sie zurück in ihr Haus.</li>'+
+  '<li>Über Figuren darfst du auf der Bahn springen, im Ziel nicht.</li>'+
+  '<li><b>Schlagzwang</b> (im Startbild umschaltbar): Kannst du schlagen und ziehst trotzdem anders, muss die Figur, die hätte schlagen können, zurück ins Haus. Können es mehrere, trifft es die am weitesten vorgerückte.</li></ul>'+
+  '<h3>Team-Variante</h3><p>Bei vier Mitspielern bilden die schräg gegenüberliegenden Farben ein Team: Rot mit Gelb, Blau mit Schwarz. '+
+  'Wer dran ist, darf mit seinem Wurf auch eine Figur des Partners ziehen – nur aus dem Haus holen darf jeder bloß seine eigenen. '+
+  'Den Partner darfst du schlagen, musst es aber nie – der Schlagzwang gilt nur gegen das andere Team, und auch mit den Figuren des Partners. Das Team gewinnt, wenn alle acht Figuren im Ziel sind.</p>'+
+  '<h3>Bedienung</h3><p>Nach dem Wurf tippst du die Figur an, die ziehen soll. Welche Figuren überhaupt können und wohin sie kämen, verrät das Spiel nicht – '+
+  'wer eine Chance übersieht, darf sich ärgern. Kann die angetippte Figur nicht ziehen, sagt das Spiel Bescheid. '+
+  'Mit der <b>Zughilfe</b> (in den Einstellungen) sind die ziehbaren Figuren umrandet, und eine blasse Glasfigur zeigt, wo sie landen würden. '+
+  'Stehen mehrere Figuren eng beieinander, öffnet sich eine Lupe, in der du genau wählen kannst. '+
+  'Mit <b>Zug bestätigen</b> (in den Einstellungen) wählt der erste Tipp die Figur aus, der zweite zieht sie. '+
+  'Gibt es nur eine Möglichkeit, zieht die Figur von selbst.</p>'+
+  '<p style="opacity:.7;font-size:13px;margin-top:14px;">Vorbild ist das Brettspiel „Mensch ärgere dich nicht“. Teddy ärgert dich nicht ist eine eigene Fassung mit eigener Grafik und eigenen Teddys.</p>'+
+  '<div class="row"><button class="btn" data-act="'+(G.laeuft?'zu':'neu')+'">Zurück</button></div>');
+}
+
+/* ==================================================================
+   Knöpfe und Start
+   ================================================================== */
+el('bEcke').onclick = zurSpieleecke;
+el('bMenu').onclick = function(){ zeigeMenu(); };
+el('bHilfe').onclick = function(){ zeigeHilfe(); };
+$bWurf.onclick = function(){ if (G.laeuft && istMensch(G.dran)) wuerfelWerfen(); };
+
+brettZeichnen();
+wuerfelBauen();
+W.q = lageFuer(6, 0.3);
+G.fig = leeresBrett();
+alleFigurenStellen();
+aufteilen();
+setTimeout(aufteilen, 80);
+if (!spielLaden()) { aktualisieren(); zeigeStart(false); }
+
+</script>
+</body>
+</html>
