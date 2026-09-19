@@ -783,8 +783,6 @@ function spielFortsetzen(){
   undoStack=d.undo||[]; seconds=d.seconds||0;
   zeigeSpiel();
 }
-document.addEventListener('visibilitychange', function(){ if(document.hidden) spielSpeichern(); });
-window.addEventListener('pagehide', spielSpeichern);
 
 function render(){
   spielSpeichern();

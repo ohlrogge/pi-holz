@@ -123,6 +123,15 @@ function zurSpieleecke(){
   if (typeof spielSpeichern === 'function') spielSpeichern();
   location.href = './';
 }
+/* Der Spielstand muss auch dann sitzen, wenn die Seite ohne Klick verschwindet.
+   Auf iOS ist pagehide das einzige Ereignis, das beim Wegwischen einer
+   Web-App noch kommt; unload und beforeunload bleiben dort aus. */
+(function(){
+  function sichern(){ if (typeof spielSpeichern === 'function') spielSpeichern(); }
+  document.addEventListener('visibilitychange', function(){ if (document.hidden) sichern(); });
+  window.addEventListener('pagehide', sichern);
+})();
+
 function eckeKnopf(){
   return '<button class="btn" data-act="ecke"><span class="ico">'+
          '<img class="ecke-ico" src="favicon.svg" alt=""></span>Spieleecke</button>';
