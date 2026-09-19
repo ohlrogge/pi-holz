@@ -270,14 +270,14 @@ var elRec  = document.getElementById('tb-rec');
 
 /* ---------- Speichern (mit Rueckfall in den Arbeitsspeicher) ---------- */
 function cfgKey(){ return cfg.cols+'x'+cfg.rows+'x'+cfg.colors+'L'+cfg.level; }
-function scoresFor(k){ return lsGet('clicko.hs.'+k, []); }
+function scoresFor(k){ return lsGet('teddy.mania.bestenliste.'+k, []); }
 function bestFor(k){ var s=scoresFor(k); return s.length? s[0].score : 0; }
-var savedCfg = lsGet('clicko.cfg', null);
+var savedCfg = lsGet('teddy.mania.cfg', null);
 if (savedCfg) {
   for (var sk in savedCfg) if (sk in cfg) cfg[sk] = savedCfg[sk];
   if (savedCfg.v !== 2) { cfg.sound = false; cfg.v = 2; }   /* Ton ist jetzt standardmaessig aus */
 }
-function saveCfg(){ lsSet('clicko.cfg', cfg); }
+function saveCfg(){ lsSet('teddy.mania.cfg', cfg); }
 
 /* ---------- Ton ---------- */
 var actx=null;
@@ -745,14 +745,14 @@ function update(){
 
 /* ---------- Spielstand sichern ---------- */
 function spielSpeichern(){
-  if(!running || moves===0){ lsSet('clicko.spiel', null); return; }
-  lsSet('clicko.spiel', { g:snapshot().g, score:score, moves:moves, cols:COLS, rows:ROWS,
+  if(!running || moves===0){ lsDel('teddy.mania.spiel'); return; }
+  standSpeichern('teddy.mania.spiel', { g:snapshot().g, score:score, moves:moves, cols:COLS, rows:ROWS,
     colors:cfg.colors, level:cfg.level, undo:undoStack.slice(-50),
     fortsetzen: 'Stufe ' + cfg.level + ' \u00b7 ' + score + ' Punkte' });
 }
 function spielLaden(){
-  var d=lsGet('clicko.spiel', null);
-  if(!d || !d.g || !d.cols) return false;
+  var d=standLaden('teddy.mania.spiel');
+  if(!d || !d.g || !d.cols || !d.rows) return false;
   cfg.cols=d.cols; cfg.rows=d.rows; cfg.colors=d.colors; cfg.level=d.level;
   COLS=d.cols; ROWS=d.rows; TOTAL=COLS*ROWS;
   fitCells();
@@ -921,14 +921,14 @@ function finish(won){
     var box=document.createElement('div');
     box.innerHTML=msg+'<p>Eintrag in der Bestenliste – Name:</p>';
     var inp=document.createElement('input'); inp.type='text'; inp.maxLength=16;
-    inp.value=lsGet('clicko.name','Spieler'); box.appendChild(inp);
+    inp.value=lsGet('teddy.mania.name','Spieler'); box.appendChild(inp);
     dialog({ title:'Spiel beendet', body:box, buttons:[
       {label:'OK', fn:function(){
         var nm=(inp.value||'Spieler').substring(0,16);
-        lsSet('clicko.name',nm);
+        lsSet('teddy.mania.name',nm);
         list.push({name:nm, score:score, rest:rest, date:new Date().toLocaleDateString('de-DE')});
         list.sort(function(a,b){ return b.score-a.score; });
-        lsSet('clicko.hs.'+key, list.slice(0,10));
+        lsSet('teddy.mania.bestenliste.'+key, list.slice(0,10));
         update(); showScores();
       }},
       {label:'Abbrechen'},
@@ -949,7 +949,7 @@ function showScores(){
   });
   html+='</table></div>';
   dialog({ title:'Bestenliste', body:html,
-    buttons:[{label:'OK'},{label:'Löschen', fn:function(){ lsSet('clicko.hs.'+key,[]); update(); }}]});
+    buttons:[{label:'OK'},{label:'Löschen', fn:function(){ lsSet('teddy.mania.bestenliste.'+key,[]); update(); }}]});
 }
 function showRules(){
   dialog({ title:'Teddymania! – Hilfe', body:

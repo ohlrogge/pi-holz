@@ -48,6 +48,76 @@ function lsDel(k){
   try{ localStorage.removeItem(k); }catch(e){}
 }
 
+/* ---------- Spielstaende: Schluessel und Fassung ----------
+   Alle Schluessel liegen unter teddy.<spiel>., damit kein Spiel
+   versehentlich den Stand eines anderen ueberschreibt. Jeder Spielstand
+   traegt seine Fassung; passt sie nicht, faengt das Spiel neu an, statt
+   ueber einem alten Format abzustuerzen. */
+var SPIELSTAND_FASSUNG = 1;
+
+function standSpeichern(schluessel, daten){
+  daten.v = SPIELSTAND_FASSUNG;
+  lsSet(schluessel, daten);
+}
+function standLaden(schluessel){
+  var d = lsGet(schluessel, null);
+  return (d && d.v === SPIELSTAND_FASSUNG) ? d : null;
+}
+
+/* Umzug der Schluessel aus der Zeit vor dem teddy.-Praefix. Laeuft auf jeder
+   Seite und tut nach dem ersten Mal nichts mehr; kann weg, sobald niemand
+   mehr mit einem alten Browserspeicher ankommt. */
+(function(){
+  var einzeln = [
+    ['teddi.cfg',              'teddy.kub.cfg'],
+    ['teddi.spiel',            'teddy.kub.spiel'],
+    ['teddi.karte',            'teddy.kub.karte'],
+    ['sud.cfg',                'teddy.doku.cfg'],
+    ['sud.users',              'teddy.doku.benutzer'],
+    ['sud.spiel',              'teddy.doku.spiel'],
+    ['clicko.cfg',             'teddy.mania.cfg'],
+    ['clicko.spiel',           'teddy.mania.spiel'],
+    ['clicko.name',            'teddy.mania.name'],
+    ['teddyversi.cfg',         'teddy.versi.cfg'],
+    ['teddyversi.spiel',       'teddy.versi.spiel'],
+    ['teddyversi.bilanz',      'teddy.versi.bilanz'],
+    ['teddyversi.bilanzZweit', 'teddy.versi.bilanzZweit']
+  ];
+  var praefixe = [
+    ['sud.times.',  'teddy.doku.zeiten.'],
+    ['clicko.hs.',  'teddy.mania.bestenliste.']
+  ];
+  function umziehen(alt, neu){
+    try{
+      if (localStorage.getItem(neu) !== null) { localStorage.removeItem(alt); return; }
+      var roh = localStorage.getItem(alt);
+      if (roh === null) return;
+      /* Nur Spielstaende bekommen eine Fassung aufgepraegt - alte kennen
+         noch keine und sind Fassung 1. Einstellungen fuehren ihre eigene. */
+      if (neu.slice(-6) === '.spiel'){
+        var d = JSON.parse(roh);
+        if (d && typeof d === 'object' && !(d instanceof Array) && d.v === undefined) d.v = 1;
+        roh = JSON.stringify(d);
+      }
+      localStorage.setItem(neu, roh);
+      localStorage.removeItem(alt);
+    }catch(e){}
+  }
+  try{
+    var i;
+    for (i = 0; i < einzeln.length; i++) umziehen(einzeln[i][0], einzeln[i][1]);
+    for (i = 0; i < praefixe.length; i++){
+      var alt = praefixe[i][0], neu = praefixe[i][1], treffer = [], k;
+      for (var n = 0; n < localStorage.length; n++){
+        k = localStorage.key(n);
+        if (k && k.indexOf(alt) === 0) treffer.push(k);
+      }
+      for (var t = 0; t < treffer.length; t++)
+        umziehen(treffer[t], neu + treffer[t].slice(alt.length));
+    }
+  }catch(e){}
+})();
+
 /* ---------- Zurueck in die Spieleecke ---------- */
 function zurSpieleecke(){
   if (typeof spielSpeichern === 'function') spielSpeichern();

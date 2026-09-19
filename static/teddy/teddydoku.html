@@ -470,13 +470,13 @@ var gridEl = document.getElementById('grid');
 var overlay = document.getElementById('overlay');
 
 /* ---------- Speichern ---------- */
-users = lsGet('sud.users', ['Uli']);
+users = lsGet('teddy.doku.benutzer', ['Uli']);
 if(!users.length) users = ['Uli'];
-var savedCfg = lsGet('sud.cfg', null);
+var savedCfg = lsGet('teddy.doku.cfg', null);
 if(savedCfg) for(var k in savedCfg) if(k in cfg) cfg[k]=savedCfg[k];
 if(users.indexOf(cfg.user)<0) cfg.user = users[0];
-function saveCfg(){ lsSet('sud.cfg', cfg); }
-function timesKey(u,d){ return 'sud.times.'+u+'.'+d; }
+function saveCfg(){ lsSet('teddy.doku.cfg', cfg); }
+function timesKey(u,d){ return 'teddy.doku.zeiten.'+u+'.'+d; }
 function bestTimes(u,d){ return lsGet(timesKey(u,d), []); }
 
 /* ==================================================================
@@ -766,14 +766,16 @@ function countOf(v){ var n=0; for(var i=0;i<81;i++) if(board[i]===v) n++; return
 /* ---------- Spielstand sichern ---------- */
 function spielSpeichern(){
   if(!board || solved) return;
-  lsSet('sud.spiel', {user:cfg.user, level:diffLevel, puzzle:puzzle, solution:solution,
+  standSpeichern('teddy.doku.spiel', {user:cfg.user, level:diffLevel, puzzle:puzzle, solution:solution,
     board:board, undo:undoStack, seconds:seconds,
     fortsetzen: cfg.user + ' \u00b7 Stufe ' + diffLevel + ' \u00b7 ' + fmt(seconds)});
 }
-function spielLoeschen(){ lsSet('sud.spiel', null); }
+function spielLoeschen(){ lsDel('teddy.doku.spiel'); }
 function gespeichertesSpiel(){
-  var d=lsGet('sud.spiel', null);
-  return (d && d.board && d.user===cfg.user) ? d : null;
+  var d=standLaden('teddy.doku.spiel');
+  if(!d || d.user!==cfg.user) return null;
+  if(!d.board || d.board.length!==81 || !d.puzzle || !d.solution) return null;
+  return d;
 }
 function spielFortsetzen(){
   var d=gespeichertesSpiel(); if(!d) return;
@@ -934,7 +936,7 @@ function showUsers(){
     dialogInput('Neuer Benutzer','Name eingeben:', '', function(name){
       name=(name||'').trim().substring(0,16);
       if(!name) return;
-      if(users.indexOf(name)<0){ users.push(name); lsSet('sud.users',users); }
+      if(users.indexOf(name)<0){ users.push(name); lsSet('teddy.doku.benutzer',users); }
       sel=name; cfg.user=name; saveCfg(); showUsers();
     });
   };
@@ -943,7 +945,7 @@ function showUsers(){
     dialog({title:'Benutzer löschen', html:'<p>'+esc(sel)+' wirklich löschen? Die Zeiten gehen mit.</p>',
       buttons:[{label:'Ja', cls:'red', fn:function(){
         users=users.filter(function(u){ return u!==sel; });
-        lsSet('sud.users',users);
+        lsSet('teddy.doku.benutzer',users);
         for(var n=1;n<=10;n++) lsSet(timesKey(sel,n),[]);
         if(cfg.user===sel){ cfg.user=users[0]; saveCfg(); }
         showUsers();

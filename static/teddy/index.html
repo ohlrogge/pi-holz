@@ -9,6 +9,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Spieleecke">
+<script src="teddy.js"></script>
 <script>if('serviceWorker' in navigator && location.protocol.indexOf('http')===0) navigator.serviceWorker.register('sw.js');</script>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
@@ -125,7 +126,7 @@
           </g>
         </svg></span>
         <span class="name">Teddikub</span>
-        <span class="stand" data-spiel="teddi.spiel"></span>
+        <span class="stand" data-spiel="teddy.kub.spiel"></span>
       </a>
     </div>
     <div class="card">
@@ -148,7 +149,7 @@
           </g>
         </svg></span>
         <span class="name">Teddydoku</span>
-        <span class="stand" data-spiel="sud.spiel"></span>
+        <span class="stand" data-spiel="teddy.doku.spiel"></span>
       </a>
     </div>
     <div class="card">
@@ -175,7 +176,7 @@
           </g>
         </svg></span>
         <span class="name">Teddymania</span>
-        <span class="stand" data-spiel="clicko.spiel"></span>
+        <span class="stand" data-spiel="teddy.mania.spiel"></span>
       </a>
     </div>
     <div class="card">
@@ -195,7 +196,7 @@
           <circle cx="43" cy="57" r="5.6" fill="#d8232b"/>
         </svg></span>
         <span class="name">Teddyversi</span>
-        <span class="stand" data-spiel="teddyversi.spiel"></span>
+        <span class="stand" data-spiel="teddy.versi.spiel"></span>
       </a>
     </div>
   </div>
@@ -206,7 +207,7 @@
   var felder = document.querySelectorAll('.stand');
   for (var i = 0; i < felder.length; i++){
     var el = felder[i], stand = null;
-    try { stand = JSON.parse(localStorage.getItem(el.getAttribute('data-spiel'))); } catch(e){}
+    stand = standLaden(el.getAttribute('data-spiel'));
     if (stand){
       el.className = 'stand weiter';
       el.innerHTML = 'Fortsetzen<em>' + String(stand.fortsetzen || '').replace(/[<&]/g, '') + '</em>';

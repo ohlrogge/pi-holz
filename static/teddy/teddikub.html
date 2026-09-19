@@ -530,7 +530,7 @@ table.sc tr.me{background:rgba(255,210,58,.3);}
 var cfg = { v:2, minOut:30, ki:2, foes:2, vibrate:true, sortMode:'n', feld:'nacht', feldV:1,
             namen:['Du','Bello','Luna','Nero'] };
 var NAMEN_STD = ['Du','Bello','Luna','Nero'];
-var savedCfg = lsGet('teddi.cfg', null);
+var savedCfg = lsGet('teddy.kub.cfg', null);
 if (savedCfg){
   for (var ck in savedCfg) if (ck in cfg) cfg[ck] = savedCfg[ck];
   if (!(cfg.namen instanceof Array) || cfg.namen.length !== 4) cfg.namen = NAMEN_STD.slice();
@@ -544,7 +544,7 @@ if (savedCfg){
     cfg.v = 2;
   }
 }
-function saveCfg(){ lsSet('teddi.cfg', cfg); }
+function saveCfg(){ lsSet('teddy.kub.cfg', cfg); }
 
 /* Die zwei Achsen der Schwierigkeit. */
 var MIN_KLEIN = 15, MIN_GROSS = 50;
@@ -2212,7 +2212,7 @@ function kiSchritt(nr){
    ================================================================== */
 function ende(gewinner){
   G.laeuft = false;
-  lsDel('teddi.spiel');
+  lsDel('teddy.kub.spiel');
   var i, werte = [];
   for (i=0;i<G.spieler.length;i++) werte.push(handWert(G.spieler[i].hand));
   if (gewinner < 0){
@@ -2230,7 +2230,7 @@ function ende(gewinner){
                   gesamt:G.spieler[i].punkte, sieg:i === gewinner });
   }
   G.runde++;
-  lsSet('teddi.karte', { runde:G.runde, stand:G.spieler.map(function(p,i){ return {platz:i, name:p.name, punkte:p.punkte}; }) });
+  lsSet('teddy.kub.karte', { runde:G.runde, stand:G.spieler.map(function(p,i){ return {platz:i, name:p.name, punkte:p.punkte}; }) });
   renderAll();
   setTimeout(function(){ zeigeErgebnis(zeilen, gewinner); }, 320);
 }
@@ -2244,7 +2244,7 @@ function neuesSpiel(){
   G.minOut = cfg.minOut; G.kiStufe = cfg.ki;
   G.saetze = []; G.gehoben = []; G.undo = []; G.passen = 0; G.laeuft = true;
   G.dran = 0; G.warten = false; setId = 1; G.spielNr = (G.spielNr || 0) + 1;
-  var alt = lsGet('teddi.karte', null), punkte = {};
+  var alt = lsGet('teddy.kub.karte', null), punkte = {};
   if (alt && alt.stand) alt.stand.forEach(function(x, k){
     punkte[x.platz != null ? x.platz : k] = x.punkte;
   });
@@ -2267,7 +2267,7 @@ function neuesSpiel(){
 function spielSpeichern(){
   if (!G.laeuft) return;
   try{
-    lsSet('teddi.spiel', {
+    standSpeichern('teddy.kub.spiel', {
       fortsetzen: 'Runde ' + (G.runde + 1) + ' \u00b7 ' + stufenKurz(),
       deck:G.deck, dran:G.dran, minOut:G.minOut, kiStufe:G.kiStufe,
       passen:G.passen, runde:G.runde,
@@ -2277,8 +2277,8 @@ function spielSpeichern(){
   }catch(e){}
 }
 function spielLaden(){
-  var d = lsGet('teddi.spiel', null);
-  if (!d || !d.spieler || !d.spieler.length) return false;
+  var d = standLaden('teddy.kub.spiel');
+  if (!d || !d.spieler || !d.spieler.length || !d.deck || !d.saetze) return false;
   var maxId = 0;
   function fix(t){ if (t.id > maxId) maxId = t.id; return t; }
   G.deck = d.deck.map(fix);
@@ -2326,7 +2326,7 @@ $dlg.addEventListener('click', function(e){
   }
   else if (a === 'foes'){ cfg.foes = parseInt(v,10); saveCfg(); zeigeOptionen(); }
   else if (a === 'feld'){ cfg.feld = v; saveCfg(); feldAnwenden(); zeigeOptionen(); }
-  else if (a === 'reset'){ lsSet('teddi.karte', null); zeigeOptionen(); }
+  else if (a === 'reset'){ lsSet('teddy.kub.karte', null); zeigeOptionen(); }
 });
 
 function miniTile(t){
@@ -2389,7 +2389,7 @@ function bindeRegler(){
 }
 
 function zeigeStart(nurNeu){
-  var hatStand = !!lsGet('teddi.spiel', null);
+  var hatStand = !!standLaden('teddy.kub.spiel');
   var h = '<div id="title"><div class="mk">'+teddiMarke()+'</div><div class="nm">Teddikub</div></div>';
   if (hatStand && !nurNeu)
     h += '<div class="lvl"><button data-act="weiter"><b>Fortsetzen</b><em>'+stufenKurz()+'</em></button></div>'+
@@ -2441,7 +2441,7 @@ function zeigeOptionen(){
   auf(h);
 }
 function zeigeKarte(){
-  var k = lsGet('teddi.karte', null);
+  var k = lsGet('teddy.kub.karte', null);
   var h = '<h2>Punktekarte</h2>';
   if (!k || !k.stand || !k.stand.length) h += '<p>Noch keine beendete Runde.</p>';
   else {

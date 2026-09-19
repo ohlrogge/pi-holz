@@ -205,9 +205,9 @@ table.sc tr.me{background:rgba(216,35,43,.16);}
 
 /* ---------- Einstellungen ---------- */
 var cfg = { v:1, stufe:1, modus:'ki', vibrate:true, sound:false, hinweise:true };
-var saved = lsGet('teddyversi.cfg', null);
+var saved = lsGet('teddy.versi.cfg', null);
 if (saved) for (var ck in saved) if (ck in cfg) cfg[ck] = saved[ck];
-function saveCfg(){ lsSet('teddyversi.cfg', cfg); }
+function saveCfg(){ lsSet('teddy.versi.cfg', cfg); }
 
 var STUFEN = [
   { name:'Leicht',  art:'anfaenger',
@@ -483,11 +483,11 @@ function meldung(txt, dauer, art){
 /* ---------- Spielstand sichern ---------- */
 function spielSpeichern(){
   if (!G.laeuft) return;
-  lsSet('teddyversi.spiel', { brett:G.brett, dran:G.dran, modus:G.modus, stufe:cfg.stufe,
+  standSpeichern('teddy.versi.spiel', { brett:G.brett, dran:G.dran, modus:G.modus, stufe:cfg.stufe,
     fortsetzen: (G.modus === 'zweit' ? 'Zu zweit' : STUFEN[cfg.stufe].name) });
 }
 function spielLaden(){
-  var d = lsGet('teddyversi.spiel', null);
+  var d = standLaden('teddy.versi.spiel');
   if (!d || !d.brett || d.brett.length !== 64) return false;
   cfg.modus = d.modus; cfg.stufe = d.stufe; G.modus = d.modus;
   el('nameSpieler2').textContent = spielerName(2);
@@ -587,7 +587,7 @@ $board.addEventListener(tapEvt, function(e){
 /* ==================================================================
    Abrechnung
    ================================================================== */
-function bilanzSchluessel(modus){ return modus === 'zweit' ? 'teddyversi.bilanzZweit' : 'teddyversi.bilanz'; }
+function bilanzSchluessel(modus){ return modus === 'zweit' ? 'teddy.versi.bilanzZweit' : 'teddy.versi.bilanz'; }
 function bilanzLesen(modus){
   modus = modus || G.modus;
   if (modus === 'zweit') return lsGet(bilanzSchluessel(modus), { du:0, spieler2:0, unentschieden:0 });
@@ -598,7 +598,7 @@ function bilanzLesen(modus){
 }
 function spielEnde(){
   G.laeuft = false; legaleZuegeAnzeigen([]);
-  lsSet('teddyversi.spiel', null);
+  lsDel('teddy.versi.spiel');
   var st = zaehleSteine(G.brett);
   var bilanz = bilanzLesen();
   var sieger = st.du > st.teddy ? 'du' : (st.teddy > st.du ? (G.modus === 'zweit' ? 'spieler2' : 'teddy') : 'unentschieden');
@@ -639,8 +639,8 @@ $dlg.addEventListener('click', function(e){
     if (f === 'hinweise') aktualisieren();
   }
   else if (a === 'reset'){
-    lsSet('teddyversi.bilanz', {du:0,teddy:0,unentschieden:0});
-    lsSet('teddyversi.bilanzZweit', {du:0,spieler2:0,unentschieden:0});
+    lsSet('teddy.versi.bilanz', {du:0,teddy:0,unentschieden:0});
+    lsSet('teddy.versi.bilanzZweit', {du:0,spieler2:0,unentschieden:0});
     zeigeOptionen();
   }
 });
