@@ -100,7 +100,7 @@ button{font:inherit; color:#000;}
 .tbsep{width:2px; height:28px; margin:0 6px; border-left:1px solid var(--shadow); border-right:1px solid var(--white);}
 
 /* ---------- Spielfeld ---------- */
-.board-frame{position:relative; flex:1 1 auto; min-height:0; padding:1px; background:var(--face2);
+.brettrahmen{position:relative; flex:1 1 auto; min-height:0; padding:1px; background:var(--face2);
   display:flex; align-items:center; justify-content:center; overflow:hidden;
   border:2px solid; border-color:var(--shadow) var(--white) var(--white) var(--shadow);
   box-shadow:inset 1px 1px 0 var(--black), inset -1px -1px 0 var(--face-light);}
@@ -219,7 +219,7 @@ table.hs td.r{text-align:right;}
   </div>
   <div class="menubar" id="menubar"></div>
   <div class="toolbar" id="toolbar"></div>
-  <div class="board-frame"><div id="board"></div><div id="confirm"></div></div>
+  <div class="brettrahmen"><div id="board"></div><div id="confirm"></div></div>
   <div class="statusbar">
     <div class="sp num" id="sp-total" title="Steine gesamt">0</div>
     <div class="sp num" id="sp-left"  title="Steine übrig">0</div>
@@ -306,7 +306,7 @@ function sndOver(){ [392,330,262,196].forEach(function(f,i){ beep(f,0.17,'square
 
 /* ---------- Groesse: Fenster fuellt den verfuegbaren Platz ---------- */
 var MAXCELL = { s:18, m:26, l:36, xl:52, auto:999, custom:999 };
-var frame = document.querySelector('.board-frame');
+var frame = document.querySelector('.brettrahmen');
 /* Freier Platz im Spielfeldrahmen - der Rahmen bekommt per Flexbox alles,
    was Titel, Menue, Symbolleiste und Statuszeile uebrig lassen. */
 function freeArea(){

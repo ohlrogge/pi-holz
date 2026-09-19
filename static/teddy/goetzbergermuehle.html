@@ -49,15 +49,15 @@ body{
 #statusTxt{text-align:center; font-size:16px; letter-spacing:.3px;}
 
 /* ---------- Spielfeld ---------- */
-#boardframe{
+#brettrahmen{
   flex:1 1 auto; min-height:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
   gap:6px; padding:4px;
 }
 /* Geschlagene Steine: hochkant oben und unten, quer links und rechts */
-#boardframe.quer{flex-direction:row;}
+#brettrahmen.quer{flex-direction:row;}
 .ablage{display:flex; align-items:center; justify-content:center; flex:0 0 auto;
   width:var(--seite); height:var(--mini);}
-#boardframe.quer .ablage{flex-direction:column; width:var(--mini); height:var(--seite);}
+#brettrahmen.quer .ablage{flex-direction:column; width:var(--mini); height:var(--seite);}
 .ablage svg{width:var(--mini); height:var(--mini); flex:0 0 auto; display:block;}
 .ablage svg.neu{animation:setzen .3s ease-out .12s both;}
 .ablage svg.kommt{visibility:hidden;}
@@ -215,8 +215,8 @@ table.sc tr.me{background:rgba(140,20,25,.14);}
     <svg id="dranStein" class="aus" viewBox="-43 -42 86 86"></svg>
     <span id="statusTxt">Götzberger Mühle</span>
   </div>
-  <div id="boardframe"><div class="ablage" id="ablage2"></div><svg id="brett" viewBox="-26 -26 752 752" xmlns="http://www.w3.org/2000/svg">
-    <rect x="4" y="4" width="692" height="692" rx="22" fill="var(--brett)" stroke="var(--dunkel)" stroke-width="8"/>
+  <div id="brettrahmen"><div class="ablage" id="ablage2"></div><svg id="brett" viewBox="-26 -26 752 752" xmlns="http://www.w3.org/2000/svg">
+    <rect id="brettplatte" x="-22" y="-22" width="744" height="744" rx="4" fill="var(--brett)" stroke="var(--dunkel)" stroke-width="8"/>
     <g id="linien"></g><g id="marken"></g><g id="steine"></g><g id="ringe"></g>
   </svg><div class="ablage" id="ablage1"></div></div>
   <div id="bar">
@@ -492,7 +492,7 @@ function esc(t){ return String(t).replace(/[&<>"]/g, function(c){ return { '&':'
 function el(id){ return document.getElementById(id); }
 var $brett = el('brett'), $steine = el('steine'), $marken = el('marken'), $ringe = el('ringe'),
     $status = el('status'), $statusTxt = el('statusTxt'), $veil = el('veil'), $dlg = el('dlg'),
-    $frame = el('boardframe');
+    $frame = el('brettrahmen');
 var SVGNS = 'http://www.w3.org/2000/svg';
 /* Muss zur viewBox von #brett passen. */
 var VB_ECKE = -26, VB_WEITE = 752;
@@ -524,13 +524,10 @@ function steinInhalt(s){
     '<circle r="35.8" fill="none" stroke="url(#kanteInnen)" stroke-width="1.8"/>'+
     '<g class="m'+s+'">'+muehleLage('schatten', 1.1, 1.2)+muehleLage('licht', -.8, -.8)+muehleLage('oben', 0, 0)+'</g>';
 }
-function brettZeichnen(){
+function linienZeichnen(){
   var s = '';
-  /* Nur der aeussere Rand des Spielfelds ist an den Ecken gebrochen, die
-     Linien im Feld bleiben scharf. */
-  [[50,650],[150,550],[250,450]].forEach(function(q, i){
-    s += '<rect class="linie"'+(i === 0 ? ' rx="3"' : '')+' x="'+q[0]+'" y="'+q[0]+
-         '" width="'+(q[1]-q[0])+'" height="'+(q[1]-q[0])+'"/>';
+  [[50,650],[150,550],[250,450]].forEach(function(q){
+    s += '<rect class="linie" x="'+q[0]+'" y="'+q[0]+'" width="'+(q[1]-q[0])+'" height="'+(q[1]-q[0])+'"/>';
   });
   s += '<path class="linie" d="M350 50V250M350 450V650M50 350H250M450 350H650"/>';
   /* Die Vereinsmuehle blass im leeren Mittelfeld */
@@ -1043,7 +1040,8 @@ function zeigeStart(nurNeu){
        '<span class="ico">&#9654;</span>Spielen</button></div>';
   h += '<div class="row">'+
        '<button class="btn" data-act="opt"><span class="ico">&#9881;</span>Mehr</button>'+
-       '<button class="btn" data-act="hilfe"><span class="ico">?</span>Regeln</button>';
+       '<button class="btn" data-act="hilfe"><span class="ico">?</span>Regeln</button>'+
+       eckeKnopf();
   if (G.laeuft && !nurNeu) h += '<button class="btn" data-act="zu"><span class="ico">&#10005;</span>Zurück</button>';
   h += '</div>';
   auf(h);
@@ -1134,7 +1132,7 @@ el('bMenu').onclick = function(){ zeigeMenu(); };
 el('bHilfe').onclick = function(){ zeigeHilfe(); };
 el('bNeu').onclick = function(){ zeigeStart(true); };
 
-brettZeichnen();
+linienZeichnen();
 G.brett = []; for (var i0=0;i0<24;i0++) G.brett.push(0);
 steineAufbauen();
 ablageZeichnen();

@@ -57,7 +57,7 @@ input, textarea{user-select:text; -webkit-user-select:text; font-size:16px;}
 #statusTxt{flex:1 1 auto; text-align:center; font-size:15px; letter-spacing:.3px;}
 
 /* ---------- Spielfeld: schwarzes Brett mit Mulden ---------- */
-#boardframe{
+#brettrahmen{
   flex:1 1 auto; min-height:0; display:flex; align-items:center; justify-content:center;
   padding:12px;
 }
@@ -180,7 +180,7 @@ table.sc tr.me{background:rgba(216,35,43,.16);}
     <span id="statusTxt">Teddyversi</span>
     <div class="chip" id="chipTeddy"><span class="kugel teddy"></span><span class="name" id="nameSpieler2">Teddy</span><span id="scoreTeddy">2</span></div>
   </div>
-  <div id="boardframe"><div id="board"></div></div>
+  <div id="brettrahmen"><div id="board"></div></div>
   <div id="bar">
     <button class="btn" id="bEcke"><span class="ico"><img class="ecke-ico" src="favicon.svg" alt=""></span><span class="lbl">Spieleecke</span></button>
     <button class="btn" id="bMenu"><span class="ico">&#9776;</span><span class="lbl">Menü</span></button>
@@ -400,7 +400,7 @@ function spielerName(spieler){
 }
 function el(id){ return document.getElementById(id); }
 var $board = el('board'), $status = el('status'), $statusTxt = el('statusTxt'),
-    $veil = el('veil'), $dlg = el('dlg'), $frame = el('boardframe'),
+    $veil = el('veil'), $dlg = el('dlg'), $frame = el('brettrahmen'),
     $scoreDu = el('scoreDu'), $scoreTeddy = el('scoreTeddy'),
     $chipDu = el('chipDu'), $chipTeddy = el('chipTeddy');
 
