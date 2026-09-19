@@ -870,8 +870,9 @@ function checkSolved(){
          '<p>Stufe '+diffLevel+' &ndash; '+LV(diffLevel).name+'</p>'+
          (rank? '<p>Neue Bestzeit &ndash; Platz '+rank+' in deiner Liste.</p>' : ''),
     buttons:[
-      {label:'Noch eins', cls:'green', fn:function(){ startGame(diffLevel); }},
-      {label:'Menü', fn:toMenu}
+      {label:'Nochmal', cls:'green', fn:function(){ startGame(diffLevel); }},
+      {label:'Menü', fn:toMenu},
+      {label:'Spieleecke', fn:zurSpieleecke}
     ]
   });
 }
@@ -1650,6 +1651,7 @@ function showHint(){
 
 /* ---------- Overlay-Dialoge ---------- */
 function closeOverlay(){ overlay.classList.remove('show'); overlay.innerHTML=''; }
+function zurSpieleecke(){ spielSpeichern(); location.href='./'; }
 function dialog(o){
   overlay.innerHTML='';
   var p=document.createElement('div'); p.className='panel'; p.style.position='relative';
@@ -1756,7 +1758,7 @@ function buildPhoneBar(){
   var ecke=document.createElement('div');
   ecke.className='k wide ecke'; ecke.title='Zur Spieleecke';
   ecke.innerHTML='<img class="ecke-ico" src="favicon.svg" alt="Spieleecke">';
-  ecke.onclick=function(){ spielSpeichern(); location.href='./'; };
+  ecke.onclick=zurSpieleecke;
   acts.appendChild(ecke);
   [['Radieren', pickEraser, 'eraser'],
    ['Rückg.',   undo,       ''],
@@ -1807,12 +1809,12 @@ document.getElementById('b-opts').onclick=showOptions;
 document.getElementById('b-times').onclick=showTimes;
 document.getElementById('b-quit').onclick=showQuit;
 document.getElementById('b-print').onclick=printPuzzle;
-document.getElementById('b-ecke').onclick=function(){ location.href='./'; };
+document.getElementById('b-ecke').onclick=zurSpieleecke;
 document.getElementById('teddy-icon').innerHTML=teddySVG();
 document.getElementById('b-teddy').onclick=askTeddy;
 document.getElementById('b-menu').onclick=toMenu;
 document.getElementById('b-give').onclick=giveUp;
-document.getElementById('b-ecke-spiel').onclick=function(){ spielSpeichern(); location.href='./'; };
+document.getElementById('b-ecke-spiel').onclick=zurSpieleecke;
 
 /* ---------- Start ---------- */
 buildPhoneBar();

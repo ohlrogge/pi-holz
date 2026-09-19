@@ -2441,6 +2441,11 @@ function spielLaden(){
 /* ==================================================================
    Dialoge
    ================================================================== */
+function zurSpieleecke(){ spielSpeichern(); location.href='./'; }
+function eckeKnopf(){
+  return '<button class="btn" data-act="ecke"><span class="ico">'+
+         '<img class="ecke-ico" src="favicon.svg" alt=""></span>Spieleecke</button>';
+}
 function auf(html){ $dlg.innerHTML = html; $veil.className = 'on'; $dlg.scrollTop = 0; bindeRegler(); }
 function zu(){ $veil.className = ''; fitTiles(); }
 $veil.addEventListener('click', function(e){ if (e.target === $veil && G.laeuft) zu(); });
@@ -2457,7 +2462,7 @@ $dlg.addEventListener('click', function(e){
   else if (a === 'opt') zeigeOptionen();
   else if (a === 'karte') zeigeKarte();
   else if (a === 'menu') zeigeMenu();
-  else if (a === 'ecke') location.href = './';
+  else if (a === 'ecke') zurSpieleecke();
   else if (a === 'ordnen'){ zu(); tischAufraeumen(); }
   else if (a === 'sw'){
     var f = n.getAttribute('data-f');
@@ -2614,7 +2619,8 @@ function zeigeErgebnis(zeilen, gewinner){
   h += '</table>';
   h += '<div class="row"><button class="btn" data-act="karte">Punktekarte</button>'+
        '<button class="btn go" data-act="start"><span class="ico">&#9654;</span>Nochmal</button>'+
-       '<button class="btn" data-act="neu">Stufe wechseln</button></div>';
+       '<button class="btn" data-act="neu">Stufe wechseln</button>'+
+       eckeKnopf()+'</div>';
   auf(h);
 }
 function zeigeHilfe(){
@@ -2678,7 +2684,7 @@ function zeigeHilfe(){
 /* ==================================================================
    Knoepfe und Tasten
    ================================================================== */
-el('bEcke').onclick = function(){ location.href = './'; };
+el('bEcke').onclick = zurSpieleecke;
 el('bMenu').onclick = function(){zeigeMenu(); };
 el('bSortN').onclick = function(){ sortiere('n'); };
 el('bSortC').onclick = function(){ sortiere('c'); };

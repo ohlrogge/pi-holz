@@ -930,6 +930,7 @@ board.addEventListener('contextmenu', function(e){ e.preventDefault(); });
 /* ---------- Dialoge ---------- */
 var modal=document.getElementById('modal');
 function closeDialog(){ modal.classList.remove('show'); modal.innerHTML=''; }
+function zurSpieleecke(){ spielSpeichern(); location.href='./'; }
 function dialog(opts){
   modal.innerHTML='';
   var d=document.createElement('div'); d.className='dlg';
@@ -968,10 +969,12 @@ function finish(won){
         lsSet('clicko.hs.'+key, list.slice(0,10));
         update(); showScores();
       }},
-      {label:'Abbrechen'}]});
+      {label:'Abbrechen'},
+      {label:'Spieleecke', fn:zurSpieleecke}]});
   } else {
     dialog({ title:'Spiel beendet', body:msg,
-      buttons:[{label:'Neues Spiel', fn:newGame},{label:'Schließen'}]});
+      buttons:[{label:'Nochmal', fn:newGame},{label:'Schließen'},
+               {label:'Spieleecke', fn:zurSpieleecke}]});
   }
 }
 function showScores(){
@@ -1124,7 +1127,7 @@ function menuDef(){
       {sep:true},
       {label:'Bestenliste …', fn:showScores},
       {sep:true},
-      {label:'Zur Spieleecke', fn:function(){ location.href='./'; }}
+      {label:'Zur Spieleecke', fn:zurSpieleecke}
     ]},
     { label:'Optionen', items:[
       {label:'Einstellungen …', key:'F5', fn:showSettings},
@@ -1236,7 +1239,7 @@ function svgSound(on){
 function buildToolbar(){
   var host=document.getElementById('toolbar');
   var items=[
-    {html:'<img class="ecke-ico" src="favicon.svg" alt="">', title:'Zur Spieleecke', fn:function(){ location.href='./'; }},
+    {html:'<img class="ecke-ico" src="favicon.svg" alt="">', title:'Zur Spieleecke', fn:zurSpieleecke},
     {sep:true},
     {html:svgCube('#ffffff'), title:'Neues Spiel (F2)', fn:function(){ confirmNew(newGame); }},
     {html:svgCube('#e8412c'), title:'Einstellungen: Feldgröße & Schwierigkeit (F5)', fn:showSettings},
@@ -1263,7 +1266,7 @@ function buildToolbar(){
   });
 }
 document.getElementById('sp-arrow').onclick=showScores;
-document.getElementById('tb-close').onclick=function(){ location.href='./'; };
+document.getElementById('tb-close').onclick=zurSpieleecke;
 
 /* ---------- Tastatur ---------- */
 document.addEventListener('keydown', function(e){
