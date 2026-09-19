@@ -59,7 +59,6 @@ body{
 }
 #brett{display:block; touch-action:manipulation; cursor:pointer;}
 .linie{stroke:var(--linie); stroke-width:7; fill:none; stroke-linecap:square;}
-.punkt{fill:var(--linie);}
 .pos{transition:transform .3s ease;}
 .stein{transform-box:fill-box; transform-origin:center;}
 .stein.neu{animation:setzen .18s ease-out;}
@@ -456,7 +455,6 @@ function brettZeichnen(){
     s += '<rect class="linie" x="'+q[0]+'" y="'+q[0]+'" width="'+(q[1]-q[0])+'" height="'+(q[1]-q[0])+'"/>';
   });
   s += '<path class="linie" d="M350 50V250M350 450V650M50 350H250M450 350H650"/>';
-  for (var i=0;i<24;i++) s += '<circle class="punkt" cx="'+px(i)+'" cy="'+py(i)+'" r="11"/>';
   el('linien').innerHTML = s;
   el('chipStein1').innerHTML = steinInhalt(1);
   el('chipStein2').innerHTML = steinInhalt(2);
