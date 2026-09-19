@@ -13,14 +13,14 @@
 <script src="teddy.js"></script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
-<meta name="theme-color" content="#3b2314">
+<meta name="theme-color" content="#8e151b">
 <title>Götzberger Mühle</title>
 <style>
 :root{
   --schrift:"Arial Rounded MT Bold","Arial Rounded MT",ui-rounded,"SF Pro Rounded","Helvetica Rounded","Nunito","Trebuchet MS",sans-serif;
   --grund:#e4d3b2;
   --dunkel:#3b2314; --tinte:#2e1b0f;
-  --rot:#8e151b; --rot2:#6e0f13;
+  --rot:#8e151b; --rot2:#5a0c10;
   --beige:#f1e2c0;
   --brett:#cfa86e; --linie:#4a2b17;
 }
@@ -37,38 +37,47 @@ body{
 
 /* ---------- Statuszeile ---------- */
 #status{
-  flex:0 0 auto; display:flex; align-items:center; gap:8px;
-  padding:calc(7px + env(safe-area-inset-top)) 10px 7px;
-  background:var(--dunkel); color:#fff;
-  box-shadow:0 3px 0 var(--rot); font-size:14px; line-height:1.25;
+  flex:0 0 auto; display:flex; align-items:center; justify-content:center; gap:9px;
+  padding:calc(8px + env(safe-area-inset-top)) 10px 8px; min-height:44px;
+  background:var(--rot); color:#fff;
+  box-shadow:0 3px 0 var(--rot2); font-size:14px; line-height:1.25;
 }
 #status.warn{background:var(--rot2);}
-.chip{
-  display:flex; align-items:center; gap:6px; padding:3px 11px 3px 4px; border-radius:16px;
-  background:#56351f; border:2px solid #6a4429; color:#fff;
-  font-size:14px; white-space:nowrap;
-}
-.chip.dran{background:var(--rot); border-color:var(--beige);}
-.chip svg{width:22px; height:22px; flex:0 0 auto; display:block;}
-#statusTxt{flex:1 1 auto; text-align:center; font-size:15px; letter-spacing:.3px;}
+/* Wer dran ist: der eigene Stein vor dem Text, weiss umrandet */
+#dranStein{width:26px; height:26px; flex:0 0 auto; display:block; border-radius:50%; box-shadow:0 0 0 2px #fff;}
+#dranStein.aus{display:none;}
+#statusTxt{text-align:center; font-size:16px; letter-spacing:.3px;}
 
 /* ---------- Spielfeld ---------- */
 #boardframe{
-  flex:1 1 auto; min-height:0; display:flex; align-items:center; justify-content:center;
-  padding:10px;
+  flex:1 1 auto; min-height:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:8px; padding:8px;
 }
-#brett{display:block; touch-action:manipulation; cursor:pointer;}
-.linie{stroke:var(--linie); stroke-width:7; fill:none; stroke-linecap:square;}
+/* Geschlagene Steine: hochkant oben und unten, quer links und rechts */
+#boardframe.quer{flex-direction:row;}
+.ablage{display:flex; align-items:center; justify-content:center; flex:0 0 auto;
+  width:var(--seite); height:var(--mini);}
+#boardframe.quer .ablage{flex-direction:column; width:var(--mini); height:var(--seite);}
+.ablage svg{width:var(--mini); height:var(--mini); flex:0 0 auto; display:block;}
+.ablage svg.neu{animation:setzen .3s ease-out .12s both;}
+.ablage svg.kommt{visibility:hidden;}
+#brett{display:block; touch-action:manipulation; cursor:pointer; overflow:visible; position:relative; z-index:2;}
+.linie{stroke:var(--rot); stroke-width:7; fill:none; stroke-linecap:square;}
 .pos{transition:transform .3s ease;}
 .stein{transform-box:fill-box; transform-origin:center;}
 .stein.neu{animation:setzen .18s ease-out;}
 @keyframes setzen{from{transform:scale(.35); opacity:0;} to{transform:scale(1); opacity:1;}}
-.stein.weg{transition:opacity .28s, transform .28s; opacity:0; transform:scale(.4);}
-/* In den Farben des Logos: Stein 1 weiss mit roter Muehle, Stein 2 rot mit weisser Muehle */
-.k1{fill:#fff; stroke:#b9aea0; stroke-width:2.5;}
-.k2{fill:#8e151b; stroke:#5a0c10; stroke-width:2.5;}
-.m1{color:#8e151b;}
-.m2{color:#fff;}
+/* Steine in den Farben des Logos, weiss und rot, jeweils einfarbig mit Praegung.
+   Waehrend die Fluegel drehen, steht der Rumpf ohne Aussparungen da und die Fluegel
+   bekommen einen Rand in der Steinfarbe - so sieht es aus wie im Logo. */
+/* Die Muehle ist eingepraegt: dieselbe Farbe wie der Stein, erhaben durch eine
+   helle Kante oben links und einen Schatten unten rechts. */
+.m1 .oben{color:#f6f3ee;} .m1 .licht{color:#fff; opacity:.95;} .m1 .schatten{color:#5e4c3a; opacity:.68;}
+.m2 .oben{color:#8e151b;} .m2 .licht{color:#e4808a; opacity:.75;} .m2 .schatten{color:#260204; opacity:.6;}
+.voll{display:none;}
+.dreht .voll{display:inline;}
+.dreht .ruhe{display:none;}
+.dreht .oben .fl{stroke:currentColor; stroke-width:16; stroke-linejoin:round; paint-order:stroke;}
 .ring{fill:none; stroke:var(--dunkel); stroke-width:6;}
 .ring.weg{stroke-dasharray:14 9; animation:kreisen 1.2s linear infinite;}
 @keyframes kreisen{to{stroke-dashoffset:-46;}}
@@ -78,8 +87,10 @@ body{
 #bar{
   flex:0 0 auto; display:flex; align-items:stretch; gap:6px;
   padding:6px 6px calc(6px + env(safe-area-inset-bottom));
-  background:var(--dunkel); box-shadow:0 -3px 0 var(--rot);
+  background:var(--rot); box-shadow:0 -3px 0 var(--rot2);
 }
+#bar .btn{background:#fff; border-color:var(--rot2);}
+#bar .btn.go{background:var(--rot2); color:#fff; border-color:#fff;}
 .btn{
   display:flex; flex-direction:column; align-items:center; justify-content:center;
   min-width:46px; padding:3px 9px; cursor:pointer; flex:1 1 0;
@@ -146,33 +157,48 @@ table.sc tr.me{background:rgba(140,20,25,.14);}
   .dlg p,.dlg li{font-size:15px;}
   .sw{width:58px; height:32px; border-radius:16px;}
   .sw i{width:26px; height:26px;} .sw.on i{left:27px;}
-  .chip{font-size:15px;}
 }
 @media (max-width:420px){
-  .chip .name{display:none;}
   #statusTxt{font-size:13px;}
   #title .nm{font-size:30px;}
 }
 </style>
 </head>
 <body>
-<!-- Die Windmuehle aus dem Logo der Goetzberger Windmuehle, aus dem Original nachgezeichnet.
-     Fuellung = currentColor. -->
+<!-- Die Windmuehle aus dem Logo der Goetzberger Windmuehle, aus dem Original nachgezeichnet
+     und in Rumpf und Fluegel geteilt, damit die Fluegel sich drehen koennen. Fuellung = currentColor.
+     muehleRumpfVoll ist der Rumpf ohne die Aussparungen fuer die Fluegel. -->
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <!-- Kanten wie bei einer Muenze, Licht von oben links: die Aussenkante des Rands
+         glaenzt oben links, die Stufe vom Rand ins Feld liegt dort im Schatten. -->
+    <linearGradient id="kanteAussen" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fff" stop-opacity=".9"/><stop offset=".5" stop-color="#fff" stop-opacity="0"/>
+      <stop offset=".5" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".35"/>
+    </linearGradient>
+    <linearGradient id="kanteInnen" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#000" stop-opacity=".4"/><stop offset=".5" stop-color="#000" stop-opacity="0"/>
+      <stop offset=".5" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#fff" stop-opacity=".85"/>
+    </linearGradient>
+    <radialGradient id="bodenSchatten"><stop offset=".7" stop-color="#3b2314" stop-opacity=".35"/><stop offset="1" stop-color="#3b2314" stop-opacity="0"/></radialGradient>
+  </defs>
+  <symbol id="muehleRumpf" viewBox="143 96 481 481"><path fill="currentColor" d="M359 284 L374 278 L390 279 L379 297 L373 295Z M406 313 L419 292 L423 292 L441 314 L447 328 L448 339 L444 339Z M320 335 L323 323 L332 307 L361 324 L360 329 L344 354 L322 353 L320 351Z M382 352 L386 345 L391 342 L406 353Z M278 520 L353 401 L373 366 L375 364 L425 364 L426 367 L424 371 L409 394 L407 393 L407 388 L404 386 L400 386 L397 390 L404 460 L412 492 L421 512 L350 512 L360 483 L368 443 L373 389 L370 386 L366 386 L363 390 L361 419 L353 470 L340 512 L337 514Z M409 414 L414 414 L460 443 L472 481 L485 506 L496 519 L495 522 L434 514 L431 511 L424 496 L415 465Z M263 545 L268 536 L273 532 L339 523 L432 523 L456 526 L505 534 L505 577 L265 578 L263 576Z"/></symbol>
+  <symbol id="muehleRumpfVoll" viewBox="143 96 481 481"><path fill="currentColor" d="M278 520 L380 356 L380 354 L321 354 L320 335 L327 313 L343 293 L355 285 L370 279 L389 278 L414 285 L426 293 L439 308 L446 323 L449 343 L448 354 L410 355 L426 365 L466 452 L466 454 L463 452 L463 455 L472 481 L482 501 L496 521 L490 522 L434 514 L431 511 L424 496 L415 465 L410 420 L400 409 L400 397 L406 388 L404 386 L400 386 L397 390 L402 448 L412 492 L421 512 L350 512 L356 498 L367 450 L373 399 L373 389 L368 386 L363 394 L360 427 L353 470 L340 512 L337 514 L293 519 L284 522Z M263 545 L268 536 L273 532 L339 523 L432 523 L456 526 L505 534 L505 577 L265 578 L263 576Z"/></symbol>
+  <symbol id="muehleFluegel" viewBox="143 96 481 481"><path fill="currentColor" d="M388 300 L464 180 L466 174 L485 146 L510 103 L515 96 L522 99 L525 104 L487 163 L470 193 L464 200 L462 206 L430 255 L428 261 L422 268 L400 306 L396 309 L390 305Z M435 266 L454 238 L532 110 L536 108 L564 125 L567 128 L566 131 L470 286 L468 288 L462 286 L455 280 L438 271Z M172 167 L190 138 L193 136 L260 179 L290 196 L297 202 L303 204 L348 232 L352 235 L352 238 L334 267 L330 268 L194 184 L187 178 L173 171Z M160 187 L166 178 L176 183 L262 238 L268 240 L296 259 L302 261 L317 272 L323 274 L338 285 L368 302 L373 306 L372 309 L367 316 L362 314Z M395 331 L402 323 L608 452 L602 461 L598 460 L413 344 L407 342 L400 336 L396 335Z M242 536 L369 331 L371 330 L379 335 L379 340 L352 381 L255 540 L250 543Z M201 509 L297 354 L301 351 L332 370 L332 374 L313 402 L235 530 L231 531 L227 529 L220 523 L203 514Z M415 402 L436 370 L472 394 L594 468 L596 471 L577 502 L574 503Z"/></symbol>
   <symbol id="muehle" viewBox="143 96 481 481">
-    <path fill="currentColor" d="M388 300 L464 180 L466 174 L485 146 L510 103 L515 96 L522 99 L525 104 L487 163 L470 193 L464 200 L462 206 L430 255 L428 261 L422 268 L400 306 L396 309 L390 305Z M435 266 L454 238 L532 110 L536 108 L564 125 L567 128 L566 131 L470 286 L468 288 L462 286 L455 280 L438 271Z M172 167 L190 138 L193 136 L260 179 L290 196 L297 202 L303 204 L348 232 L352 235 L352 238 L334 267 L330 268 L194 184 L187 178 L173 171Z M160 187 L166 178 L176 183 L262 238 L268 240 L296 259 L302 261 L317 272 L323 274 L338 285 L368 302 L373 306 L372 309 L367 316 L362 314Z M359 284 L374 278 L390 279 L379 297 L373 295Z M406 313 L419 292 L423 292 L441 314 L447 328 L448 339 L444 339Z M320 335 L323 323 L332 307 L361 324 L360 329 L344 354 L322 353 L320 351Z M395 331 L402 323 L608 452 L602 461 L598 460 L413 344 L407 342 L400 336 L396 335Z M242 536 L369 331 L371 330 L379 335 L379 340 L352 381 L255 540 L250 543Z M382 352 L386 345 L391 342 L406 353Z M201 509 L297 354 L301 351 L332 370 L332 374 L313 402 L235 530 L231 531 L227 529 L220 523 L203 514Z M278 520 L353 401 L373 366 L375 364 L425 364 L426 367 L424 371 L409 394 L407 393 L407 388 L404 386 L400 386 L397 390 L404 460 L412 492 L421 512 L350 512 L360 483 L368 443 L373 389 L370 386 L366 386 L363 390 L361 419 L353 470 L340 512 L337 514Z M415 402 L436 370 L472 394 L594 468 L596 471 L577 502 L574 503Z M409 414 L414 414 L460 443 L472 481 L485 506 L496 519 L495 522 L434 514 L431 511 L424 496 L415 465Z M263 545 L268 536 L273 532 L339 523 L432 523 L456 526 L505 534 L505 577 L265 578 L263 576Z"/>
+    <use href="#muehleRumpf" x="143" y="96" width="481" height="481"/>
+    <use href="#muehleFluegel" x="143" y="96" width="481" height="481"/>
   </symbol>
 </svg>
 <div id="wrap">
   <div id="status">
-    <div class="chip" id="chip1"><svg viewBox="-44 -44 88 88" id="chipStein1"></svg><span class="name">Du</span><span id="zahl1">9</span></div>
+    <svg id="dranStein" class="aus" viewBox="-43 -42 86 86"></svg>
     <span id="statusTxt">Götzberger Mühle</span>
-    <div class="chip" id="chip2"><svg viewBox="-44 -44 88 88" id="chipStein2"></svg><span class="name" id="name2">Teddy</span><span id="zahl2">9</span></div>
   </div>
-  <div id="boardframe"><svg id="brett" viewBox="0 0 700 700" xmlns="http://www.w3.org/2000/svg">
+  <div id="boardframe"><div class="ablage" id="ablage2"></div><svg id="brett" viewBox="0 0 700 700" xmlns="http://www.w3.org/2000/svg">
     <rect x="4" y="4" width="692" height="692" rx="22" fill="var(--brett)" stroke="var(--dunkel)" stroke-width="8"/>
     <g id="linien"></g><g id="marken"></g><g id="steine"></g><g id="ringe"></g>
-  </svg></div>
+  </svg><div class="ablage" id="ablage1"></div></div>
   <div id="bar">
     <button class="btn" id="bEcke"><span class="ico"><img class="ecke-ico" src="favicon.svg" alt=""></span><span class="lbl">Spieleecke</span></button>
     <button class="btn" id="bMenu"><span class="ico">&#9776;</span><span class="lbl">Menü</span></button>
@@ -445,9 +471,29 @@ var SVGNS = 'http://www.w3.org/2000/svg';
 /* ---------- Zeichnen ---------- */
 function px(idx){ return 50 + 100 * PUNKTE[idx][0]; }
 function py(idx){ return 50 + 100 * PUNKTE[idx][1]; }
+/* Ein Glasstein: farbiger Schatten, getoenter Glaskoerper, die Muehle, darueber
+   Lichtkante und Glanzpunkt. Die Fluegel liegen in .dreh und drehen um die Nabe. */
+/* Eine Lage der Praegung; jede Lage hat ihre eigenen Fluegel, damit Licht und
+   Schatten beim Drehen in derselben Richtung bleiben. */
+function muehleLage(art, dx, dy){
+  var u = ' x="-27" y="-29.5" width="54" height="54"/>';
+  return '<g class="'+art+'"'+(dx || dy ? ' transform="translate('+dx+' '+dy+')"' : '')+'>'+
+    '<use class="ruhe" href="#muehleRumpf"'+u+
+    '<use class="voll" href="#muehleRumpfVoll"'+u+
+    '<g class="dreh"><use class="fl" href="#muehleFluegel"'+u+'</g></g>';
+}
+var NABE = '-0.02 -4.44';
+/* Ein Stein wie eine Muenze: einfarbige Scheibe mit schmaler Kante, darauf ein
+   schmaler erhoehter Rand, im Feld die eingepraegte Muehle. */
+var STEIN_FARBE = [null, { flaeche:'#f6f3ee', kante:'#c9bfb2' }, { flaeche:'#8e151b', kante:'#5a0b10' }];
 function steinInhalt(s){
-  return '<circle r="41" class="k'+s+'"/>'+
-    '<use href="#muehle" x="-31" y="-33" width="62" height="62" class="m'+s+'"/>';
+  var f = STEIN_FARBE[s];
+  return '<ellipse cx="2" cy="6" rx="45" ry="44" fill="url(#bodenSchatten)"/>'+
+    '<circle cy="3" r="40" fill="'+f.kante+'"/>'+
+    '<circle r="40" fill="'+f.flaeche+'"/>'+
+    '<circle r="39.2" fill="none" stroke="url(#kanteAussen)" stroke-width="1.6"/>'+
+    '<circle r="35.8" fill="none" stroke="url(#kanteInnen)" stroke-width="1.8"/>'+
+    '<g class="m'+s+'">'+muehleLage('schatten', 1.1, 1.2)+muehleLage('licht', -.8, -.8)+muehleLage('oben', 0, 0)+'</g>';
 }
 function brettZeichnen(){
   var s = '';
@@ -455,9 +501,9 @@ function brettZeichnen(){
     s += '<rect class="linie" x="'+q[0]+'" y="'+q[0]+'" width="'+(q[1]-q[0])+'" height="'+(q[1]-q[0])+'"/>';
   });
   s += '<path class="linie" d="M350 50V250M350 450V650M50 350H250M450 350H650"/>';
+  /* Die Vereinsmuehle blass im leeren Mittelfeld */
+  s += '<use href="#muehle" x="268" y="262" width="164" height="164" style="color:var(--rot);" opacity=".17"/>';
   el('linien').innerHTML = s;
-  el('chipStein1').innerHTML = steinInhalt(1);
-  el('chipStein2').innerHTML = steinInhalt(2);
 }
 var steinEl = [];
 function steineAufbauen(){
@@ -475,12 +521,6 @@ function steinNeu(idx, s, animiert){
 function steinBewegen(von, nach){
   var g = steinEl[von]; steinEl[von] = null; steinEl[nach] = g;
   if (g) g.style.transform = 'translate('+px(nach)+'px,'+py(nach)+'px)';
-}
-function steinEntfernen(idx){
-  var g = steinEl[idx]; steinEl[idx] = null;
-  if (!g) return;
-  g.firstChild.classList.add('weg');
-  setTimeout(function(){ if (g.parentNode) g.parentNode.removeChild(g); }, 320);
 }
 function markenZeichnen(){
   var m = '', r = '', i;
@@ -505,10 +545,18 @@ function zielpunkte(von){
 }
 
 /* ---------- Brettgroesse: bildfuellend ---------- */
+/* Die beiden Ablagen sind je MINI Brettbreiten dick und liegen hochkant ueber
+   und unter dem Brett, quer links und rechts davon. */
+var MINI = 0.12;
 function brettGroesse(){
-  var seite = Math.min($frame.clientWidth - 20, $frame.clientHeight - 20);
-  seite = Math.max(200, Math.min(720, seite));
+  var breite = $frame.clientWidth - 16, hoehe = $frame.clientHeight - 16, quer = breite > hoehe;
+  $frame.classList.toggle('quer', quer);
+  var lang = quer ? breite : hoehe, kurz = quer ? hoehe : breite;
+  var seite = Math.floor(Math.min(kurz, (lang - 16) / (1 + 2 * MINI)));
+  seite = Math.max(180, Math.min(720, seite));
   $brett.style.width = seite + 'px'; $brett.style.height = seite + 'px';
+  document.documentElement.style.setProperty('--seite', seite + 'px');
+  document.documentElement.style.setProperty('--mini', Math.floor(seite * MINI) + 'px');
 }
 beiGroessenwechsel(brettGroesse);
 
@@ -516,8 +564,9 @@ beiGroessenwechsel(brettGroesse);
 function statusText(){
   if (!G.laeuft) return { t:'Götzberger Mühle', k:'' };
   var wer = spielerName(G.dran), du = G.dran === 1 && wer === 'Du';
+  if (G.dreht) return { t:wer + (du ? ' hast' : ' hat') + ' eine Mühle!', k:'warn' };
   if (G.wegnehmen) return istKI(G.dran)
-    ? { t:wer + ' hat eine Mühle!', k:'warn' }
+    ? { t:wer + ' nimmt einen Stein weg', k:'warn' }
     : { t:'Mühle! ' + (du ? 'Nimm' : wer + ' nimmt') + ' einen Stein weg', k:'warn' };
   if (G.warten) return { t:wer + ' überlegt …', k:'' };
   var ph = phaseVon(G.brett, G.vorrat, G.dran);
@@ -525,7 +574,14 @@ function statusText(){
   if (ph === 'springen') return { t:wer + (du ? ' darfst springen' : ' darf springen'), k:'' };
   return { t:wer + (du ? ' ziehst' : ' zieht'), k:'' };
 }
+var dranGezeigt = 0;
 function renderStatus(){
+  var wer = G.laeuft ? G.dran : 0;
+  if (wer !== dranGezeigt){
+    dranGezeigt = wer;
+    el('dranStein').innerHTML = wer ? steinInhalt(wer) : '';
+    el('dranStein').setAttribute('class', wer ? '' : 'aus');
+  }
   if (G.meldung){ $statusTxt.textContent = G.meldung; $status.className = G.meldungArt || ''; return; }
   var s = statusText();
   $statusTxt.textContent = s.t; $status.className = s.k;
@@ -536,22 +592,32 @@ function meldung(txt, dauer, art){
   if (txt) G.meldTimer = setTimeout(function(){ G.meldung = ''; renderStatus(); }, dauer || 2200);
   renderStatus();
 }
-function punkteAnzeigen(){
-  el('zahl1').textContent = anzahl(G.brett, 1) + G.vorrat[1];
-  el('zahl2').textContent = anzahl(G.brett, 2) + G.vorrat[2];
-  el('chip1').classList.toggle('dran', G.laeuft && G.dran === 1);
-  el('chip2').classList.toggle('dran', G.laeuft && G.dran === 2);
+/* Ablage 1 (unten bzw. rechts) haelt die Steine, die Du geschlagen hast,
+   Ablage 2 (oben bzw. links) die von Teddy oder Spieler 2. */
+var ablageAlt = [0, -1, -1];
+/* kommt: der neueste Stein bleibt unsichtbar, bis der geschlagene Stein vom
+   Brett bei ihm angekommen ist. */
+function ablageZeichnen(kommt){
+  for (var s=1;s<=2;s++){
+    var n = 9 - anzahl(G.brett, gegner(s)) - G.vorrat[gegner(s)], h = '';
+    if (n === ablageAlt[s]) continue;
+    var neu = n > ablageAlt[s] && ablageAlt[s] >= 0 ? (kommt ? ' class="kommt"' : ' class="neu"') : '';
+    for (var i=0;i<n;i++)
+      h += '<svg viewBox="-46 -46 92 92"'+(i === n-1 ? neu : '')+'>'+steinInhalt(gegner(s))+'</svg>';
+    el('ablage' + s).innerHTML = h;
+    ablageAlt[s] = n;
+  }
 }
 function aktualisieren(){
   spaeterSichern();
-  punkteAnzeigen(); renderStatus(); markenZeichnen();
+  ablageZeichnen(); renderStatus(); markenZeichnen();
 }
 
 /* ---------- Spielstand sichern ---------- */
 function spielSpeichern(){
   if (!G.laeuft) return;
   standSpeichern('teddy.muehle.spiel', {
-    brett:G.brett, vorrat:G.vorrat, dran:G.dran, wegnehmen:G.wegnehmen, ohneWeg:G.ohneWeg,
+    brett:G.brett, vorrat:G.vorrat, dran:G.dran, wegnehmen:G.wegnehmen || !!G.dreht, ohneWeg:G.ohneWeg,
     verlauf:G.verlauf, modus:G.modus, stufe:cfg.stufe,
     fortsetzen:(G.modus === 'zweit' ? 'Zu zweit' : STUFEN[cfg.stufe].name)
   });
@@ -560,10 +626,11 @@ function spielLaden(){
   var d = standLaden('teddy.muehle.spiel');
   if (!d || !d.brett || d.brett.length !== 24 || !d.vorrat) return false;
   cfg.modus = d.modus; cfg.stufe = d.stufe; G.modus = d.modus;
-  el('name2').textContent = spielerName(2);
   G.brett = d.brett; G.vorrat = d.vorrat; G.dran = d.dran; G.wegnehmen = !!d.wegnehmen;
   G.ohneWeg = d.ohneWeg || 0; G.verlauf = d.verlauf || {};
-  G.laeuft = true; G.warten = false; G.wahl = -1; G.wegZiel = -1; G.spielNr = (G.spielNr||0) + 1;
+  G.laeuft = true; G.warten = false; G.dreht = false; G.wahl = -1; G.wegZiel = -1; G.spielNr = (G.spielNr||0) + 1;
+  ablageAlt = [0, -1, -1];
+  if (G.wegnehmen && !wegnehmbar(G.brett, gegner(G.dran)).length) G.wegnehmen = false;
   steineAufbauen();
   meldung('Spiel fortgesetzt.', 1800);
   aktualisieren();
@@ -578,11 +645,10 @@ function spielLaden(){
 function neuesSpiel(){
   saveCfg();
   G.modus = cfg.modus;
-  el('name2').textContent = spielerName(2);
   G.brett = []; for (var i=0;i<24;i++) G.brett.push(0);
   G.vorrat = [0, 9, 9]; G.dran = 1; G.laeuft = true; G.warten = false;
   G.wahl = -1; G.wegnehmen = false; G.wegZiel = -1; G.ohneWeg = 0; G.verlauf = {};
-  G.spielNr = (G.spielNr||0) + 1;
+  G.spielNr = (G.spielNr||0) + 1; G.dreht = false; ablageAlt = [0, -1, -1];
   steineAufbauen();
   meldung('');
   aktualisieren();
@@ -621,12 +687,72 @@ function steinZiehen(von, nach, s){
   else { G.brett[von] = 0; steinBewegen(von, nach); }
   G.brett[nach] = s;
   ton(s === 1 ? 420 : 340, .06); summ(10);
-  return inMuehle(G.brett, nach) && wegnehmbar(G.brett, gegner(s)).length > 0;
+  return inMuehle(G.brett, nach);
 }
-function steinWegnehmen(idx){
-  G.brett[idx] = 0;
-  steinEntfernen(idx);
+function muehlenSteine(idx){
+  var out = [], s = G.brett[idx];
+  for (var k=0;k<LINIEN_AN[idx].length;k++){
+    var L = LINIEN[LINIEN_AN[idx][k]];
+    if (G.brett[L[0]] === s && G.brett[L[1]] === s && G.brett[L[2]] === s)
+      for (var j=0;j<3;j++) if (out.indexOf(L[j]) < 0) out.push(L[j]);
+  }
+  return out;
+}
+/* Eine geschlossene Muehle: erst den Zug zu Ende laufen lassen, dann drehen die
+   Fluegel aller Steine der Muehle einmal ganz herum (links herum, wie bei einer
+   echten Windmuehle). Erst danach geht es weiter. */
+var DREH_DAUER = 1400;
+function muehleDrehen(nach, nr, danach){
+  G.dreht = true; G.warten = true; aktualisieren();
+  setTimeout(function(){
+    if (nr !== G.spielNr) return;
+    var steine = muehlenSteine(nach).map(function(i){ return steinEl[i] && steinEl[i].firstChild; })
+                                   .filter(Boolean);
+    var fluegel = [];
+    steine.forEach(function(st){ st.classList.add('dreht'); [].push.apply(fluegel, st.querySelectorAll('.dreh')); });
+    ton(520, .12); summ([20, 40, 20]);
+    /* Mit Timer statt requestAnimationFrame: der steht in einem Hintergrund-Tab
+       still, und das Spiel bliebe mitten in der Muehle haengen. */
+    var t0 = Date.now();
+    function schritt(){
+      if (nr !== G.spielNr) return;
+      var k = Math.min(1, (Date.now() - t0) / DREH_DAUER), e = k < .5 ? 2*k*k : 1 - Math.pow(-2*k + 2, 2) / 2;
+      var w = (-360 * e).toFixed(1);
+      for (var i=0;i<fluegel.length;i++) fluegel[i].setAttribute('transform', 'rotate('+w+' '+NABE+')');
+      if (k < 1){ setTimeout(schritt, 16); return; }
+      for (i=0;i<fluegel.length;i++) fluegel[i].removeAttribute('transform');
+      for (i=0;i<steine.length;i++) steine[i].classList.remove('dreht');
+      setTimeout(function(){ if (nr === G.spielNr){ G.dreht = false; danach(); } }, 250);
+    }
+    schritt();
+  }, 340);
+}
+/* Der geschlagene Stein fliegt vom Brett auf seinen Platz in der Ablage
+   (das Brett-SVG laesst dafuer seinen Inhalt ueber den Rand); erst wenn er
+   liegt, geht das Spiel weiter. */
+var FLUG_DAUER = 650;
+function steinWegnehmen(idx, danach){
+  var nr = G.spielNr, g = steinEl[idx];
+  G.brett[idx] = 0; steinEl[idx] = null;
+  G.wegnehmen = false; G.wegZiel = -1; G.warten = true;
+  markenZeichnen();
+  ablageZeichnen(true);
   ton(250, .12, 'square'); summ([15, 30, 15]);
+  var ziel = document.querySelector('.ablage svg.kommt');
+  function fertig(){
+    if (g && g.parentNode) g.parentNode.removeChild(g);
+    if (ziel) ziel.removeAttribute('class');
+    if (nr === G.spielNr && danach) danach();
+  }
+  if (!g || !ziel){ fertig(); return; }
+  var br = $brett.getBoundingClientRect(), zr = ziel.getBoundingClientRect();
+  var x = (zr.left + zr.width/2 - br.left) / br.width * 700, y = (zr.top + zr.height/2 - br.top) / br.height * 700;
+  var k = zr.width * 700 / (92 * br.width);
+  $steine.appendChild(g);
+  g.getBoundingClientRect();                         /* Umhaengen abschliessen, sonst springt er */
+  g.style.transition = 'transform '+FLUG_DAUER+'ms cubic-bezier(.45,0,.3,1)';
+  g.style.transform = 'translate('+x.toFixed(1)+'px,'+y.toFixed(1)+'px) scale('+k.toFixed(3)+')';
+  setTimeout(fertig, FLUG_DAUER + 60);
 }
 function feldGetippt(idx){
   if (!G.laeuft || G.warten || istKI(G.dran) || idx < 0) return;
@@ -636,8 +762,7 @@ function feldGetippt(idx){
       if (G.brett[idx] === gegner(s)) meldung('Steine in einer Mühle sind geschützt.', 1800, 'warn');
       return;
     }
-    steinWegnehmen(idx);
-    zugFertig(true);
+    steinWegnehmen(idx, function(){ zugFertig(true); });
     return;
   }
   var ph = phaseVon(G.brett, G.vorrat, s), von = -1;
@@ -654,7 +779,12 @@ function feldGetippt(idx){
     von = G.wahl;
   }
   G.wahl = -1;
-  if (steinZiehen(von, idx, s)){ G.wegnehmen = true; aktualisieren(); }
+  var nr = G.spielNr;
+  if (steinZiehen(von, idx, s)) muehleDrehen(idx, nr, function(){
+    G.warten = false;
+    if (wegnehmbar(G.brett, gegner(s)).length){ G.wegnehmen = true; aktualisieren(); }
+    else zugFertig(false);
+  });
   else zugFertig(false);
 }
 function teddyZug(nr){
@@ -672,20 +802,22 @@ function teddyZug(nr){
     G.wegZiel = best; aktualisieren();
     setTimeout(function(){
       if (nr !== G.spielNr) return;
-      steinWegnehmen(best); zugFertig(true);
+      steinWegnehmen(best, function(){ zugFertig(true); });
     }, 700);
     return;
   }
 
   var z = teddyWahl(G.brett, G.vorrat, stufe);
   if (!z){ spielEnde(gegner(s), 'blockiert'); return; }
-  var muehle = steinZiehen(z.von, z.nach, s);
-  if (muehle && z.weg >= 0){
-    G.wegnehmen = true; G.wegZiel = z.weg; G.warten = true; aktualisieren();
-    setTimeout(function(){
-      if (nr !== G.spielNr) return;
-      steinWegnehmen(z.weg); zugFertig(true);
-    }, 900);
+  if (steinZiehen(z.von, z.nach, s)){
+    muehleDrehen(z.nach, nr, function(){
+      if (z.weg < 0){ zugFertig(false); return; }
+      G.wegnehmen = true; G.wegZiel = z.weg; G.warten = true; aktualisieren();
+      setTimeout(function(){
+        if (nr !== G.spielNr) return;
+        steinWegnehmen(z.weg, function(){ zugFertig(true); });
+      }, 800);
+    });
   } else {
     setTimeout(function(){ if (nr === G.spielNr) zugFertig(false); }, 320);
   }
@@ -717,7 +849,7 @@ function bilanzLesen(modus){
   return lsGet(bilanzSchluessel(modus), { du:0, teddy:0, unentschieden:0 });
 }
 function spielEnde(gewinner, grund){
-  G.laeuft = false; G.warten = false; G.wahl = -1; G.wegnehmen = false;
+  G.laeuft = false; G.warten = false; G.dreht = false; G.wahl = -1; G.wegnehmen = false;
   lsDel('teddy.muehle.spiel');
   var bilanz = bilanzLesen();
   var sieger = gewinner === 1 ? 'du' : (gewinner === 2 ? (G.modus === 'zweit' ? 'spieler2' : 'teddy') : 'unentschieden');
@@ -844,7 +976,7 @@ function zeigeErgebnis(gewinner, grund, sieger, bilanz){
 function zeigeHilfe(){
   auf('<h2>Mühle – Regeln</h2>'+
   '<h3>Ziel</h3><p>Nimm dem Gegner so viele Steine weg, dass er nur noch zwei hat – oder sperre ihn so ein, dass er nicht mehr ziehen kann.</p>'+
-  '<h3>Setzen</h3><p>Jede Seite hat <b>neun Steine</b>. Abwechselnd setzt ihr sie auf freie Punkte. Du hast die weißen Steine und fängst an.</p>'+
+  '<h3>Setzen</h3><p>Jede Seite hat <b>neun Steine</b>. Abwechselnd setzt ihr sie auf freie Punkte. Du hast die weißen Steine und fängst an. Geschlagene Steine landen neben dem Brett.</p>'+
   '<h3>Ziehen</h3><p>Sind alle Steine gesetzt, schiebt ihr abwechselnd einen eigenen Stein entlang einer Linie auf einen freien Nachbarpunkt. '+
   'Tippe erst deinen Stein an, dann das Ziel.</p>'+
   '<h3>Springen</h3><p>Wer nur noch <b>drei Steine</b> hat, darf mit einem davon auf jeden freien Punkt springen.</p>'+
@@ -870,7 +1002,7 @@ el('bNeu').onclick = function(){ zeigeStart(true); };
 brettZeichnen();
 G.brett = []; for (var i0=0;i0<24;i0++) G.brett.push(0);
 steineAufbauen();
-punkteAnzeigen();
+ablageZeichnen();
 if (!spielLaden()) zeigeStart(false);
 brettGroesse();
 setTimeout(brettGroesse, 80);
