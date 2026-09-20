@@ -628,12 +628,13 @@ function pustFigur(fig, pflicht){
   return best;
 }
 /* Dreimal würfeln darf, wer keine Figur mehr bewegen kann außer mit einer Sechs */
+/* Es zählen nur die eigenen Figuren: Wer selbst nichts bewegen kann, darf
+   dreimal würfeln - auch im Team, wenn der Partner draußen ist. */
 function dreiVersuche(fig, p, team){
-  var wer = team ? [p, partner(p, team)] : [p];
-  for (var n=0;n<wer.length;n++) for (var i=0;i<4;i++){
-    var q = wer[n], r = fig[q][i];
+  for (var i=0;i<4;i++){
+    var r = fig[p][i];
     if (r >= 0 && r < 40) return false;
-    if (r >= 40) for (var w=1; w<=3; w++) if (kannZiehen(fig, q, i, w, team) >= 0) return false;
+    if (r >= 40) for (var w=1; w<=3; w++) if (kannZiehen(fig, p, i, w, team) >= 0) return false;
   }
   return true;
 }
@@ -708,7 +709,7 @@ function teddyWahl(fig, p, liste, stufe, kx){
    ================================================================== */
 var G = { fig:null, dran:0, versuche:1, wurf:0, phase:'aus', zuege:[], laeuft:false,
           spielNr:0, schlagzwang:true, stufe:2, team:false,
-          sitze:['mensch','teddy','teddy','teddy'], namen:['','','',''], meldung:'' };
+          sitze:['mensch','teddy','teddy','teddy'], namen:['','','',''], nochmal:false, meldung:'' };
 function istMensch(p){ return G.sitze[p] === 'mensch'; }
 function istTeddy(p){ return G.sitze[p] === 'teddy'; }
 function spielt(p){ return G.sitze[p] !== 'frei'; }
@@ -945,7 +946,20 @@ function wuerfelZeigen(){
             hier entscheidet der Flug durch die Schale, welche Seite oben
             liegen bleibt.
    ================================================================== */
+/* Einen der drei Versuche verbrauchen und neu würfeln */
+function nochmalWuerfeln(){
+  G.versuche--; G.nochmal = false; G.auswahl = null;
+  if (istMensch(G.dran) && G.versuche > 0)
+    meldung('Noch '+G.versuche+(G.versuche === 1 ? ' Versuch' : ' Versuche')+' für eine Sechs.', 1400);
+  wuerfelnLassen();
+}
 function wuerfelWerfen(){               /* Antippen, Knopf "Würfeln" und die Teddys */
+  /* Wer statt zu ziehen nochmal würfelt, verbraucht einen Versuch - und der
+     Tipp wirft gleich. */
+  if (G.phase === 'ziehen' && G.nochmal && !wurf){
+    nochmalWuerfeln();
+    if (G.phase !== 'wuerfeln' || !istMensch(G.dran)) return;
+  }
   if (G.phase !== 'wuerfeln' || wurf) return;
   if (cfg.wuerfelArt === 'physik'){ physikWurf(); return; }
   var zahl = 1 + Math.floor(zufall()*6);
@@ -1171,9 +1185,10 @@ function physikWurf(){
   wecken();
 }
 $schale.addEventListener('pointerdown', function(e){
-  if (!G.laeuft || G.phase !== 'wuerfeln' || !istMensch(G.dran)) return;
+  if (!G.laeuft || !istMensch(G.dran)) return;
+  if (G.phase !== 'wuerfeln' && !(G.phase === 'ziehen' && G.nochmal)) return;
   if (e.pointerType === 'mouse' && e.button !== 0) return;
-  if (cfg.wuerfelArt !== 'physik'){ wuerfelWerfen(); return; }
+  if (cfg.wuerfelArt !== 'physik' || G.nochmal){ wuerfelWerfen(); return; }
   greifen(e);
 });
 
@@ -1185,7 +1200,7 @@ function zugBeginnen(){
   wuerfelnLassen();
 }
 function wuerfelnLassen(){
-  G.phase = 'wuerfeln'; G.wurf = 0; G.zuege = [];
+  G.phase = 'wuerfeln'; G.wurf = 0; G.zuege = []; G.nochmal = false;
   aktualisieren();
   if (istTeddy(G.dran)){
     var nr = G.spielNr;
@@ -1212,15 +1227,24 @@ function wurfErgebnis(n){
     }
     return;
   }
+  /* Bleiben Versuche für eine Sechs übrig und geht nur eine Partnerfigur,
+     darf man wählen: ziehen oder nochmal würfeln. */
   G.zuege = liste; G.phase = 'ziehen'; G.auswahl = null;
+  G.nochmal = n !== 6 && G.versuche > 1 && !liste.some(function(z){ return z.p === wer; });
   aktualisieren();
   if (!mensch){
     setTimeout(function(){
       if (nr !== G.spielNr) return;
+      /* Der Teddy zieht für den Partner nur, wenn er damit schlagen kann */
+      if (G.nochmal && !liste.some(function(z){ return z.schlag && !freunde(wer, z.schlag.p, G.team); })){
+        nochmalWuerfeln(); return;
+      }
       ausfuehren(teddyWahl(G.fig, wer, liste, G.stufe, kontext()));
     }, 380);
   } else {
-    /* Gibt es nur eine Möglichkeit (alle Haus-Figuren sind gleich), zieht sie von selbst */
+    /* Gibt es nur eine Möglichkeit (alle Haus-Figuren sind gleich), zieht sie von
+       selbst - nur nicht, wenn man stattdessen nochmal würfeln darf */
+    if (G.nochmal) return;
     var ziele = {};
     liste.forEach(function(z){ ziele[z.von === -1 ? 'haus' : z.p+'-'+z.i] = 1; });
     if (Object.keys(ziele).length === 1){
@@ -1411,6 +1435,7 @@ function hinweisOhneTeam(){
     return 'Wirf den Würfel mit dem Finger – oder tippe auf „Würfeln“'+v;
   }
   if (G.phase === 'ziehen')
+    if (G.nochmal) return 'Du kannst die Figur deines Partners ziehen – oder nochmal auf eine Sechs würfeln ('+G.versuche+').';
     return cfg.bestaetigen && G.auswahl ? 'Nochmal tippen zum Ziehen – oder eine andere Figur wählen.' :
            (cfg.vorschau ? 'Tippe auf eine markierte Figur.' : 'Tippe auf die Figur, die ziehen soll.');
   return '';
@@ -1434,7 +1459,7 @@ function meldung(txt, dauer, art){
   renderStatus();
 }
 function knoepfe(){
-  var dran = G.laeuft && istMensch(G.dran) && G.phase === 'wuerfeln';
+  var dran = G.laeuft && istMensch(G.dran) && (G.phase === 'wuerfeln' || (G.phase === 'ziehen' && G.nochmal));
   $bWurf.disabled = !dran;
   $schale.classList.toggle('dran', dran);
 }
@@ -1749,7 +1774,8 @@ function zeigeHilfe(){
   'Das Schütteln braucht auf dem iPhone einmal deine Erlaubnis.</li></ul>'+
   '<h3>Ziehen</h3><ul>'+
   '<li>Mit einer <b>6</b> kommt eine Figur aus dem Haus auf dein Startfeld. Nach einer 6 darfst du nochmal würfeln.</li>'+
-  '<li>Hast du keine Figur, die ziehen kann, hast du <b>drei Versuche</b> für eine 6.</li>'+
+  '<li>Hast du keine eigene Figur, die ziehen kann, hast du <b>drei Versuche</b> für eine 6. Im Team gilt das auch dann, wenn dein Partner schon draußen ist: '+
+  'Du darfst dann wählen, ob du eine Figur des Partners ziehst oder nochmal würfelst.</li>'+
   '<li>Das Startfeld muss frei gemacht werden, solange noch Figuren im Haus warten.</li>'+
   '<li>Landest du auf einer fremden Figur, fliegt sie zurück in ihr Haus.</li>'+
   '<li>Über Figuren darfst du auf der Bahn springen, im Ziel nicht.</li>'+
