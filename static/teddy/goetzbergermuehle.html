@@ -72,8 +72,11 @@ body{
    bekommen einen Rand in der Steinfarbe - so sieht es aus wie im Logo. */
 /* Die Muehle ist eingepraegt: dieselbe Farbe wie der Stein, erhaben durch eine
    helle Kante oben links und einen Schatten unten rechts. */
-.m1 .oben{color:#f6f3ee;} .m1 .licht{color:#fff; opacity:.95;} .m1 .schatten{color:#5e4c3a; opacity:.68;}
-.m2 .oben{color:#8e151b;} .m2 .licht{color:#e4808a; opacity:.75;} .m2 .schatten{color:#260204; opacity:.6;}
+/* Zwei Steinsaetze: die Farben der Muehle (s) und klassisches Holz (h) */
+.s1 .oben{color:#f6f3ee;} .s1 .licht{color:#fff; opacity:.95;} .s1 .schatten{color:#5e4c3a; opacity:.68;}
+.s2 .oben{color:#8e151b;} .s2 .licht{color:#e4808a; opacity:.75;} .s2 .schatten{color:#260204; opacity:.6;}
+.h1 .oben{color:#e0bd8a;} .h1 .licht{color:#fbe8c8; opacity:.9;} .h1 .schatten{color:#6d4a22; opacity:.62;}
+.h2 .oben{color:#5a3a1e;} .h2 .licht{color:#9d7040; opacity:.85;} .h2 .schatten{color:#160b03; opacity:.62;}
 .voll{display:none;}
 .dreht .voll{display:inline;}
 .dreht .ruhe{display:none;}
@@ -240,7 +243,8 @@ table.sc tr.me{background:rgba(140,20,25,.14);}
    ================================================================== */
 
 /* ---------- Einstellungen ---------- */
-var cfg = { v:1, stufe:1, modus:'ki', anfang:'wechsel', zuletzt:0, namen:['','',''], vibrate:true, sound:false, hinweise:true, wegRinge:true };
+var cfg = { v:1, stufe:1, modus:'ki', anfang:'wechsel', zuletzt:0, namen:['','',''], vibrate:true, sound:false, hinweise:true, wegRinge:true,
+  steine:'logo', drehen:true };
 var saved = lsGet('teddy.muehle.cfg', null);
 if (saved) for (var ck in saved) if (ck in cfg) cfg[ck] = saved[ck];
 if (!(cfg.namen instanceof Array) || cfg.namen.length !== 3) cfg.namen = ['','',''];
@@ -514,15 +518,18 @@ function muehleLage(art, dx, dy){
 var NABE = '-0.02 -4.44';
 /* Ein Stein wie eine Muenze: einfarbige Scheibe mit schmaler Kante, darauf ein
    schmaler erhoehter Rand, im Feld die eingepraegte Muehle. */
-var STEIN_FARBE = [null, { flaeche:'#f6f3ee', kante:'#c9bfb2' }, { flaeche:'#8e151b', kante:'#5a0b10' }];
-function steinInhalt(s){
-  var f = STEIN_FARBE[s];
+var STEIN_SATZ = {
+  logo: [null, { flaeche:'#f6f3ee', kante:'#c9bfb2', klasse:'s1' }, { flaeche:'#8e151b', kante:'#5a0b10', klasse:'s2' }],
+  holz: [null, { flaeche:'#e0bd8a', kante:'#ac8954', klasse:'h1' }, { flaeche:'#5a3a1e', kante:'#311e0d', klasse:'h2' }]
+};
+function steinInhalt(s, satz){
+  var f = (STEIN_SATZ[satz || cfg.steine] || STEIN_SATZ.logo)[s];
   return '<ellipse cx="2" cy="6" rx="45" ry="44" fill="url(#bodenSchatten)"/>'+
     '<circle cy="3" r="40" fill="'+f.kante+'"/>'+
     '<circle r="40" fill="'+f.flaeche+'"/>'+
     '<circle r="39.2" fill="none" stroke="url(#kanteAussen)" stroke-width="1.6"/>'+
     '<circle r="35.8" fill="none" stroke="url(#kanteInnen)" stroke-width="1.8"/>'+
-    '<g class="m'+s+'">'+muehleLage('schatten', 1.1, 1.2)+muehleLage('licht', -.8, -.8)+muehleLage('oben', 0, 0)+'</g>';
+    '<g class="'+f.klasse+'">'+muehleLage('schatten', 1.1, 1.2)+muehleLage('licht', -.8, -.8)+muehleLage('oben', 0, 0)+'</g>';
 }
 function linienZeichnen(){
   var s = '';
@@ -535,6 +542,14 @@ function linienZeichnen(){
   el('linien').innerHTML = s;
 }
 var steinEl = [];
+/* Nach einem Wechsel der Steinart alles neu zeichnen, was Steine zeigt:
+   Brett, Ablagen und den Stein in der Statuszeile. */
+function steineNeuZeichnen(){
+  if (!G.brett) return;
+  steineAufbauen();
+  ablageAlt = [0, -1, -1]; ablageZeichnen();
+  dranGezeigt = 0; renderStatus();
+}
 function steineAufbauen(){
   $steine.innerHTML = ''; steinEl = [];
   for (var i=0;i<24;i++){ steinEl.push(null); if (G.brett[i]) steinNeu(i, G.brett[i], false); }
@@ -757,6 +772,16 @@ function muehleDrehen(nach, nr, sperren, danach){
   G.dreht = true;
   if (sperren) G.warten = true;
   aktualisieren();
+  /* Ohne Dreheffekt bleibt nur ein kurzer Moment, in dem "Mühle!" zu lesen ist. */
+  if (!cfg.drehen){
+    setTimeout(function(){
+      if (nr !== G.spielNr) return;
+      if (meine === drehZaehler) G.dreht = false;
+      if (sperren) G.warten = false;
+      danach();
+    }, 650);
+    return;
+  }
   setTimeout(function(){
     if (nr !== G.spielNr) return;
     var steine = muehlenSteine(nach).map(function(i){ return steinEl[i] && steinEl[i].firstChild; })
@@ -959,6 +984,7 @@ $dlg.addEventListener('click', function(e){
   else if (a === 'bilanz') zeigeBilanz();
   else if (a === 'ecke') zurSpieleecke();
   else if (a === 'stufe'){ cfg.stufe = parseInt(v, 10); saveCfg(); zeigeOptionen(); }
+  else if (a === 'steine'){ cfg.steine = v; saveCfg(); steineNeuZeichnen(); zeigeOptionen(); }
   else if (a === 'sw'){
     var f = n.getAttribute('data-f');
     cfg[f] = !cfg[f]; saveCfg();
@@ -1059,6 +1085,14 @@ function zeigeMenu(){
 }
 function zeigeOptionen(){
   var h = '<h2>Einstellungen</h2><h3>Schwierigkeit</h3>' + stufenListe();
+  h += segZeile('Steine', 'steine', [
+    {v:'logo', name:'Rot & Weiß', unten:'Farben der Mühle'},
+    {v:'holz', name:'Klassisch',  unten:'hell & dunkelbraun'}
+  ], cfg.steine);
+  h += '<div class="seg" style="margin-top:8px;pointer-events:none;">'+
+       '<span style="flex:1 1 0;text-align:center;"><svg viewBox="-46 -46 92 92" style="width:44px;height:44px;">'+steinInhalt(1, cfg.steine)+'</svg>'+
+       '<svg viewBox="-46 -46 92 92" style="width:44px;height:44px;">'+steinInhalt(2, cfg.steine)+'</svg></span></div>';
+  h += schalter('drehen', 'Mühle dreht sich', 'Beim Schließen einer Mühle drehen sich die Flügel der drei Steine einmal.');
   h += schalter('hinweise', 'Mögliche Züge zeigen', 'Markiert die Punkte, auf die der angetippte Stein ziehen kann.');
   h += schalter('wegRinge', 'Wegnehmbare Steine einkreisen', 'Ringelt nach einer Mühle die gegnerischen Steine ein, die frei sind.');
   h += '<div class="opt"><label>Ton</label><div class="sw'+(cfg.sound?' on':'')+'" data-act="sw" data-f="sound"><i></i></div></div>';
@@ -1111,7 +1145,8 @@ function zeigeErgebnis(gewinner, grund, sieger, bilanz){
 function zeigeHilfe(){
   auf('<h2>Mühle – Regeln</h2>'+
   '<h3>Ziel</h3><p>Nimm dem Gegner so viele Steine weg, dass er nur noch zwei hat – oder sperre ihn so ein, dass er nicht mehr ziehen kann.</p>'+
-  '<h3>Setzen</h3><p>Jede Seite hat <b>neun Steine</b>. Abwechselnd setzt ihr sie auf freie Punkte. Du hast die weißen Steine. Wer beginnt, stellst du im Startbild unter <b>Anfang</b> ein. Geschlagene Steine landen neben dem Brett.</p>'+
+  '<h3>Steine</h3><p>In den <b>Einstellungen</b> kannst du zwischen den Steinen in den Farben der Mühle und klassischen hell- und dunkelbraunen Steinen wechseln. Dort lässt sich auch die Drehung der Mühlenflügel abschalten.</p>'+
+  '<h3>Setzen</h3><p>Jede Seite hat <b>neun Steine</b>. Abwechselnd setzt ihr sie auf freie Punkte. Du hast die hellen Steine. Wer beginnt, stellst du im Startbild unter <b>Anfang</b> ein. Geschlagene Steine landen neben dem Brett.</p>'+
   '<h3>Ziehen</h3><p>Sind alle Steine gesetzt, schiebt ihr abwechselnd einen eigenen Stein entlang einer Linie auf einen freien Nachbarpunkt. '+
   'Tippe erst deinen Stein an, dann das Ziel.</p>'+
   '<h3>Springen</h3><p>Wer nur noch <b>drei Steine</b> hat, darf mit einem davon auf jeden freien Punkt springen.</p>'+
