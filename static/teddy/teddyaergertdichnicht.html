@@ -953,10 +953,19 @@ function wuerfelWerfen(){               /* Antippen, Knopf "Würfeln" und die Te
 }
 
 /* ---------- Einfach: die Zahl liegt sofort da ---------- */
-/* Fester Platz links oben: dort verdeckt der Würfel weder den Kommentar
-   in der Mitte noch den roten Viertelkreis in der Ecke. */
+/* Fester Platz: mittig knapp unter dem Kommentar, damit der Würfel die
+   Schrift nicht verdeckt und trotzdem nicht in der Ecke klebt. */
 function einfachPlatz(){
-  W.p = [Math.min(W.breite/2, 1.9), Math.min(W.tiefe/2, 1.9), 1];
+  var unten = W.tiefe/2 * pxProEinheit;
+  try{
+    var sc = $schale.getBoundingClientRect();
+    [$statusTxt, $hinweis].forEach(function(el){
+      var r = el.getBoundingClientRect();
+      if (r.height) unten = Math.max(unten, r.bottom - sc.top);
+    });
+  }catch(e){}
+  var y = unten / pxProEinheit + 1.9;
+  W.p = [W.breite/2, Math.max(1.6, Math.min(W.tiefe - 1.6, y)), 1];
 }
 function einfachZeigen(zahl){
   var nr = G.spielNr;
