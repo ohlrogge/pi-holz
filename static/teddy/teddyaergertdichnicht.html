@@ -594,7 +594,10 @@ function zuegeFuer(fig, p, w, team){
   var liste = [], wer = team ? [p, partner(p, team)] : [p], eng;
   wer.forEach(function(q){
     for (var i=0;i<4;i++){
-      if (q !== p && fig[q][i] < 0) continue;
+      /* Aus dem Haus holt jeder seine eigenen Figuren. Im Team darf man mit
+         einer Sechs auch eine des Partners herausstellen - aber erst, wenn
+         keine eigene mehr im Haus wartet. */
+      if (q !== p && fig[q][i] < 0 && fig[p].indexOf(-1) >= 0) continue;
       var nach = kannZiehen(fig, q, i, w, team);
       if (nach < 0) continue;
       liste.push({ p:q, i:i, von:fig[q][i], nach:nach, schlag: nach < 40 ? besetzt(fig, absolut(q, nach)) : null });
@@ -1781,7 +1784,8 @@ function zeigeHilfe(){
   '<li>Über Figuren darfst du auf der Bahn springen, im Ziel nicht.</li>'+
   '<li><b>Schlagzwang</b> (im Startbild umschaltbar): Kannst du schlagen und ziehst trotzdem anders, muss die Figur, die hätte schlagen können, zurück ins Haus. Können es mehrere, trifft es die am weitesten vorgerückte.</li></ul>'+
   '<h3>Team-Variante</h3><p>Bei vier Mitspielern bilden die schräg gegenüberliegenden Farben ein Team: Rot mit Gelb, Blau mit Schwarz. '+
-  'Wer dran ist, darf mit seinem Wurf auch eine Figur des Partners ziehen – nur aus dem Haus holen darf jeder bloß seine eigenen. '+
+  'Wer dran ist, darf mit seinem Wurf auch eine Figur des Partners ziehen. Aus dem Haus holen darf man eine Figur des Partners nur mit einer 6 und nur dann, '+
+  'wenn keine eigene mehr im Haus wartet. '+
   'Den Partner darfst du schlagen, musst es aber nie – der Schlagzwang gilt nur gegen das andere Team, und auch mit den Figuren des Partners. Das Team gewinnt, wenn alle acht Figuren im Ziel sind.</p>'+
   '<h3>Bedienung</h3><p>Nach dem Wurf tippst du die Figur an, die ziehen soll. Welche Figuren überhaupt können und wohin sie kämen, verrät das Spiel nicht – '+
   'wer eine Chance übersieht, darf sich ärgern. Kann die angetippte Figur nicht ziehen, sagt das Spiel Bescheid. '+
