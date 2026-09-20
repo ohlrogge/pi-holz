@@ -231,7 +231,7 @@ p.klein{font-size:13px; opacity:.8; margin:6px 0 2px;}
 
 /* ---------- Einstellungen ---------- */
 var cfg = { v:2, stufe:2, schlagzwang:true, team:false, bestaetigen:false, vibrate:true, sound:false,
-            sitze:['mensch','teddy','teddy','teddy'], namen:['','','',''], vorschau:false, autozug:true,
+            sitze:['mensch','teddy','teddy','teddy'], namen:['','','',''], vorschau:false, autozug:true, schnell:false,
             wuerfelArt:'rollen' };
 var saved = lsGet('teddy.aerger.cfg', null);
 /* Fassung 1 kannte nur zwei Stufen - deren Nummern bedeuten heute etwas anderes */
@@ -731,6 +731,9 @@ function esc(t){ return String(t).replace(/[&<>"]/g, function(c){ return { '&':'
 function namenAufraeumen(namen){
   return [0,1,2,3].map(function(p){ return nameKuerzen(namen[p]); });
 }
+/* Mit "Teddys ziehen schnell" laufen die Züge der Computer-Gegner in etwa
+   einem Drittel der Zeit ab. Für Menschen bleibt alles wie gehabt. */
+function teddyTempo(ms){ return (cfg.schnell && !istMensch(G.dran)) ? Math.round(ms*.35) : ms; }
 function kontext(){ return { team:G.team, schlagzwang:G.schlagzwang, aktiv:[0,1,2,3].map(spielt), mensch:[0,1,2,3].map(istMensch) }; }
 function el(id){ return document.getElementById(id); }
 var $main = el('main'), $brett = el('brett'), $schale = el('schale'), $wuerfel = el('wuerfel'),
@@ -992,7 +995,7 @@ function einfachZeigen(zahl){
   ton(700, .05, 'square', .07);
   if (istMensch(G.dran)) summ(8);
   G.phase = 'rollen'; aktualisieren();
-  setTimeout(function(){ if (nr === G.spielNr) wurfErgebnis(zahl); }, 320);
+  setTimeout(function(){ if (nr === G.spielNr) wurfErgebnis(zahl); }, teddyTempo(320));
 }
 
 /* ---------- Rollen: eine von zehn gemütlichen Bewegungen ---------- */
@@ -1000,6 +1003,7 @@ var wurf = null, letzteArt = -1;
 function rollenLassen(zahl){
   var nr = G.spielNr, start = null, aufsetzer = 0;
   wurf = wurfPlanen(W, zahl, zufall, letzteArt);
+  if (cfg.schnell && !istMensch(G.dran)) wurf.dauer *= .4;
   letzteArt = wurf.art;
   G.phase = 'rollen'; aktualisieren();
   function frame(t){
@@ -1184,7 +1188,7 @@ function physikWurf(){
   W.gehalten = false;
   zufallsWurf(W, zufall);
   wurfAktiv = true;
-  zeitfaktor = istTeddy(G.dran) ? 1.3 : 1;
+  zeitfaktor = istTeddy(G.dran) ? (cfg.schnell ? 3 : 1.3) : 1;
   wecken();
 }
 $schale.addEventListener('pointerdown', function(e){
@@ -1207,7 +1211,7 @@ function wuerfelnLassen(){
   aktualisieren();
   if (istTeddy(G.dran)){
     var nr = G.spielNr;
-    setTimeout(function(){ if (nr === G.spielNr && G.phase === 'wuerfeln') wuerfelWerfen(); }, 420);
+    setTimeout(function(){ if (nr === G.spielNr && G.phase === 'wuerfeln') wuerfelWerfen(); }, teddyTempo(420));
   }
 }
 function wurfErgebnis(n){
@@ -1221,12 +1225,12 @@ function wurfErgebnis(n){
         meldung(mensch ? 'Keine Sechs – noch '+G.versuche+(G.versuche === 1 ? ' Versuch' : ' Versuche')+'.' :
                          name(wer)+': noch '+G.versuche+' Versuch'+(G.versuche === 1 ? '' : 'e'), 1600);
       if (n === 6) G.versuche = Math.max(G.versuche, 1);
-      setTimeout(function(){ if (nr === G.spielNr) wuerfelnLassen(); }, mensch ? 500 : 650);
+      setTimeout(function(){ if (nr === G.spielNr) wuerfelnLassen(); }, mensch ? 500 : teddyTempo(650));
       G.phase = 'pause'; aktualisieren();
     } else {
       meldung(mensch ? 'Eine '+n+' – damit geht nichts.' : name(wer)+' kann nicht ziehen.', 1500);
       G.phase = 'pause'; aktualisieren();
-      setTimeout(function(){ if (nr === G.spielNr) naechster(); }, mensch ? 1100 : 800);
+      setTimeout(function(){ if (nr === G.spielNr) naechster(); }, mensch ? 1100 : teddyTempo(800));
     }
     return;
   }
@@ -1243,7 +1247,7 @@ function wurfErgebnis(n){
         nochmalWuerfeln(); return;
       }
       ausfuehren(teddyWahl(G.fig, wer, liste, G.stufe, kontext()));
-    }, 380);
+    }, teddyTempo(380));
   } else {
     /* Gibt es nur eine Möglichkeit (alle Haus-Figuren sind gleich), zieht sie von
        selbst - nur nicht, wenn man stattdessen nochmal würfeln darf oder lieber
@@ -1269,7 +1273,7 @@ function ausfuehren(z){
   G.phase = 'laufen'; markenZeigen(); knoepfe();
   if (z.von === -1) punkte.push(feldXY(q, z.i, 0));
   else for (k = z.von+1; k <= z.nach; k++) punkte.push(feldXY(q, z.i, k));
-  hopsen(q, z.i, punkte, z.von === -1 ? 260 : 140, function(){
+  hopsen(q, z.i, punkte, teddyTempo(z.von === -1 ? 260 : 140), function(){
     if (nr !== G.spielNr) return;
     G.fig[q][z.i] = z.nach;
     if (z.schlag){
@@ -1278,7 +1282,7 @@ function ausfuehren(z){
       meldung(schlagMeldung(p, s.p), 2000, istMensch(s.p) ? 'warn' : '');
       ton(istMensch(p) ? 700 : 220, .15, istMensch(p) ? 'triangle' : 'square');
       summ(istMensch(s.p) ? [30,40,30] : 20);
-      gleiten(s.p, s.i, feldXY(s.p, s.i, -1), 520, strafe);
+      gleiten(s.p, s.i, feldXY(s.p, s.i, -1), teddyTempo(520), strafe);
     } else strafe();
   });
   /* Schlagzwang verpasst: die Figur, die hätte schlagen können, muss nach Hause */
@@ -1305,7 +1309,7 @@ function ausfuehren(z){
 }
 function naechster(){
   G.phase = 'pause'; aktualisieren();
-  var nr = G.spielNr, pause = istMensch(G.dran) ? 250 : 350;
+  var nr = G.spielNr, pause = istMensch(G.dran) ? 250 : teddyTempo(350);
   setTimeout(function(){
     if (nr !== G.spielNr) return;
     do { G.dran = (G.dran + 1) % 4; } while (!spielt(G.dran));
@@ -1695,6 +1699,7 @@ function zeigeStart(nurNeu){
   h += schalter('vorschau', 'Zughilfe', 'Zeigt, welche Figuren ziehen können, und mit einer blassen Glasfigur, wo sie landen.');
   h += schalter('bestaetigen', 'Zug bestätigen', 'Erst Figur antippen, dann nochmal tippen zum Ziehen.');
   h += schalter('autozug', 'Einzige Möglichkeit von selbst ziehen', 'Aus: Du tippst jeden Zug selbst, auch wenn nur eine Figur kann.');
+  h += schalter('schnell', 'Teddys ziehen schnell', 'Kürzt die Züge der Teddys ab, damit eine Runde flotter läuft.');
   /* Mindestens zwei Mitspieler, und mindestens einer davon ein Mensch */
   var menschen = anzahl(cfg.sitze, 'mensch'), geht = mit >= 2 && menschen >= 1;
   h += '<div class="row"><button class="btn go" data-act="los"'+(geht ? '' : ' disabled')+'>'+
@@ -1724,6 +1729,7 @@ function zeigeOptionen(){
   h += wuerfelWahl('opt');
   h += schalter('bestaetigen', 'Zug bestätigen', 'Erst Figur antippen, dann nochmal tippen zum Ziehen.');
   h += schalter('autozug', 'Einzige Möglichkeit von selbst ziehen', 'Aus: Du tippst jeden Zug selbst, auch wenn nur eine Figur kann.');
+  h += schalter('schnell', 'Teddys ziehen schnell', 'Kürzt die Züge der Teddys ab, damit eine Runde flotter läuft.');
   h += schalter('vorschau', 'Zughilfe', 'Zeigt, welche Figuren ziehen können, und mit einer blassen Glasfigur, wo sie landen.');
   h += schalter('sound', 'Ton');
   h += schalter('vibrate', 'Vibration');
@@ -1795,7 +1801,8 @@ function zeigeHilfe(){
   'Mit der <b>Zughilfe</b> (in den Einstellungen) sind die ziehbaren Figuren umrandet, und eine blasse Glasfigur zeigt, wo sie landen würden. '+
   'Stehen mehrere Figuren eng beieinander, öffnet sich eine Lupe, in der du genau wählen kannst. '+
   'Mit <b>Zug bestätigen</b> (in den Einstellungen) wählt der erste Tipp die Figur aus, der zweite zieht sie. '+
-  'Gibt es nur eine Möglichkeit, zieht die Figur von selbst – wer lieber jeden Zug selbst macht, schaltet das in den Einstellungen aus.</p>'+
+  'Gibt es nur eine Möglichkeit, zieht die Figur von selbst – wer lieber jeden Zug selbst macht, schaltet das in den Einstellungen aus. '+
+  'Dort gibt es auch <b>Teddys ziehen schnell</b>: Dann sind die Züge der Teddys deutlich kürzer.</p>'+
   '<p style="opacity:.7;font-size:13px;margin-top:14px;">Vorbild ist das Brettspiel „Mensch ärgere dich nicht“. Teddy ärgert dich nicht ist eine eigene Fassung mit eigener Grafik und eigenen Teddys.</p>'+
   '<div class="row"><button class="btn" data-act="'+(G.laeuft?'zu':'neu')+'">Zurück</button></div>');
 }
