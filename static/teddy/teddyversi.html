@@ -17,6 +17,7 @@
 <title>Teddyversi</title>
 <style>
 :root{
+  --tafel:76px; --brett:440px;
   --schrift:"Arial Rounded MT Bold","Arial Rounded MT",ui-rounded,"SF Pro Rounded","Helvetica Rounded","Nunito","Trebuchet MS",sans-serif;
   --stein-grau:#a9ada2;
   --schwarz:#161616; --tinte:#1c1c1c;
@@ -54,13 +55,42 @@ input, textarea{user-select:text; -webkit-user-select:text; font-size:16px;}
 .chip .kugel{width:20px; height:20px; border-radius:50%; flex:0 0 auto;}
 .chip .kugel.du{background:var(--rot); box-shadow:0 0 0 1.5px #fff;}
 .chip .kugel.teddy{background:var(--weiss); box-shadow:0 0 0 1.5px #000;}
+.chip .zahl{font-size:19px; line-height:1; font-variant-numeric:tabular-nums;}
+.chip .zahl.frisch{animation:zahlAuf .32s ease-out;}
 #statusTxt{flex:1 1 auto; text-align:center; font-size:15px; letter-spacing:.3px;}
 
 /* ---------- Spielfeld: schwarzes Brett mit Mulden ---------- */
+/* Der Rahmen muss auf volle Hoehe gezogen werden, sonst misst brettGroesse()
+   nur die Hoehe des Bretts und das Brett bleibt klein. */
+#feld{position:relative; flex:1 1 auto; min-height:0; display:flex; align-items:stretch; justify-content:center;}
 #brettrahmen{
-  flex:1 1 auto; min-height:0; display:flex; align-items:center; justify-content:center;
+  flex:1 1 auto; min-width:0; min-height:0; display:flex; align-items:center; justify-content:center;
   padding:12px;
 }
+/* Die Steinschalen haengen im grauen Rand neben dem Brett und nehmen ihm
+   keinen Platz weg. Ob daneben ueberhaupt Rand frei ist, rechnet
+   brettGroesse() aus; nur dann traegt body die Klasse "tafeln". */
+.tafel{
+  display:none; position:absolute; bottom:calc(50% - var(--brett) / 2);
+  flex-direction:column; align-items:center; justify-content:center; gap:4px;
+  width:var(--tafel); padding:8px 6px; border-radius:10px;
+  background:#1c1c1c; border:2px solid #3a3a3a; color:#fff;
+}
+body.tafeln .tafel{display:flex;}
+/* Steht der Stand auf den Tafeln, traegt das Band nur noch den Text. */
+body.tafeln #status .chip{display:none;}
+/* Die Tafeln haengen an der Brettkante, nicht am Bildschirmrand: --brett ist
+   die gemessene Brettbreite, das Brett steht mittig. */
+#tafelDu{right:calc(50% + var(--brett) / 2 + 10px);}
+#tafelTeddy{left:calc(50% + var(--brett) / 2 + 10px);}
+.tafel.dran{border-color:#fff; box-shadow:0 0 0 2px var(--rot);}
+.tafel .kugel{width:16px; height:16px; border-radius:50%;}
+.tafel .kugel.du{background:var(--rot); box-shadow:0 0 0 1.5px #fff;}
+.tafel .kugel.teddy{background:var(--weiss); box-shadow:0 0 0 1.5px #000;}
+.tzahl{font-size:24px; line-height:1; font-variant-numeric:tabular-nums;}
+.tzahl.frisch{animation:zahlAuf .32s ease-out;}
+.tname{font-size:12px; text-align:center; opacity:.85; overflow-wrap:anywhere;}
+@keyframes zahlAuf{ from{transform:scale(1.18);} to{transform:scale(1);} }
 #board{
   display:grid; grid-template-columns:repeat(8, var(--zelle)); grid-template-rows:repeat(8, var(--zelle));
   gap:0; padding:10px; border-radius:6px;
@@ -84,10 +114,17 @@ input, textarea{user-select:text; -webkit-user-select:text; font-size:16px;}
 }
 .stein.zeigtTeddy{transform:rotateY(180deg);}
 .stein .seite{
-  position:absolute; inset:0; border-radius:50%; backface-visibility:hidden;
+  position:absolute; inset:0; backface-visibility:hidden;
 }
-.stein .seite.vorn{background:var(--rot);}
-.stein .seite.hinten{background:var(--weiss); box-shadow:inset 0 0 0 1px #c9c6bd; transform:rotateY(180deg);}
+.stein .seite svg{width:100%; height:100%; display:block; overflow:visible;}
+.stein .seite.hinten{transform:rotateY(180deg);}
+/* Praegung: Licht von oben links, Schatten nach unten rechts. */
+.pr .oben{color:currentColor;}
+.pr .licht{opacity:.85;} .pr .schatten{opacity:.5;}
+.s1 .oben{color:#a8141b;} .s1 .licht{color:#f08a90;} .s1 .schatten{color:#5e070c;}
+.s2 .oben{color:#d8d3c4;} .s2 .licht{color:#fff;} .s2 .schatten{color:#8e897c;}
+/* Die Schnauze deckt, sonst scheint der dunkle Kopf durch. */
+.s1 .schnauze{color:#ea6b71;} .s2 .schnauze{color:#fffdf7;}
 
 /* ---------- Symbolleiste ---------- */
 #bar{
@@ -134,12 +171,30 @@ input, textarea{user-select:text; -webkit-user-select:text; font-size:16px;}
 .lvl button:active{opacity:.75;}
 .lvl b{flex:1 1 auto; font-weight:normal;}
 .lvl span{font-size:12px; opacity:.8; display:block; margin-top:1px;}
+.feld{font-size:14px; opacity:.85; margin-top:12px;}
+.seg{display:flex; gap:6px; margin-top:5px;}
+.seg button{
+  flex:1 1 0; min-width:0; cursor:pointer; text-align:center;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  border:2px solid var(--schwarz); border-radius:10px; padding:9px 3px; font-size:15px;
+  background:var(--weiss); color:var(--tinte); font-family:var(--schrift);
+}
+.seg button.an{background:var(--rot); color:#fff;}
+.seg button:active{opacity:.75;}
+.hint{font-size:13px; opacity:.8; margin:5px 0 0;}
+.namen{display:flex; flex-direction:column; gap:6px; margin-top:5px;}
+.namen input{
+  width:100%; font-family:var(--schrift); font-size:16px; padding:8px 10px;
+  color:var(--tinte); background:var(--weiss); border:2px solid var(--schwarz); border-radius:10px;
+}
+.namen input::placeholder{color:#8d8a82;}
 table.sc{width:100%; border-collapse:collapse; margin-top:8px; font-size:15px;}
 table.sc th,table.sc td{padding:6px; border-bottom:2px solid rgba(0,0,0,.15); text-align:left;}
 table.sc td.n{text-align:right;}
 table.sc tr.me{background:rgba(216,35,43,.16);}
 .opt{display:flex; align-items:center; justify-content:space-between; gap:10px; padding:8px 0; border-bottom:2px solid rgba(0,0,0,.12);}
 .opt label{font-size:15px;}
+.opt label span{display:block; font-size:12px; opacity:.75; margin-top:2px;}
 .sw{
   width:52px; height:28px; border-radius:14px; border:2px solid var(--schwarz); background:#bdb9b0;
   position:relative; cursor:pointer; flex:0 0 auto;
@@ -157,6 +212,7 @@ table.sc tr.me{background:rgba(216,35,43,.16);}
 
 /* ---------- Fingerbedienung ---------- */
 @media (pointer:coarse){
+  .seg button{padding:12px 3px; min-height:50px;}
   .btn{min-width:50px; min-height:50px; font-size:12px;}
   .btn .ico{font-size:19px;}
   .lvl button{padding:13px 14px; font-size:17px;}
@@ -174,13 +230,34 @@ table.sc tr.me{background:rgba(216,35,43,.16);}
 </style>
 </head>
 <body>
+<!-- Kanten wie bei einer Muenze, Licht von oben links - wie bei den Muehlesteinen,
+     nur mit schmalerem Rand. -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs id="steindefs">
+    <linearGradient id="vKanteAussen" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fff" stop-opacity=".9"/><stop offset=".5" stop-color="#fff" stop-opacity="0"/>
+      <stop offset=".5" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".35"/>
+    </linearGradient>
+    <linearGradient id="vKanteInnen" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#000" stop-opacity=".4"/><stop offset=".5" stop-color="#000" stop-opacity="0"/>
+      <stop offset=".5" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#fff" stop-opacity=".85"/>
+    </linearGradient>
+    <radialGradient id="vBodenSchatten">
+      <stop offset=".7" stop-color="#000" stop-opacity=".45"/><stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+</svg>
 <div id="wrap">
   <div id="status">
-    <div class="chip" id="chipDu"><span class="kugel du"></span><span class="name">Du</span><span id="scoreDu">2</span></div>
+    <div class="chip" id="chipDu"><span class="kugel du"></span><span class="name" id="nameSpieler1">Du</span><span class="zahl" id="scoreDu">2</span></div>
     <span id="statusTxt">Teddyversi</span>
-    <div class="chip" id="chipTeddy"><span class="kugel teddy"></span><span class="name" id="nameSpieler2">Teddy</span><span id="scoreTeddy">2</span></div>
+    <div class="chip" id="chipTeddy"><span class="kugel teddy"></span><span class="name" id="nameSpieler2">Teddy</span><span class="zahl" id="scoreTeddy">2</span></div>
   </div>
-  <div id="brettrahmen"><div id="board"></div></div>
+  <div id="feld">
+    <div class="tafel" id="tafelDu"><span class="kugel du"></span><div class="tzahl" id="tafelScoreDu">2</div><div class="tname" id="tafelNameDu">Du</div></div>
+    <div id="brettrahmen"><div id="board"></div></div>
+    <div class="tafel" id="tafelTeddy"><span class="kugel teddy"></span><div class="tzahl" id="tafelScoreTeddy">2</div><div class="tname" id="tafelNameTeddy">Teddy</div></div>
+  </div>
   <div id="bar">
     <button class="btn" id="bEcke"><span class="ico"><img class="ecke-ico" src="favicon.svg" alt=""></span><span class="lbl">Spieleecke</span></button>
     <button class="btn" id="bMenu"><span class="ico">&#9776;</span><span class="lbl">Menü</span></button>
@@ -204,9 +281,10 @@ table.sc tr.me{background:rgba(216,35,43,.16);}
 /* ---------- Speichern mit Rueckfall in den Arbeitsspeicher ---------- */
 
 /* ---------- Einstellungen ---------- */
-var cfg = { v:1, stufe:1, modus:'ki', vibrate:true, sound:false, hinweise:true };
+var cfg = { v:1, stufe:1, modus:'ki', anfang:'wechsel', zuletzt:0, namen:['','',''], vibrate:true, sound:false, hinweise:true };
 var saved = lsGet('teddy.versi.cfg', null);
 if (saved) for (var ck in saved) if (ck in cfg) cfg[ck] = saved[ck];
+if (!(cfg.namen instanceof Array) || cfg.namen.length !== 3) cfg.namen = ['','',''];
 function saveCfg(){ lsSet('teddy.versi.cfg', cfg); }
 
 var STUFEN = [
@@ -394,23 +472,46 @@ var G = {
 /* Ist an dieser Stelle die KI dran? Im Zweispielermodus nie - da sitzen zwei
    Menschen abwechselnd am selben Geraet. */
 function istKI(spieler){ return G.modus !== 'zweit' && spieler === 2; }
-function spielerName(spieler){
-  if (spieler === 1) return 'Du';
-  return G.modus === 'zweit' ? 'Spieler 2' : 'Teddy';
+/* Wer den ersten Stein setzt. Bei 'wechsel' die Seite, die zuletzt nicht
+   angefangen hat. */
+function anfaenger(){
+  if (cfg.anfang === 'du') return 1;
+  if (cfg.anfang === 'gegner') return 2;
+  return cfg.zuletzt === 1 ? 2 : 1;
 }
+/* Gegen Teddy spielt nur ein Mensch; der heisst wie in der Spieleecke.
+   Erst zu zweit gehoeren die Namen zum Platz, dann gilt der eingetragene. */
+function nameFuer(s, modus){
+  if (modus !== 'zweit') return s === 1 ? (meinName() || 'Du') : 'Teddy';
+  var eigen = nameKuerzen(cfg.namen[s]);
+  if (eigen) return eigen;
+  return s === 1 ? (meinName() || 'Spieler 1') : 'Spieler 2';
+}
+function spielerName(spieler){ return nameFuer(spieler, G.modus); }
+function spielerNameCfg(spieler){ return nameFuer(spieler, cfg.modus); }
+function esc(t){ return String(t).replace(/[&<>"]/g, function(c){ return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]; }); }
 function el(id){ return document.getElementById(id); }
 var $board = el('board'), $status = el('status'), $statusTxt = el('statusTxt'),
-    $veil = el('veil'), $dlg = el('dlg'), $frame = el('brettrahmen'),
+    $veil = el('veil'), $dlg = el('dlg'), $frame = el('brettrahmen'), $feld = el('feld'),
     $scoreDu = el('scoreDu'), $scoreTeddy = el('scoreTeddy'),
-    $chipDu = el('chipDu'), $chipTeddy = el('chipTeddy');
+    $chipDu = el('chipDu'), $chipTeddy = el('chipTeddy'),
+    $tafelDu = el('tafelDu'), $tafelTeddy = el('tafelTeddy'),
+    $tafelScoreDu = el('tafelScoreDu'), $tafelScoreTeddy = el('tafelScoreTeddy');
 
 /* ---------- Brettgroesse: bildfuellend, keine feste Groesse ---------- */
+var TAFEL_BREITE = 76, TAFEL_HOEHE = 130;
 function brettGroesse(){
   var breite = $frame.clientWidth - 20, hoehe = $frame.clientHeight - 20;
   var seite = Math.max(24, Math.min(breite, hoehe));
   var zelle = Math.floor((seite - 20) / 8);        /* Rahmenpolster 10px je Seite */
-  zelle = Math.max(26, Math.min(96, zelle));
+  zelle = Math.max(26, zelle);
   document.documentElement.style.setProperty('--zelle', zelle + 'px');
+  document.documentElement.style.setProperty('--brett', (zelle * 8 + 20) + 'px');
+  /* Die Tafeln haengen im Rand neben dem Brett. Sie erscheinen nur, wenn
+     dort Platz ist - das Brett wird dafuer nie kleiner. */
+  var rand = ($feld.clientWidth - (zelle * 8 + 20)) / 2;
+  document.body.classList.toggle('tafeln',
+    rand >= TAFEL_BREITE + 24 && $feld.clientHeight >= TAFEL_HOEHE);
 }
 beiGroessenwechsel(brettGroesse);
 
@@ -423,10 +524,56 @@ function brettAufbauen(){
 function zelleVon(idx){ return $board.children[idx]; }
 
 /* Einen Stein in eine Zelle setzen (ohne Animation - fuer den Spielaufbau). */
+/* ---------- Der Spielstein als zweifarbige Muenze ----------
+   Aufbau wie bei den Muehlesteinen: Scheibe, schmaler erhoehter Rand, im Feld
+   die eingepraegte Marke. Die Kante darunter hat die Farbe der Rueckseite -
+   ein roter Stein steht also auf Weiss und ein weisser auf Rot. */
+/* Die Marke von Teddikubs Joker, hier als Relief: Kopf und Ohren tragen die
+   drei Lagen, die Gesichtszuege liegen nur auf der obersten. */
+(function(){
+  el('steindefs').insertAdjacentHTML('beforeend',
+    '<symbol id="teddiKopf" viewBox="0 0 100 104">'+
+      '<path fill="currentColor" d="'+lockenKranz(19,57,15,7)+'"/>'+
+      '<path fill="currentColor" d="'+lockenKranz(81,57,15,7)+'"/>'+
+      '<path fill="currentColor" d="'+lockenKranz(50,44,29,11)+'"/>'+
+    '</symbol>'+
+    '<symbol id="teddiSchnauze" viewBox="0 0 100 104">'+
+      '<path fill="currentColor" d="'+lockenKranz(50,73,21,9)+'"/>'+
+    '</symbol>'+
+    '<symbol id="teddiZuege" viewBox="0 0 100 104">'+
+      '<path d="M40 64 C44 59 56 59 60 64 C62 69 56 74 50 74 C44 74 38 69 40 64 Z" fill="#000" opacity=".34"/>'+
+      '<path d="M50 74 L50 79 M50 79 C45 86 39 85 37 80 M50 79 C55 86 61 85 63 80"'+
+        ' stroke="#000" stroke-opacity=".34" stroke-width="3.4" fill="none" stroke-linecap="round"/>'+
+      '<circle cx="36" cy="43" r="5.2" fill="#000" opacity=".34"/>'+
+      '<circle cx="64" cy="43" r="5.2" fill="#000" opacity=".34"/>'+
+    '</symbol>');
+})();
+function teddiPraegung(art, dx, dy){
+  var u = ' x="-29" y="-33" width="58" height="60"/>';
+  return '<g class="'+art+'"'+(dx || dy ? ' transform="translate('+dx+' '+dy+')"' : '')+'>'+
+    '<use href="#teddiKopf"'+u+
+    (art === 'oben' ? '<use class="schnauze" href="#teddiSchnauze"'+u+'<use href="#teddiZuege"'+u : '')+'</g>';
+}
+var STEIN_SEITE = [null,
+  { flaeche:'#d8232b', kante:'#8f1119', klasse:'s1' },
+  { flaeche:'#f6f4ee', kante:'#c9c5b8', klasse:'s2' }];
+function muenze(spieler){
+  var f = STEIN_SEITE[spieler];
+  return '<svg viewBox="-50 -50 100 100" xmlns="http://www.w3.org/2000/svg">'+
+    '<ellipse cx="2" cy="9" rx="46" ry="45" fill="url(#vBodenSchatten)"/>'+
+    '<circle cy="6" r="40" fill="'+f.kante+'"/>'+
+    '<circle r="40" fill="'+f.flaeche+'"/>'+
+    '<circle r="39.3" fill="none" stroke="url(#vKanteAussen)" stroke-width="1.3"/>'+
+    '<circle r="37.6" fill="none" stroke="url(#vKanteInnen)" stroke-width="1.3"/>'+
+    '<g class="pr '+f.klasse+'">'+teddiPraegung('schatten', 1, 1.2)+
+      teddiPraegung('licht', -.8, -.9)+teddiPraegung('oben', 0, 0)+'</g></svg>';
+}
+var MUENZE_VORN = muenze(1), MUENZE_HINTEN = muenze(2);
 function steinSetzen(idx, spieler, animiert){
   var z = zelleVon(idx);
   z.innerHTML = '<div class="steinWrap'+(animiert ? ' neu' : '')+'"><div class="stein'+
-    (spieler === 2 ? ' zeigtTeddy' : '')+'"><div class="seite vorn"></div><div class="seite hinten"></div></div></div>';
+    (spieler === 2 ? ' zeigtTeddy' : '')+'"><div class="seite vorn">'+MUENZE_VORN+
+    '</div><div class="seite hinten">'+MUENZE_HINTEN+'</div></div></div>';
 }
 /* Einen liegenden Stein umdrehen - der DOM-Knoten bleibt derselbe, nur die
    Klasse wechselt, damit der Uebergang (die Dreh-Animation) auch laeuft. */
@@ -445,28 +592,53 @@ function legaleZuegeAnzeigen(zuege){
 function neuesSpiel(){
   saveCfg();
   G.modus = cfg.modus;
-  el('nameSpieler2').textContent = spielerName(2);
+  namenAnzeigen();
   G.brett = new Array(64); for (var i=0;i<64;i++) G.brett[i] = 0;
   G.brett[feld(3,3)] = 2; G.brett[feld(3,4)] = 1;
   G.brett[feld(4,3)] = 1; G.brett[feld(4,4)] = 2;
-  G.dran = 1; G.laeuft = true; G.warten = false; G.spielNr = (G.spielNr||0) + 1;
+  G.dran = anfaenger(); cfg.zuletzt = G.dran; saveCfg();
+  G.laeuft = true; G.warten = false; G.spielNr = (G.spielNr||0) + 1;
   brettAufbauen();
   steinSetzen(feld(3,3),2,false); steinSetzen(feld(3,4),1,false);
   steinSetzen(feld(4,3),1,false); steinSetzen(feld(4,4),2,false);
   meldung('');
   aktualisieren();
+  /* Faengt Teddy an, setzt er den ersten Stein von selbst. */
+  if (istKI(G.dran)){
+    var nr = G.spielNr;
+    G.warten = true; aktualisieren();
+    setTimeout(function(){ teddyZug(nr); }, 700);
+  }
 }
 
+/* Beim Umdrehen kippen oft viele Steine auf einmal. Die neue Zahl zieht
+   sich kurz zusammen, damit der Sprung auffaellt. */
+function zahlSetzen(feld, wert){
+  if (feld.textContent === String(wert)) return;
+  feld.textContent = wert;
+  feld.classList.remove('frisch');
+  void feld.offsetWidth;
+  feld.classList.add('frisch');
+}
 function punkteAnzeigen(){
   var st = zaehleSteine(G.brett);
-  $scoreDu.textContent = st.du; $scoreTeddy.textContent = st.teddy;
+  zahlSetzen($scoreDu, st.du); zahlSetzen($scoreTeddy, st.teddy);
+  zahlSetzen($tafelScoreDu, st.du); zahlSetzen($tafelScoreTeddy, st.teddy);
   $chipDu.classList.toggle('dran', G.laeuft && G.dran === 1);
   $chipTeddy.classList.toggle('dran', G.laeuft && G.dran === 2);
+  $tafelDu.classList.toggle('dran', G.laeuft && G.dran === 1);
+  $tafelTeddy.classList.toggle('dran', G.laeuft && G.dran === 2);
+}
+function namenAnzeigen(){
+  el('nameSpieler1').textContent = spielerName(1);
+  el('nameSpieler2').textContent = spielerName(2);
+  el('tafelNameDu').textContent = spielerName(1);
+  el('tafelNameTeddy').textContent = spielerName(2);
 }
 function statusText(){
   if (!G.laeuft) return { t:'Teddyversi', k:'' };
   if (G.warten) return { t:spielerName(G.dran) + ' überlegt …', k:'' };
-  if (G.dran === 1) return { t:'Du bist dran', k:'gut' };
+  if (G.dran === 1) return { t:spielerName(1) + ' ist dran', k:'gut' };
   return { t:spielerName(2) + ' ist dran', k:'gut' };
 }
 function renderStatus(){
@@ -490,7 +662,7 @@ function spielLaden(){
   var d = standLaden('teddy.versi.spiel');
   if (!d || !d.brett || d.brett.length !== 64) return false;
   cfg.modus = d.modus; cfg.stufe = d.stufe; G.modus = d.modus;
-  el('nameSpieler2').textContent = spielerName(2);
+  namenAnzeigen();
   G.brett = d.brett; G.dran = d.dran; G.laeuft = true; G.warten = false; G.spielNr = (G.spielNr||0) + 1;
   brettAufbauen();
   for (var i=0;i<64;i++) if (G.brett[i]) steinSetzen(i, G.brett[i], false);
@@ -543,7 +715,7 @@ function naechsterZug(){
   /* naechster kann nicht ziehen - hat der, der gerade dran war, ueberhaupt eine Fortsetzung? */
   var meineZuege = zuegeMitFlips(G.brett, G.dran);
   if (!meineZuege.length){ spielEnde(); return; }
-  var wer = naechster === 1 ? 'Du' : spielerName(naechster), verb = naechster === 1 ? 'musst' : 'muss';
+  var wer = spielerName(naechster), verb = naechster === 1 && wer === 'Du' ? 'musst' : 'muss';
   meldung(wer + ' ' + verb + ' aussetzen.', 2000, 'warn');
   aktualisieren();
   if (istKI(G.dran)){
@@ -614,6 +786,20 @@ function spielEnde(){
 function auf(html){ $dlg.innerHTML = html; $veil.className = 'on'; $dlg.scrollTop = 0; }
 function zu(){ $veil.className = ''; }
 $veil.addEventListener('click', function(e){ if (e.target === $veil && G.laeuft) zu(); });
+var startNurNeu = false;
+/* Namen gleich mitschreiben. Der Dialog wird dabei nicht neu gebaut, sonst
+   waere der Fokus weg; die Anzeige am Brett zieht nach. */
+$dlg.addEventListener('input', function(e){
+  var n = e.target;
+  if (!n.classList || !n.classList.contains('namefeld')) return;
+  var p = parseInt(n.getAttribute('data-p'), 10);
+  cfg.namen[p] = n.value;
+  saveCfg();
+  var knopf = $dlg.querySelector('.seg button[data-act="anfang"][data-v="' + (p === 1 ? 'du' : 'gegner') + '"]');
+  if (knopf && knopf.firstChild) knopf.firstChild.nodeValue = spielerNameCfg(p);
+  var satz = el('anfangHint');
+  if (satz) satz.textContent = anfangSatz();
+});
 $dlg.addEventListener('click', function(e){
   var n = e.target;
   while (n && n !== $dlg && !n.getAttribute('data-act')) n = n.parentNode;
@@ -621,9 +807,11 @@ $dlg.addEventListener('click', function(e){
   var a = n.getAttribute('data-act'), v = n.getAttribute('data-v');
   ton(500,.05);
   if (a === 'zu') zu();
-  else if (a === 'neu') zeigeStart(true);
-  else if (a === 'start'){ cfg.modus = 'ki'; if (v != null) cfg.stufe = parseInt(v,10); zu(); neuesSpiel(); }
-  else if (a === 'zweit'){ cfg.modus = 'zweit'; zu(); neuesSpiel(); }
+  else if (a === 'neu'){ startNurNeu = true; zeigeStart(true); }
+  else if (a === 'gegner'){ cfg.modus = v; saveCfg(); zeigeStart(startNurNeu); }
+  else if (a === 'stufeStart'){ cfg.stufe = parseInt(v,10); saveCfg(); zeigeStart(startNurNeu); }
+  else if (a === 'anfang'){ cfg.anfang = v; saveCfg(); zeigeStart(startNurNeu); }
+  else if (a === 'los'){ zu(); neuesSpiel(); }
   else if (a === 'weiter') zu();
   else if (a === 'hilfe') zeigeHilfe();
   else if (a === 'opt') zeigeOptionen();
@@ -653,16 +841,66 @@ function stufenListe(aktionName){
   h += '</div>';
   return h;
 }
+function schalter(f, titel, unter){
+  return '<div class="opt"><label>'+titel+'<span>'+unter+'</span></label>'+
+         '<div class="sw'+(cfg[f] ? ' on' : '')+'" data-act="sw" data-f="'+f+'"><i></i></div></div>';
+}
+/* Eine Reihe gleich breiter Knoepfe, von denen einer angewaehlt ist. */
+function segZeile(titel, aktion, werte, aktiv){
+  var h = '<div class="feld">'+titel+'</div><div class="seg">';
+  for (var i=0;i<werte.length;i++){
+    var w = werte[i];
+    h += '<button data-act="'+aktion+'" data-v="'+w.v+'" class="'+(w.v === aktiv ? 'an' : '')+'">'+
+         w.name + (w.unten ? '<em>'+w.unten+'</em>' : '') + '</button>';
+  }
+  return h + '</div>';
+}
+function anfangSatz(){
+  var wer = spielerNameCfg(anfaenger());
+  if (anfaenger() === 1 && wer === 'Du') return 'Diesmal fängst du an.';
+  return 'Diesmal fängt ' + wer + ' an.';
+}
+/* Das Startbild stellt nur ein; gestartet wird allein mit "Spielen". */
 function zeigeStart(nurNeu){
+  var zweit = cfg.modus === 'zweit';
   var h = '<div id="title"><div>'+teddiMarke()+'</div><div class="nm">'+
           'Teddyversi'.split('').map(function(b){ return '<span>'+b+'</span>'; }).join('')+
           '</div><div class="streifen"></div></div>';
-  h += '<h3>Gegen Teddy</h3>' + stufenListe('start');
-  h += '<div class="row"><button class="btn" data-act="zweit" style="flex:1 1 100%;">'+
-       '<span class="ico">&#128101;</span>Zu zweit spielen (ohne Teddy)</button></div>';
+
+  h += segZeile('Gegner', 'gegner', [{v:'ki', name:'Teddy'}, {v:'zweit', name:'Zu zweit'}], cfg.modus);
+
+  /* Allein gegen Teddy braucht es kein Feld, da zaehlt der Name aus der Ecke. */
+  if (zweit)
+    h += '<div class="feld">Namen</div><div class="namen">'+
+         '<input class="namefeld" data-p="1" type="text" maxlength="14" autocomplete="off" placeholder="'+
+         esc(meinName() || 'Spieler 1')+'" value="'+esc(cfg.namen[1] || '')+'">'+
+         '<input class="namefeld" data-p="2" type="text" maxlength="14" autocomplete="off"'+
+         ' placeholder="Spieler 2" value="'+esc(cfg.namen[2] || '')+'">'+
+         '</div>';
+
+  if (!zweit){
+    var stufen = [], i;
+    for (i=0;i<STUFEN.length;i++) stufen.push({ v:String(i), name:STUFEN[i].name });
+    h += segZeile('Stufe', 'stufeStart', stufen, String(cfg.stufe));
+    h += '<p class="hint">'+STUFEN[cfg.stufe].txt+'</p>';
+  }
+
+  h += segZeile('Anfang', 'anfang', [
+    { v:'du',      name:esc(spielerNameCfg(1)), unten: cfg.zuletzt === 1 ? 'zuletzt' : '' },
+    { v:'gegner',  name:esc(spielerNameCfg(2)), unten: cfg.zuletzt === 2 ? 'zuletzt' : '' },
+    { v:'wechsel', name:'Abwechselnd' }
+  ], cfg.anfang);
+  h += '<p class="hint" id="anfangHint">'+esc(anfangSatz())+'</p>';
+
+  h += '<div class="feld">Hilfen</div>';
+  h += schalter('hinweise', 'Mögliche Felder zeigen', 'Markiert die Felder, auf die du gerade legen darfst.');
+
+  h += '<div class="row"><button class="btn go" data-act="los" style="flex:1 1 100%;">'+
+       '<span class="ico">&#9654;</span>Spielen</button></div>';
   h += '<div class="row">'+
        '<button class="btn" data-act="opt"><span class="ico">&#9881;</span>Mehr</button>'+
-       '<button class="btn" data-act="hilfe"><span class="ico">?</span>Regeln</button>';
+       '<button class="btn" data-act="hilfe"><span class="ico">?</span>Regeln</button>'+
+       eckeKnopf();
   if (G.laeuft && !nurNeu) h += '<button class="btn" data-act="zu"><span class="ico">&#10005;</span>Zurück</button>';
   h += '</div>';
   auf(h);
@@ -680,7 +918,7 @@ function zeigeMenu(){
 }
 function zeigeOptionen(){
   var h = '<h2>Einstellungen</h2><h3>Schwierigkeit</h3>' + stufenListe('stufe');
-  h += '<div class="opt"><label>Mögliche Felder anzeigen</label><div class="sw'+(cfg.hinweise?' on':'')+'" data-act="sw" data-f="hinweise"><i></i></div></div>';
+  h += schalter('hinweise', 'Mögliche Felder zeigen', 'Markiert die Felder, auf die du gerade legen darfst.');
   h += '<div class="opt"><label>Ton</label><div class="sw'+(cfg.sound?' on':'')+'" data-act="sw" data-f="sound"><i></i></div></div>';
   h += '<div class="opt"><label>Vibration</label><div class="sw'+(cfg.vibrate?' on':'')+'" data-act="sw" data-f="vibrate"><i></i></div></div>';
   h += '<p style="margin-top:10px;font-size:13px;opacity:.8;">Die Schwierigkeit gilt ab dem nächsten neuen Spiel.</p>';
@@ -704,17 +942,19 @@ function zeigeBilanz(){
 function zeigeErgebnis(st, sieger, bilanz){
   var duHat = sieger === 'du', zweit = G.modus === 'zweit';
   var bild = duHat ? teddyJubel() : (sieger === 'unentschieden' ? teddyStaunt() : teddyRuhig());
-  var titel = duHat ? 'Gewonnen!' : (sieger === 'unentschieden' ? 'Unentschieden' : spielerName(2) + ' gewinnt');
+  var titel = sieger === 'unentschieden' ? 'Unentschieden'
+            : duHat ? (zweit ? esc(spielerName(1)) + ' gewinnt' : 'Gewonnen!')
+            : esc(spielerName(2)) + ' gewinnt';
   var h = '<div style="text-align:center;margin-bottom:6px;">'+
           '<div style="width:110px;margin:0 auto;">'+bild+'</div>'+
           '<h2 style="margin:2px 0 0;">'+titel+'</h2>'+
           '<p style="margin:0;opacity:.75;font-size:13px;">'+(zweit ? 'Zu zweit' : STUFEN[cfg.stufe].name)+'</p></div>';
   h += '<table class="sc">'+
-       '<tr class="me"><td>Du</td><td class="n" style="font-size:19px;">'+st.du+'</td></tr>'+
-       '<tr><td>'+spielerName(2)+'</td><td class="n" style="font-size:19px;">'+st.teddy+'</td></tr></table>';
-  h += '<p style="font-size:13px;opacity:.75;margin-top:8px;">Bilanz: Du '+bilanz.du+' &middot; '+spielerName(2)+' '+
+       '<tr class="me"><td>'+esc(spielerName(1))+'</td><td class="n" style="font-size:19px;">'+st.du+'</td></tr>'+
+       '<tr><td>'+esc(spielerName(2))+'</td><td class="n" style="font-size:19px;">'+st.teddy+'</td></tr></table>';
+  h += '<p style="font-size:13px;opacity:.75;margin-top:8px;">Bilanz: '+esc(spielerName(1))+' '+bilanz.du+' &middot; '+esc(spielerName(2))+' '+
        (zweit ? (bilanz.spieler2||0) : bilanz.teddy)+' &middot; Unentschieden '+bilanz.unentschieden+'</p>';
-  h += '<div class="row"><button class="btn go" data-act="'+(zweit ? 'zweit' : 'start')+'" data-v="'+cfg.stufe+'">'+
+  h += '<div class="row"><button class="btn go" data-act="los">'+
        '<span class="ico">&#9654;</span>Nochmal</button>'+
        '<button class="btn" data-act="neu">'+(zweit ? 'Zurück' : 'Stufe wechseln')+'</button>'+
        eckeKnopf()+'</div>';
@@ -733,7 +973,7 @@ function zeigeHilfe(){
   '<li>Können beide nicht mehr ziehen - oder ist das Brett voll - ist die Partie zu Ende.</li></ul>'+
   '<h3>Bedienung</h3><p>Ein Feld mit gelbem Punkt antippen, fertig. Es gibt keine Ablage und '+
   'keinen Bestätigen-Knopf: der Zug gilt sofort.</p>'+
-  '<h3>Zu zweit</h3><p>Im Startbild <b>Zu zweit spielen</b> wählen - dann tippen abwechselnd zwei Menschen auf demselben Gerät, ganz ohne Teddy. Die Bilanz führt beide Modi getrennt.</p>'+
+  '<h3>Zu zweit</h3><p>Im Startbild bei <b>Gegner</b> auf <b>Zu zweit</b> stellen - dann tippen abwechselnd zwei Menschen auf demselben Gerät, ganz ohne Teddy. Dort lassen sich auch beide Namen eintragen. Die Bilanz führt beide Modi getrennt.</p>'+
   '<h3>Schwierigkeit</h3><p>Vier Stufen von <b>Leicht</b> bis <b>Meister</b> - Teddy denkt dabei '+
   'unterschiedlich lange nach und plant unterschiedlich weit voraus. Auf den oberen Stufen spielt '+
   'sie gegen Ende der Partie das Restspiel vollständig durch.</p>'+
@@ -749,15 +989,16 @@ function zeigeHilfe(){
 el('bEcke').onclick = zurSpieleecke;
 el('bMenu').onclick = function(){ zeigeMenu(); };
 el('bHilfe').onclick = function(){ zeigeHilfe(); };
-el('bNeu').onclick = function(){ zeigeStart(true); };
+el('bNeu').onclick = function(){ startNurNeu = true; zeigeStart(true); };
 
 brettAufbauen();
 G.brett = new Array(64); for (var i0=0;i0<64;i0++) G.brett[i0] = 0;
 G.brett[feld(3,3)] = 2; G.brett[feld(3,4)] = 1; G.brett[feld(4,3)] = 1; G.brett[feld(4,4)] = 2;
 steinSetzen(feld(3,3),2,false); steinSetzen(feld(3,4),1,false);
 steinSetzen(feld(4,3),1,false); steinSetzen(feld(4,4),2,false);
+namenAnzeigen();
 punkteAnzeigen();
-if (!spielLaden()) zeigeStart(false);
+if (!spielLaden()){ startNurNeu = false; zeigeStart(false); }
 brettGroesse();
 setTimeout(brettGroesse, 80);
 </script>
