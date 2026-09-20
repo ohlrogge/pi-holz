@@ -281,7 +281,7 @@ table.sc tr.me{background:rgba(216,35,43,.16);}
 /* ---------- Speichern mit Rueckfall in den Arbeitsspeicher ---------- */
 
 /* ---------- Einstellungen ---------- */
-var cfg = { v:1, stufe:1, modus:'ki', anfang:'wechsel', zuletzt:0, namen:['','',''], vibrate:true, sound:false, hinweise:true };
+var cfg = { v:1, stufe:1, modus:'ki', anfang:'wechsel', zuletzt:0, namen:['','',''], vibrate:true, sound:false, hinweise:true, steine:'teddy' };
 var saved = lsGet('teddy.versi.cfg', null);
 if (saved) for (var ck in saved) if (ck in cfg) cfg[ck] = saved[ck];
 if (!(cfg.namen instanceof Array) || cfg.namen.length !== 3) cfg.namen = ['','',''];
@@ -557,7 +557,9 @@ function teddiPraegung(art, dx, dy){
 var STEIN_SEITE = [null,
   { flaeche:'#d8232b', kante:'#8f1119', klasse:'s1' },
   { flaeche:'#f6f4ee', kante:'#c9c5b8', klasse:'s2' }];
-function muenze(spieler){
+/* Ohne Praegung bleibt dieselbe Muenze uebrig, nur eben glatt - wer es
+   schlicht mag, spielt mit blanken Steinen. */
+function muenze(spieler, schlicht){
   var f = STEIN_SEITE[spieler];
   return '<svg viewBox="-50 -50 100 100" xmlns="http://www.w3.org/2000/svg">'+
     '<ellipse cx="2" cy="9" rx="46" ry="45" fill="url(#vBodenSchatten)"/>'+
@@ -565,15 +567,32 @@ function muenze(spieler){
     '<circle r="40" fill="'+f.flaeche+'"/>'+
     '<circle r="39.3" fill="none" stroke="url(#vKanteAussen)" stroke-width="1.3"/>'+
     '<circle r="37.6" fill="none" stroke="url(#vKanteInnen)" stroke-width="1.3"/>'+
-    '<g class="pr '+f.klasse+'">'+teddiPraegung('schatten', 1, 1.2)+
-      teddiPraegung('licht', -.8, -.9)+teddiPraegung('oben', 0, 0)+'</g></svg>';
+    (schlicht ? '' :
+      '<g class="pr '+f.klasse+'">'+teddiPraegung('schatten', 1, 1.2)+
+      teddiPraegung('licht', -.8, -.9)+teddiPraegung('oben', 0, 0)+'</g>')+
+    '</svg>';
 }
-var MUENZE_VORN = muenze(1), MUENZE_HINTEN = muenze(2);
+var MUENZEN = {
+  teddy:   [null, muenze(1, false), muenze(2, false)],
+  einfach: [null, muenze(1, true),  muenze(2, true)]
+};
+function muenzeVon(spieler){
+  return (MUENZEN[cfg.steine] || MUENZEN.teddy)[spieler];
+}
 function steinSetzen(idx, spieler, animiert){
   var z = zelleVon(idx);
   z.innerHTML = '<div class="steinWrap'+(animiert ? ' neu' : '')+'"><div class="stein'+
-    (spieler === 2 ? ' zeigtTeddy' : '')+'"><div class="seite vorn">'+MUENZE_VORN+
-    '</div><div class="seite hinten">'+MUENZE_HINTEN+'</div></div></div>';
+    (spieler === 2 ? ' zeigtTeddy' : '')+'"><div class="seite vorn">'+muenzeVon(1)+
+    '</div><div class="seite hinten">'+muenzeVon(2)+'</div></div></div>';
+}
+/* Nach einem Wechsel der Steinart die liegenden Steine neu zeichnen - ohne
+   Animation, es aendert sich ja nur ihr Aussehen. */
+function steineNeuZeichnen(){
+  if (!G.brett) return;
+  for (var i=0;i<64;i++){
+    if (G.brett[i]) steinSetzen(i, G.brett[i], false);
+    else zelleVon(i).innerHTML = '';
+  }
 }
 /* Einen liegenden Stein umdrehen - der DOM-Knoten bleibt derselbe, nur die
    Klasse wechselt, damit der Uebergang (die Dreh-Animation) auch laeuft. */
@@ -819,6 +838,7 @@ $dlg.addEventListener('click', function(e){
   else if (a === 'bilanz') zeigeBilanz();
   else if (a === 'ecke') zurSpieleecke();
   else if (a === 'stufe'){ cfg.stufe = parseInt(v,10); saveCfg(); zeigeOptionen(); }
+  else if (a === 'steine'){ cfg.steine = v; saveCfg(); steineNeuZeichnen(); zeigeOptionen(); }
   else if (a === 'sw'){
     var f = n.getAttribute('data-f');
     cfg[f] = !cfg[f]; saveCfg();
@@ -918,6 +938,10 @@ function zeigeMenu(){
 }
 function zeigeOptionen(){
   var h = '<h2>Einstellungen</h2><h3>Schwierigkeit</h3>' + stufenListe('stufe');
+  h += segZeile('Steine', 'steine', [
+    {v:'teddy',   name:'Teddy-Steine', unten:'mit Teddi'},
+    {v:'einfach', name:'Einfache',     unten:'ganz glatt'}
+  ], cfg.steine);
   h += schalter('hinweise', 'Mögliche Felder zeigen', 'Markiert die Felder, auf die du gerade legen darfst.');
   h += '<div class="opt"><label>Ton</label><div class="sw'+(cfg.sound?' on':'')+'" data-act="sw" data-f="sound"><i></i></div></div>';
   h += '<div class="opt"><label>Vibration</label><div class="sw'+(cfg.vibrate?' on':'')+'" data-act="sw" data-f="vibrate"><i></i></div></div>';
@@ -973,6 +997,9 @@ function zeigeHilfe(){
   '<li>Können beide nicht mehr ziehen - oder ist das Brett voll - ist die Partie zu Ende.</li></ul>'+
   '<h3>Bedienung</h3><p>Ein Feld mit gelbem Punkt antippen, fertig. Es gibt keine Ablage und '+
   'keinen Bestätigen-Knopf: der Zug gilt sofort.</p>'+
+  '<h3>Steine</h3><p>In den Einstellungen wählst du zwischen <b>Teddy-Steinen</b> mit der '+
+  'eingeprägten Teddi-Marke und <b>einfachen</b>, ganz glatten Steinen. Das ändert nur das '+
+  'Aussehen und gilt sofort, auch mitten im Spiel.</p>'+
   '<h3>Zu zweit</h3><p>Im Startbild bei <b>Gegner</b> auf <b>Zu zweit</b> stellen - dann tippen abwechselnd zwei Menschen auf demselben Gerät, ganz ohne Teddy. Dort lassen sich auch beide Namen eintragen. Die Bilanz führt beide Modi getrennt.</p>'+
   '<h3>Schwierigkeit</h3><p>Vier Stufen von <b>Leicht</b> bis <b>Meister</b> - Teddy denkt dabei '+
   'unterschiedlich lange nach und plant unterschiedlich weit voraus. Auf den oberen Stufen spielt '+
