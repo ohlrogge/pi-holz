@@ -58,10 +58,25 @@ body{
 .ablage{display:flex; align-items:center; justify-content:center; flex:0 0 auto;
   width:var(--seite); height:var(--mini);}
 #brettrahmen.quer .ablage{flex-direction:column; width:var(--mini); height:var(--seite);}
-.ablage svg{width:var(--mini); height:var(--mini); flex:0 0 auto; display:block;}
-.ablage svg.neu{animation:setzen .3s ease-out .12s both;}
-.ablage svg.kommt{visibility:hidden;}
-#brett{display:block; touch-action:manipulation; cursor:pointer; overflow:visible; position:relative; z-index:2;}
+/* Links (quer: oben) der eigene Vorrat, daneben die geschlagenen Steine.
+   Die Stapel liegen uebereinander wie Muenzen, sonst passen sie nicht nebeneinander. */
+.stapel{display:flex; align-items:center; flex:0 0 auto;}
+#brettrahmen.quer .stapel{flex-direction:column;}
+.stapel svg{width:var(--mini); height:var(--mini); flex:0 0 auto; display:block;
+  touch-action:none; filter:drop-shadow(0 0 1px rgba(60,35,15,.35));}
+.stapel svg + svg{margin-left:calc(var(--mini) * -.52);}
+#brettrahmen.quer .stapel svg + svg{margin-left:0; margin-top:calc(var(--mini) * -.52);}
+/* Der Vorrat liegt etwas kleiner da als die geschlagenen Steine - er ist mit
+   neun Steinen der laengere Stapel und soll trotzdem neben das Brett passen. */
+.vorrat svg{width:calc(var(--mini) * .84); height:calc(var(--mini) * .84);}
+.vorrat svg + svg{margin-left:calc(var(--mini) * -.44);}
+#brettrahmen.quer .vorrat svg + svg{margin-left:0; margin-top:calc(var(--mini) * -.44);}
+.schlag{margin-left:calc(var(--mini) * .34);}
+#brettrahmen.quer .schlag{margin-left:0; margin-top:calc(var(--mini) * .34);}
+.stapel svg.neu{animation:setzen .3s ease-out .12s both;}
+.stapel svg.kommt{visibility:hidden;}
+.stapel svg.getragen{visibility:hidden;}
+#brett{display:block; touch-action:none; cursor:pointer; overflow:visible; position:relative; z-index:2;}
 .linie{stroke:var(--rot); stroke-width:7; fill:none; stroke-linecap:square;}
 .pos{transition:transform .3s ease;}
 .stein{transform-box:fill-box; transform-origin:center;}
@@ -84,6 +99,8 @@ body{
 .ring{fill:none; stroke:var(--dunkel); stroke-width:6;}
 .ring.weg{stroke-dasharray:14 9; animation:kreisen 1.2s linear infinite;}
 @keyframes kreisen{to{stroke-dashoffset:-46;}}
+.pos.zieht{transition:none;}
+.ziel.auf{fill:rgba(140,20,25,.2);}
 .ziel{fill:rgba(140,20,25,.55);}
 
 /* ---------- Symbolleiste ---------- */
@@ -547,7 +564,7 @@ var steinEl = [];
 function steineNeuZeichnen(){
   if (!G.brett) return;
   steineAufbauen();
-  ablageAlt = [0, -1, -1]; ablageZeichnen();
+  ablageAlt = [null, null, null]; ablageZeichnen();
   dranGezeigt = 0; renderStatus();
 }
 function steineAufbauen(){
@@ -574,6 +591,13 @@ function markenZeichnen(){
       var ziele = istKI(G.dran) ? (G.wegZiel >= 0 ? [G.wegZiel] : [])
                                 : (cfg.wegRinge ? wegnehmbar(G.brett, gegner(G.dran)) : []);
       for (i=0;i<ziele.length;i++) r += '<circle class="ring weg" cx="'+px(ziele[i])+'" cy="'+py(ziele[i])+'" r="46"/>';
+    } else if (G.zieltZiele){
+      /* Waehrend des Ziehens immer zeigen, wohin der Stein darf */
+      for (i=0;i<G.zieltZiele.length;i++){
+        var zp = G.zieltZiele[i], drauf = Z && Z.ziel === zp;
+        m += '<circle class="ziel'+(drauf ? ' auf' : '')+'" cx="'+px(zp)+'" cy="'+py(zp)+'" r="'+(drauf ? 44 : 17)+'"/>';
+      }
+      if (G.wahl >= 0) r += '<circle class="ring" cx="'+px(G.wahl)+'" cy="'+py(G.wahl)+'" r="46"/>';
     } else if (!G.warten && !istKI(G.dran) && G.wahl >= 0){
       r += '<circle class="ring" cx="'+px(G.wahl)+'" cy="'+py(G.wahl)+'" r="46"/>';
       if (cfg.hinweise){
@@ -640,18 +664,25 @@ function meldung(txt, dauer, art){
 }
 /* Ablage 1 (unten bzw. rechts) haelt die Steine, die Du geschlagen hast,
    Ablage 2 (oben bzw. links) die von Teddy oder Spieler 2. */
-var ablageAlt = [0, -1, -1];
+var ablageAlt = [null, null, null];
 /* kommt: der neueste Stein bleibt unsichtbar, bis der geschlagene Stein vom
    Brett bei ihm angekommen ist. */
+function stapelHtml(art, spieler, wieViele, letzterKlasse){
+  var h = '<span class="stapel '+art+'">';
+  for (var i=0;i<wieViele;i++)
+    h += '<svg viewBox="-46 -46 92 92" data-vorrat="'+(art === 'vorrat' ? spieler : 0)+'"'+
+         (i === wieViele-1 && letzterKlasse ? ' class="'+letzterKlasse+'"' : '')+'>'+steinInhalt(spieler)+'</svg>';
+  return h + '</span>';
+}
+/* Jede Ablage zeigt zwei Stapel: den eigenen Vorrat, der noch gesetzt werden
+   muss, und die Steine, die diese Seite dem Gegner abgenommen hat. */
 function ablageZeichnen(kommt){
   for (var s=1;s<=2;s++){
-    var n = 9 - anzahl(G.brett, gegner(s)) - G.vorrat[gegner(s)], h = '';
-    if (n === ablageAlt[s]) continue;
-    var neu = n > ablageAlt[s] && ablageAlt[s] >= 0 ? (kommt ? ' class="kommt"' : ' class="neu"') : '';
-    for (var i=0;i<n;i++)
-      h += '<svg viewBox="-46 -46 92 92"'+(i === n-1 ? neu : '')+'>'+steinInhalt(gegner(s))+'</svg>';
-    el('ablage' + s).innerHTML = h;
-    ablageAlt[s] = n;
+    var eigen = G.vorrat[s], n = 9 - anzahl(G.brett, gegner(s)) - G.vorrat[gegner(s)], alt = ablageAlt[s];
+    if (alt && alt[0] === eigen && alt[1] === n) continue;
+    var neu = alt && n > alt[1] ? (kommt ? 'kommt' : 'neu') : '';
+    el('ablage' + s).innerHTML = stapelHtml('vorrat', s, eigen, '') + stapelHtml('schlag', gegner(s), n, neu);
+    ablageAlt[s] = [eigen, n];
   }
 }
 function aktualisieren(){
@@ -679,7 +710,7 @@ function spielLaden(){
   G.brett = d.brett; G.vorrat = d.vorrat; G.dran = d.dran; G.wegnehmen = !!d.wegnehmen;
   G.ohneWeg = d.ohneWeg || 0; G.verlauf = d.verlauf || {};
   G.laeuft = true; G.warten = false; G.dreht = false; G.wahl = -1; G.wegZiel = -1; G.spielNr = (G.spielNr||0) + 1;
-  ablageAlt = [0, -1, -1];
+  ablageAlt = [null, null, null];
   if (G.wegnehmen && !wegnehmbar(G.brett, gegner(G.dran)).length) G.wegnehmen = false;
   steineAufbauen();
   meldung('Spiel fortgesetzt.', 1800);
@@ -706,7 +737,7 @@ function neuesSpiel(){
   G.brett = []; for (var i=0;i<24;i++) G.brett.push(0);
   G.vorrat = [0, 9, 9]; G.laeuft = true; G.warten = false;
   G.wahl = -1; G.wegnehmen = false; G.wegZiel = -1; G.ohneWeg = 0; G.verlauf = {};
-  G.spielNr = (G.spielNr||0) + 1; G.dreht = false; ablageAlt = [0, -1, -1];
+  G.spielNr = (G.spielNr||0) + 1; G.dreht = false; ablageAlt = [null, null, null];
   steineAufbauen();
   meldung(G.dran === 1 ? 'Los geht\u2019s \u2013 du f\u00e4ngst an!' : 'Los geht\u2019s \u2013 ' + spielerName(2) + ' f\u00e4ngt an!', 1800);
   aktualisieren();
@@ -821,7 +852,7 @@ function steinWegnehmen(idx, danach){
   markenZeichnen();
   ablageZeichnen(true);
   ton(250, .12, 'square'); summ([15, 30, 15]);
-  var ziel = document.querySelector('.ablage svg.kommt');
+  var ziel = document.querySelector('.stapel svg.kommt');
   function fertig(){
     if (g && g.parentNode) g.parentNode.removeChild(g);
     if (ziel) ziel.removeAttribute('class');
@@ -862,6 +893,11 @@ function feldGetippt(idx){
     if (G.wahl < 0 || zielpunkte(G.wahl).indexOf(idx) < 0) return;
     von = G.wahl;
   }
+  zugSpielen(von, idx);
+}
+/* Einen fertigen Zug ausfuehren - getippt oder gezogen. */
+function zugSpielen(von, idx){
+  var s = G.dran;
   G.wahl = -1;
   var nr = G.spielNr;
   if (steinZiehen(von, idx, s)){
@@ -913,18 +949,114 @@ function teddyZug(nr){
 /* ==================================================================
    Bedienung - Touch zuerst
    ================================================================== */
-var tapEvt = window.PointerEvent ? 'pointerdown' : 'mousedown';
-$brett.addEventListener(tapEvt, function(e){
-  if (e.pointerType === 'mouse' && e.button !== 0) return;
+function brettPunktXY(e){
   var r = $brett.getBoundingClientRect();
-  var x = VB_ECKE + (e.clientX - r.left) / r.width * VB_WEITE;
-  var y = VB_ECKE + (e.clientY - r.top) / r.height * VB_WEITE;
-  var best = -1, bd = 60 * 60;
+  return { x: VB_ECKE + (e.clientX - r.left) / r.width * VB_WEITE,
+           y: VB_ECKE + (e.clientY - r.top) / r.height * VB_WEITE };
+}
+function punktBei(e, weite){
+  var q = brettPunktXY(e), best = -1, bd = weite * weite;
   for (var i=0;i<24;i++){
-    var dx = px(i) - x, dy = py(i) - y, d = dx*dx + dy*dy;
+    var dx = px(i) - q.x, dy = py(i) - q.y, d = dx*dx + dy*dy;
     if (d < bd){ bd = d; best = i; }
   }
-  feldGetippt(best);
+  return best;
+}
+
+/* ------------------------------------------------------------------
+   Ziehen mit dem Finger: einen eigenen Stein aufnehmen und auf sein Ziel
+   wischen - vom Brett oder aus dem eigenen Vorrat neben dem Brett. Ein
+   kurzer Tipp ohne Wischen tut weiterhin genau dasselbe wie vorher.
+   ------------------------------------------------------------------ */
+var Z = null;                                      /* der Stein in der Hand */
+function ziehbar(){
+  return G.laeuft && !G.warten && !G.dreht && !G.wegnehmen && !istKI(G.dran);
+}
+function freiePunkte(){
+  var out = []; for (var i=0;i<24;i++) if (!G.brett[i]) out.push(i);
+  return out;
+}
+function geistStein(spieler){
+  var g = document.createElementNS(SVGNS, 'g');
+  g.setAttribute('class', 'pos zieht');
+  g.innerHTML = '<g class="stein">'+steinInhalt(spieler)+'</g>';
+  $steine.appendChild(g);
+  return g;
+}
+function zugStart(e, art, von, quelle){
+  Z = { art:art, von:von, el:art === 'brett' ? steinEl[von] : null, quelle:quelle,
+        x0:e.clientX, y0:e.clientY, ziel:-1, aktiv:false,
+        ziele: art === 'brett' ? zielpunkte(von) : freiePunkte() };
+}
+function zugBewegen(e){
+  if (!Z) return;
+  if (!Z.aktiv){
+    if (Math.abs(e.clientX - Z.x0) + Math.abs(e.clientY - Z.y0) < 8) return;
+    if (!Z.ziele.length || !ziehbar()){ Z = null; return; }
+    Z.aktiv = true;
+    if (Z.art === 'vorrat'){
+      Z.el = geistStein(G.dran);
+      if (Z.quelle) Z.quelle.classList.add('getragen');
+    } else {
+      Z.el.classList.add('zieht');
+      $steine.appendChild(Z.el);                   /* was in der Hand ist, liegt obenauf */
+      G.wahl = Z.von;
+    }
+    G.zieltZiele = Z.ziele;
+  }
+  var nah = punktBei(e, 55), q = brettPunktXY(e);
+  Z.ziel = (nah >= 0 && Z.ziele.indexOf(nah) >= 0) ? nah : -1;
+  var x = Z.ziel >= 0 ? px(Z.ziel) : q.x, y = Z.ziel >= 0 ? py(Z.ziel) : q.y;
+  Z.el.style.transform = 'translate('+x.toFixed(1)+'px,'+y.toFixed(1)+'px)';
+  markenZeichnen();
+}
+function zugEnde(){
+  if (!Z) return;
+  var z = Z; Z = null; G.zieltZiele = null;
+  if (!z.aktiv){                                   /* nur getippt */
+    if (z.art === 'brett') feldGetippt(z.von);
+    return;
+  }
+  if (z.art === 'brett') z.el.classList.remove('zieht');
+  if (z.ziel < 0){                                 /* daneben losgelassen: zurueck */
+    if (z.art === 'vorrat'){
+      if (z.el.parentNode) z.el.parentNode.removeChild(z.el);
+      if (z.quelle) z.quelle.classList.remove('getragen');
+    } else {
+      z.el.style.transform = 'translate('+px(z.von)+'px,'+py(z.von)+'px)';
+    }
+    G.wahl = -1; markenZeichnen();
+    return;
+  }
+  if (z.art === 'vorrat'){
+    if (z.el.parentNode) z.el.parentNode.removeChild(z.el);
+    zugSpielen(-1, z.ziel);
+  } else {
+    zugSpielen(z.von, z.ziel);
+  }
+}
+document.addEventListener('pointermove', zugBewegen, {passive:true});
+document.addEventListener('pointerup', zugEnde, {passive:true});
+document.addEventListener('pointercancel', zugEnde, {passive:true});
+
+$brett.addEventListener('pointerdown', function(e){
+  if (e.pointerType === 'mouse' && e.button !== 0) return;
+  var idx = punktBei(e, 60);
+  if (idx < 0) return;
+  if (ziehbar() && G.brett[idx] === G.dran && phaseVon(G.brett, G.vorrat, G.dran) !== 'setzen')
+    zugStart(e, 'brett', idx, null);
+  else feldGetippt(idx);
+}, {passive:true});
+
+/* Ein Stein aus dem eigenen Vorrat: auf einen freien Punkt wischen */
+document.addEventListener('pointerdown', function(e){
+  if (e.pointerType === 'mouse' && e.button !== 0) return;
+  var n = e.target;
+  while (n && n !== document.body && n.tagName !== 'svg') n = n.parentNode;
+  if (!n || !n.getAttribute) return;
+  if (parseInt(n.getAttribute('data-vorrat') || '0', 10) !== G.dran) return;
+  if (!ziehbar() || phaseVon(G.brett, G.vorrat, G.dran) !== 'setzen') return;
+  zugStart(e, 'vorrat', -1, n);
 }, {passive:true});
 
 /* ==================================================================
@@ -1146,9 +1278,9 @@ function zeigeHilfe(){
   auf('<h2>Mühle – Regeln</h2>'+
   '<h3>Ziel</h3><p>Nimm dem Gegner so viele Steine weg, dass er nur noch zwei hat – oder sperre ihn so ein, dass er nicht mehr ziehen kann.</p>'+
   '<h3>Steine</h3><p>In den <b>Einstellungen</b> kannst du zwischen den Steinen in den Farben der Mühle und klassischen hell- und dunkelbraunen Steinen wechseln. Dort lässt sich auch die Drehung der Mühlenflügel abschalten.</p>'+
-  '<h3>Setzen</h3><p>Jede Seite hat <b>neun Steine</b>. Abwechselnd setzt ihr sie auf freie Punkte. Du hast die hellen Steine. Wer beginnt, stellst du im Startbild unter <b>Anfang</b> ein. Geschlagene Steine landen neben dem Brett.</p>'+
+  '<h3>Setzen</h3><p>Jede Seite hat <b>neun Steine</b>. Abwechselnd setzt ihr sie auf freie Punkte. Du hast die hellen Steine. Wer beginnt, stellst du im Startbild unter <b>Anfang</b> ein. Deine noch zu setzenden Steine liegen neben dem Brett: von dort wischst du sie auf einen freien Punkt oder tippst den Punkt an. Geschlagene Steine landen daneben.</p>'+
   '<h3>Ziehen</h3><p>Sind alle Steine gesetzt, schiebt ihr abwechselnd einen eigenen Stein entlang einer Linie auf einen freien Nachbarpunkt. '+
-  'Tippe erst deinen Stein an, dann das Ziel.</p>'+
+  'Du kannst den Stein mit dem Finger auf sein Ziel <b>wischen</b> oder erst ihn und dann das Ziel antippen.</p>'+
   '<h3>Springen</h3><p>Wer nur noch <b>drei Steine</b> hat, darf mit einem davon auf jeden freien Punkt springen.</p>'+
   '<h3>Mühle</h3><ul>'+
   '<li>Drei eigene Steine in einer Linie sind eine <b>Mühle</b>. Dann nimmst du einen gegnerischen Stein vom Brett.</li>'+
