@@ -231,7 +231,7 @@ p.klein{font-size:13px; opacity:.8; margin:6px 0 2px;}
 
 /* ---------- Einstellungen ---------- */
 var cfg = { v:2, stufe:2, schlagzwang:true, team:false, bestaetigen:false, vibrate:true, sound:false,
-            sitze:['mensch','teddy','teddy','teddy'], namen:['','','',''], vorschau:false,
+            sitze:['mensch','teddy','teddy','teddy'], namen:['','','',''], vorschau:false, autozug:true,
             wuerfelArt:'rollen' };
 var saved = lsGet('teddy.aerger.cfg', null);
 /* Fassung 1 kannte nur zwei Stufen - deren Nummern bedeuten heute etwas anderes */
@@ -1246,8 +1246,9 @@ function wurfErgebnis(n){
     }, 380);
   } else {
     /* Gibt es nur eine Möglichkeit (alle Haus-Figuren sind gleich), zieht sie von
-       selbst - nur nicht, wenn man stattdessen nochmal würfeln darf */
-    if (G.nochmal) return;
+       selbst - nur nicht, wenn man stattdessen nochmal würfeln darf oder lieber
+       jeden Zug selbst tippt */
+    if (G.nochmal || !cfg.autozug) return;
     var ziele = {};
     liste.forEach(function(z){ ziele[z.von === -1 ? 'haus' : z.p+'-'+z.i] = 1; });
     if (Object.keys(ziele).length === 1){
@@ -1693,6 +1694,7 @@ function zeigeStart(nurNeu){
   h += '<h3>Hilfen</h3>';
   h += schalter('vorschau', 'Zughilfe', 'Zeigt, welche Figuren ziehen können, und mit einer blassen Glasfigur, wo sie landen.');
   h += schalter('bestaetigen', 'Zug bestätigen', 'Erst Figur antippen, dann nochmal tippen zum Ziehen.');
+  h += schalter('autozug', 'Einzige Möglichkeit von selbst ziehen', 'Aus: Du tippst jeden Zug selbst, auch wenn nur eine Figur kann.');
   /* Mindestens zwei Mitspieler, und mindestens einer davon ein Mensch */
   var menschen = anzahl(cfg.sitze, 'mensch'), geht = mit >= 2 && menschen >= 1;
   h += '<div class="row"><button class="btn go" data-act="los"'+(geht ? '' : ' disabled')+'>'+
@@ -1721,6 +1723,7 @@ function zeigeOptionen(){
   var h = '<h2>Einstellungen</h2>';
   h += wuerfelWahl('opt');
   h += schalter('bestaetigen', 'Zug bestätigen', 'Erst Figur antippen, dann nochmal tippen zum Ziehen.');
+  h += schalter('autozug', 'Einzige Möglichkeit von selbst ziehen', 'Aus: Du tippst jeden Zug selbst, auch wenn nur eine Figur kann.');
   h += schalter('vorschau', 'Zughilfe', 'Zeigt, welche Figuren ziehen können, und mit einer blassen Glasfigur, wo sie landen.');
   h += schalter('sound', 'Ton');
   h += schalter('vibrate', 'Vibration');
@@ -1792,7 +1795,7 @@ function zeigeHilfe(){
   'Mit der <b>Zughilfe</b> (in den Einstellungen) sind die ziehbaren Figuren umrandet, und eine blasse Glasfigur zeigt, wo sie landen würden. '+
   'Stehen mehrere Figuren eng beieinander, öffnet sich eine Lupe, in der du genau wählen kannst. '+
   'Mit <b>Zug bestätigen</b> (in den Einstellungen) wählt der erste Tipp die Figur aus, der zweite zieht sie. '+
-  'Gibt es nur eine Möglichkeit, zieht die Figur von selbst.</p>'+
+  'Gibt es nur eine Möglichkeit, zieht die Figur von selbst – wer lieber jeden Zug selbst macht, schaltet das in den Einstellungen aus.</p>'+
   '<p style="opacity:.7;font-size:13px;margin-top:14px;">Vorbild ist das Brettspiel „Mensch ärgere dich nicht“. Teddy ärgert dich nicht ist eine eigene Fassung mit eigener Grafik und eigenen Teddys.</p>'+
   '<div class="row"><button class="btn" data-act="'+(G.laeuft?'zu':'neu')+'">Zurück</button></div>');
 }
