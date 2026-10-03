@@ -2441,7 +2441,7 @@ function zeigeKarte(){
 function zeigeErgebnis(zeilen, gewinner){
   var duHast = gewinner === 0;
   var h = '<div style="text-align:center;margin-bottom:6px;">'+
-          '<div style="width:120px;margin:0 auto;">'+(duHast ? teddyJubel() : teddyRuhig())+'</div>'+
+          '<div style="width:120px;margin:0 auto;">'+(duHast ? teddyJubel() : teddyKnochen())+'</div>'+
           '<h2 style="margin:2px 0 0;">'+(duHast ? 'Gewonnen!' : zeilen[gewinner].name + ' gewinnt')+'</h2>'+
           '<p style="margin:0;opacity:.75;font-size:13px;">Runde '+G.runde+' &middot; '+stufenKurz()+'</p></div>';
   h += '<table class="sc">';
@@ -2460,6 +2460,7 @@ function zeigeErgebnis(zeilen, gewinner){
        '<button class="btn" data-act="neu">Stufe wechseln</button>'+
        eckeKnopf()+'</div>';
   auf(h);
+  feiern(duHast ? 'mensch' : 'teddy');
 }
 function zeigeHilfe(){
   var h = '<h2>Teddikub - Regeln</h2>'+

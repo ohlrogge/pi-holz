@@ -970,7 +970,8 @@ function zeigeBilanz(){
 }
 function zeigeErgebnis(st, sieger, bilanz){
   var duHat = sieger === 'du', zweit = G.modus === 'zweit';
-  var bild = duHat ? teddyJubel() : (sieger === 'unentschieden' ? teddyStaunt() : teddyRuhig());
+  var feier = sieger === 'unentschieden' ? 'remis' : (sieger === 'teddy' ? 'teddy' : 'mensch');
+  var bild = feier === 'mensch' ? teddyJubel() : (feier === 'remis' ? teddyStaunt() : teddyKnochen());
   var titel = sieger === 'unentschieden' ? 'Unentschieden'
             : duHat ? (zweit ? esc(spielerName(1)) + ' gewinnt' : 'Gewonnen!')
             : esc(spielerName(2)) + ' gewinnt';
@@ -988,6 +989,7 @@ function zeigeErgebnis(st, sieger, bilanz){
        '<button class="btn" data-act="neu">'+(zweit ? 'Zurück' : 'Stufe wechseln')+'</button>'+
        eckeKnopf()+'</div>';
   auf(h);
+  feiern(feier);
   ton(duHat ? 720 : 240, duHat ? .1 : .2, duHat ? 'triangle' : 'square');
 }
 function zeigeHilfe(){

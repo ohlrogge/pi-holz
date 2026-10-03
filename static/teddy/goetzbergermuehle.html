@@ -1249,7 +1249,8 @@ function zeigeBilanz(){
 }
 function zeigeErgebnis(gewinner, grund, sieger, bilanz){
   var zweit = G.modus === 'zweit', verlierer = gegner(gewinner);
-  var bild = gewinner === 1 ? teddyJubel() : (gewinner === 0 ? teddyStaunt() : teddyRuhig());
+  var feier = gewinner === 0 ? 'remis' : (gewinner === 2 && !zweit ? 'teddy' : 'mensch');
+  var bild = feier === 'mensch' ? teddyJubel() : (feier === 'remis' ? teddyStaunt() : teddyKnochen());
   var meiner = spielerName(1), ichHeisse = meiner !== 'Du';
   var titel = gewinner === 1 ? (ichHeisse ? 'Gewonnen, ' + esc(meiner) + '!' : 'Gewonnen!')
             : (gewinner === 0 ? 'Unentschieden' : esc(spielerName(2)) + ' gewinnt');
@@ -1272,6 +1273,7 @@ function zeigeErgebnis(gewinner, grund, sieger, bilanz){
        '<button class="btn" data-act="neu">Einstellen</button>'+
        eckeKnopf()+'</div>';
   auf(h);
+  feiern(feier);
   ton(gewinner === 1 ? 720 : 240, gewinner === 1 ? .1 : .2, gewinner === 1 ? 'triangle' : 'square');
 }
 function zeigeHilfe(){

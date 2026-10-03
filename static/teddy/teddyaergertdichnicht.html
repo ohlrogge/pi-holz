@@ -1762,7 +1762,7 @@ function zeigeErgebnis(gewinner, b){
     unter = mensch ? 'Alle vier Figuren sind im Ziel.' : 'Ärgere dich nicht – nächstes Mal!';
   }
   var h = '<div style="text-align:center;margin-bottom:6px;">'+
-          '<div style="width:110px;margin:0 auto;">'+(mensch ? teddyJubel() : teddyRuhig())+'</div>'+
+          '<div style="width:110px;margin:0 auto;">'+(mensch ? teddyJubel() : teddyKnochen())+'</div>'+
           '<h2 style="margin:2px 0 0;">'+titel+'</h2>'+
           '<p style="margin:0;opacity:.75;font-size:13px;">'+unter+'</p></div>';
   h += '<table class="sc">';
@@ -1772,6 +1772,7 @@ function zeigeErgebnis(gewinner, b){
   h += '<div class="row"><button class="btn go" data-act="los"><span class="ico">&#9654;</span>Nochmal</button>'+
        '<button class="btn" data-act="neu">Mitspieler</button>'+eckeKnopf()+'</div>';
   auf(h);
+  feiern(mensch ? 'mensch' : 'teddy');
   ton(mensch ? 720 : 240, mensch ? .12 : .2, mensch ? 'triangle' : 'square');
 }
 function zeigeHilfe(){

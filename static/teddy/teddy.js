@@ -329,12 +329,255 @@ function teddyLupe(){
     '</g>';
 }
 
-function svgWrap(inner){
-  return '<svg viewBox="-8 -8 136 136" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">'+inner+'</svg>';
+function svgWrap(inner, cls){
+  return '<svg'+(cls ? ' class="'+cls+'"' : '')+' viewBox="-8 -8 136 136" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">'+inner+'</svg>';
 }
 function teddyJubel(){
   return svgWrap(teddyKonfetti() +
-    '<g transform="rotate(-4 60 64)">'+teddyKopf({eyes:'closed', mouth:'tongue'})+'</g>');
+    '<g transform="rotate(-4 60 64)">'+teddyKopf({eyes:'closed', mouth:'tongue'})+'</g>', 'teddy-jubel');
 }
 function teddyRuhig(){ return svgWrap(teddyKopf({mouth:'smile'})); }
 function teddyStaunt(){ return svgWrap(teddyKopf({eyes:'wide', mouth:'smile'})); }
+
+/* ---------- Feiern am Spielende ----------
+   Gewinnt ein Teddy, fängt er im Ergebnisbild einen Knochen (teddyKnochen)
+   und ein paar kleine Knochen rieseln. Gewinnt ein Mensch, kommt zufällig
+   eine von fünf Feiern. Alles liegt in einer eigenen Ebene ohne Klicks,
+   räumt sich selbst weg und endet beim ersten Tippen. */
+(function(){
+  var css =
+  '.feier{position:fixed; inset:0; z-index:9999; pointer-events:none; overflow:hidden; transition:opacity .45s;}'+
+  '.feier.aus{opacity:0;}'+
+  '.feier > *{position:absolute;}'+
+  '.feier svg{display:block; overflow:visible;}'+
+  /* Konfetti: aus der Mitte hochgeschossen, dann herunter */
+  '.fk{left:50%; top:42%; width:10px; height:6px; border-radius:1.5px;'+
+  '  animation:fk-flug var(--t) both; animation-delay:var(--d);}'+
+  '@keyframes fk-flug{'+
+  '  0%{transform:translate(0,0) rotate(0) scale(.3); animation-timing-function:cubic-bezier(.2,.7,.4,1);}'+
+  '  28%{transform:translate(var(--dx),var(--dy)) rotate(calc(var(--r)*.4)) scale(1); animation-timing-function:cubic-bezier(.5,0,.9,.6);}'+
+  '  100%{transform:translate(calc(var(--dx)*1.5),calc(var(--dy) + 110vh)) rotate(var(--r)) scale(1);}}'+
+  /* Ballons steigen auf und schaukeln */
+  '.fb{top:100%; animation:fb-steigen var(--t) cubic-bezier(.35,.1,.7,1) both; animation-delay:var(--d);}'+
+  '.fb > svg{transform-origin:50% 0; animation:fb-schaukeln 1.3s ease-in-out infinite alternate; animation-delay:var(--s);}'+
+  '@keyframes fb-steigen{to{transform:translateY(calc(-100vh - 160px));}}'+
+  '@keyframes fb-schaukeln{from{transform:rotate(-7deg);} to{transform:rotate(7deg);}}'+
+  /* Herzchen steigen auf, pulsieren, verblassen */
+  '.fh{left:50%; top:74%; animation:fh-steigen var(--t) ease-out both; animation-delay:var(--d);}'+
+  '.fh > svg{animation:fh-puls .45s ease-in-out infinite alternate;}'+
+  '@keyframes fh-steigen{0%{transform:translate(0,0) scale(.2); opacity:0;} 15%{opacity:1;}'+
+  '  70%{opacity:1;} 100%{transform:translate(var(--dx),-55vh) scale(1); opacity:0;}}'+
+  '@keyframes fh-puls{to{scale:1.18;}}'+
+  /* Disko und Laser: kurz das Licht runter */
+  '.fd-dunkel{inset:0; background:rgba(12,4,40,.42); animation:fd-dunkel var(--t) ease both;}'+
+  '@keyframes fd-dunkel{0%{opacity:0;} 15%,80%{opacity:1;} 100%{opacity:0;}}'+
+  '.fd-kugel{left:50%; top:0; margin-left:-38px; animation:fd-runter .7s cubic-bezier(.3,1.4,.6,1) both;}'+
+  '@keyframes fd-runter{from{transform:translateY(-200px);}}'+
+  '.fd-facetten{animation:fd-drehen 2.2s linear infinite;}'+
+  '@keyframes fd-drehen{to{transform:translateX(-40px);}}'+
+  '.fd-arm{left:50%; top:96px; width:0; height:0; animation:fd-kreisen var(--u) linear infinite; animation-delay:var(--d);}'+
+  '.fd-arm > i{position:absolute; left:var(--r); top:0; width:var(--g); height:var(--g); margin:calc(var(--g)/-2);'+
+  '  border-radius:50%; background:radial-gradient(circle, var(--f) 0, var(--f) 35%, transparent 70%);'+
+  '  mix-blend-mode:screen; opacity:.85; animation:fd-funkeln .5s ease-in-out infinite alternate;}'+
+  '@keyframes fd-kreisen{from{transform:rotate(var(--a));} to{transform:rotate(calc(var(--a) + 360deg));}}'+
+  '@keyframes fd-funkeln{to{opacity:.45;}}'+
+  '.fl{bottom:-10px; width:5px; height:150vh; margin-left:-2.5px; transform-origin:50% 100%; border-radius:3px;'+
+  '  background:linear-gradient(to top, var(--f), transparent 85%);'+
+  '  box-shadow:0 0 10px 2px var(--f); mix-blend-mode:screen;'+
+  '  animation:fl-schwenk var(--u) ease-in-out infinite alternate, fl-an var(--t) ease both;}'+
+  '@keyframes fl-schwenk{from{transform:rotate(var(--a));} to{transform:rotate(var(--b));}}'+
+  '@keyframes fl-an{0%{opacity:0;} 15%,82%{opacity:.7;} 100%{opacity:0;}}'+
+  '.fl-nebel{left:0; right:0; bottom:0; height:45vh;'+
+  '  background:radial-gradient(ellipse at 50% 100%, rgba(120,90,255,.35), transparent 70%);'+
+  '  animation:fd-dunkel var(--t) ease both;}'+
+  /* Kleine Knochen rieseln, wenn ein Teddy gewinnt */
+  '.fn{top:-40px; animation:fn-fallen var(--t) cubic-bezier(.45,0,.8,.6) both; animation-delay:var(--d);}'+
+  '@keyframes fn-fallen{to{transform:translate(var(--dx), calc(100vh + 80px)) rotate(var(--r));}}'+
+  /* Der Teddy im Ergebnisbild */
+  '.teddy-jubel{overflow:visible;}'+
+  '.feier-huepfen .teddy-jubel{animation:tj-huepfen .32s ease-in-out 8 alternate;}'+
+  '.feier-wippen .teddy-jubel{animation:tj-wippen .24s ease-in-out 14 alternate;}'+
+  '@keyframes tj-huepfen{from{transform:translateY(0);} to{transform:translateY(-9px) rotate(3deg);}}'+
+  '@keyframes tj-wippen{from{transform:rotate(-6deg);} to{transform:rotate(6deg) translateY(-4px);}}'+
+  '.teddy-knochen{overflow:visible;}'+
+  '.tk-wartet{animation:tk-weg 1.15s steps(1) both;}'+
+  '.tk-hat{animation:tk-da 1.15s steps(1) both;}'+
+  '@keyframes tk-weg{0%{opacity:1;} 100%{opacity:0;}}'+
+  '@keyframes tk-da{0%{opacity:0;} 100%{opacity:1;}}'+
+  '.tk-kopf{transform-box:view-box; transform-origin:60px 96px;'+
+  '  animation:tk-schnapp .25s ease-out 1.1s both, tk-wackeln .3s ease-in-out 1.35s 6 alternate;}'+
+  '@keyframes tk-schnapp{0%{transform:scale(1);} 40%{transform:scale(1.07,.93);} 100%{transform:scale(1);}}'+
+  '@keyframes tk-wackeln{from{transform:rotate(-7deg);} to{transform:rotate(7deg);}}'+
+  '.tk-flug{transform-box:fill-box; transform-origin:center; animation:tk-flug .85s linear .25s both;}'+
+  '@keyframes tk-flug{'+
+  '  0%{transform:translate(-150px,30px) rotate(-640deg); opacity:0;}'+
+  '  8%{opacity:1;}'+
+  '  50%{transform:translate(-75px,-60px) rotate(-320deg);}'+
+  '  100%{transform:translate(0,0) rotate(0);}}'+
+  '@media (prefers-reduced-motion: reduce){'+
+  '  .feier{display:none !important;}'+
+  '  .teddy-jubel, .tk-wartet, .tk-hat, .tk-kopf, .tk-flug{animation:none !important;}}';
+  var st = document.createElement('style');
+  st.textContent = css;
+  (document.head || document.documentElement).appendChild(st);
+})();
+
+function knochenForm(farbe, rand){
+  /* Erst die Umrisse breit in der Randfarbe, dann die Flaeche darueber -
+     so bleibt nur der Aussenrand sichtbar. */
+  function teile(f, extra){
+    return '<circle cx="-13" cy="-4.5" r="5.5"'+f+extra+'/><circle cx="-13" cy="4.5" r="5.5"'+f+extra+'/>'+
+           '<circle cx="13" cy="-4.5" r="5.5"'+f+extra+'/><circle cx="13" cy="4.5" r="5.5"'+f+extra+'/>'+
+           '<rect x="-13" y="-3.6" width="26" height="7.2"'+f+extra+'/>';
+  }
+  return teile(' fill="'+rand+'"', ' stroke="'+rand+'" stroke-width="3.2"') +
+         teile(' fill="'+farbe+'"', '');
+}
+function teddyKnochen(){
+  /* Teddy schaut, der Knochen fliegt im Bogen heran, er schnappt zu und
+     wackelt zufrieden mit dem Kopf. Ohne Bewegung bleibt nur das Endbild. */
+  return '<svg class="teddy-knochen" viewBox="-8 -8 136 136" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">'+
+    '<g class="tk-kopf">'+
+      '<g class="tk-wartet">'+teddyKopf({eyes:'wide', mouth:'neutral'})+'</g>'+
+      '<g class="tk-hat">'+teddyKopf({eyes:'closed', mouth:'smile'})+'</g>'+
+      '<g transform="translate(60 81) rotate(-8) scale(1.25)"><g class="tk-flug">'+knochenForm('#f6eedd', '#b9a888')+'</g></g>'+
+    '</g></svg>';
+}
+
+var feierLetzte = '';
+var feierEnde = null;
+function feiern(art){
+  if (feierEnde) feierEnde(true);
+  if (art !== 'teddy' && art !== 'mensch') return;
+  try{ if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return; }catch(e){}
+
+  var ebene = document.createElement('div'), body = document.body, dauer, klasse = '';
+  ebene.className = 'feier';
+  function zufall(a, b){ return a + Math.random()*(b - a); }
+  function teil(cls, stil, inhalt){
+    var n = document.createElement('div');
+    n.className = cls;
+    n.style.cssText = stil;
+    if (inhalt) n.innerHTML = inhalt;
+    ebene.appendChild(n);
+    return n;
+  }
+  var bunt = ['#e8412c','#f6a021','#ffd23a','#2f8f30','#2079d8','#8b3fbf','#00a6a6','#ff6fa8'];
+  var i, wahl = art;
+
+  if (art === 'mensch'){
+    /* Diskokugel und Laser etwas seltener, damit sie etwas Besonderes bleiben,
+       und nie zweimal dieselbe Feier hintereinander. */
+    var topf = ['konfetti','konfetti','konfetti','ballons','ballons','ballons','herzen','herzen','herzen',
+                'disko','disko','laser','laser'];
+    feierLetzte = feierLetzte || lsGet('teddy.feier.letzte', '');
+    topf = topf.filter(function(x){ return x !== feierLetzte; });
+    wahl = topf[Math.floor(Math.random()*topf.length)];
+    feierLetzte = wahl;
+    lsSet('teddy.feier.letzte', wahl);
+  }
+
+  if (wahl === 'konfetti'){
+    dauer = 3800; klasse = 'feier-huepfen';
+    for (i=0;i<70;i++){
+      var w = zufall(-50, 50);
+      teil('fk', '--dx:'+(Math.sin(w*Math.PI/180)*zufall(80, 260)).toFixed(0)+'px;'+
+        '--dy:'+(-zufall(140, 340)).toFixed(0)+'px;--r:'+zufall(-900, 900).toFixed(0)+'deg;'+
+        '--t:'+zufall(2.4, 3.3).toFixed(2)+'s;--d:'+zufall(0, .25).toFixed(2)+'s;'+
+        'background:'+bunt[i % bunt.length]+';'+(i % 3 === 0 ? 'width:7px;height:7px;border-radius:50%;' : ''));
+    }
+  } else if (wahl === 'ballons'){
+    dauer = 5600; klasse = 'feier-huepfen';
+    for (i=0;i<9;i++){
+      var f = bunt[(i*3) % bunt.length], g = 46 + Math.round(zufall(0, 18));
+      teil('fb', 'left:'+(4 + i*10.5 + zufall(-3, 3)).toFixed(1)+'%;--t:'+zufall(3.6, 4.8).toFixed(2)+'s;'+
+        '--d:'+zufall(0, .9).toFixed(2)+'s;--s:'+zufall(-1.3, 0).toFixed(2)+'s;',
+        '<svg width="'+g+'" height="'+Math.round(g*2.4)+'" viewBox="0 0 50 120">'+
+        '<path d="M25 58 C22 72 30 84 24 98 C19 108 27 114 25 120" stroke="#7a6a5a" stroke-width="1.4" fill="none"/>'+
+        '<ellipse cx="25" cy="28" rx="22" ry="27" fill="'+f+'"/>'+
+        '<path d="M21 56 L29 56 L25 61 Z" fill="'+f+'"/>'+
+        '<ellipse cx="17" cy="17" rx="5" ry="8" fill="#fff" opacity=".35" transform="rotate(-25 17 17)"/></svg>');
+    }
+  } else if (wahl === 'herzen'){
+    dauer = 3900; klasse = 'feier-huepfen';
+    var rot = ['#e8412c','#ff6fa8','#d6336c','#ff8fab'];
+    for (i=0;i<22;i++){
+      var h = Math.round(zufall(18, 40));
+      teil('fh', 'margin-left:'+(-h/2 + zufall(-150, 150)).toFixed(0)+'px;--dx:'+zufall(-170, 170).toFixed(0)+'px;'+
+        '--t:'+zufall(2.2, 3).toFixed(2)+'s;--d:'+zufall(0, 1.1).toFixed(2)+'s;',
+        '<svg width="'+h+'" height="'+h+'" viewBox="0 0 32 30">'+
+        '<path d="M16 29 C6 21 0 15 0 8.5 C0 3.5 4 0 8.6 0 C11.8 0 14.4 1.8 16 4.4 C17.6 1.8 20.2 0 23.4 0'+
+        ' C28 0 32 3.5 32 8.5 C32 15 26 21 16 29 Z" fill="'+rot[i % rot.length]+'"/>'+
+        '<ellipse cx="9" cy="8" rx="3" ry="4.5" fill="#fff" opacity=".35" transform="rotate(-30 9 8)"/></svg>');
+    }
+  } else if (wahl === 'disko'){
+    dauer = 4600; klasse = 'feier-wippen';
+    teil('fd-dunkel', '--t:'+dauer+'ms;');
+    for (i=0;i<24;i++){
+      var gr = Math.round(zufall(30, 70));
+      teil('fd-arm', '--u:'+zufall(3.5, 6).toFixed(2)+'s;--a:'+Math.round(zufall(0, 360))+'deg;'+
+        '--d:'+zufall(-.5, 0).toFixed(2)+'s;'+(i % 2 ? 'animation-direction:reverse;' : ''),
+        '').innerHTML = '<i style="--r:'+Math.round(zufall(90, 520))+'px;--g:'+gr+'px;--f:'+bunt[i % bunt.length]+';"></i>';
+    }
+    var facetten = '';
+    for (var y=-40;y<40;y+=8) for (var x=-56;x<96;x+=8)
+      facetten += '<rect x="'+(x + ((y/8) % 2 ? 4 : 0))+'" y="'+y+'" width="7" height="7" fill="'+
+        ['#e9eef5','#b8c2cf','#ffffff','#8e9aab','#d3dae4'][Math.abs((x*7 + y*3)/8) % 5]+'"/>';
+    teil('fd-kugel', '',
+      '<svg width="76" height="134" viewBox="-38 -96 76 134">'+
+      '<line x1="0" y1="-96" x2="0" y2="-34" stroke="#ccc" stroke-width="2"/>'+
+      '<rect x="-6" y="-40" width="12" height="7" rx="1.5" fill="#888"/>'+
+      '<defs><clipPath id="fd-rund"><circle r="34"/></clipPath>'+
+      '<radialGradient id="fd-glanz" cx="35%" cy="30%" r="75%"><stop offset="0" stop-color="#fff" stop-opacity=".55"/>'+
+      '<stop offset=".6" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#223" stop-opacity=".45"/></radialGradient></defs>'+
+      '<g clip-path="url(#fd-rund)"><circle r="34" fill="#9aa6b6"/><g class="fd-facetten">'+facetten+'</g>'+
+      '<circle r="34" fill="url(#fd-glanz)"/></g></svg>');
+  } else if (wahl === 'laser'){
+    dauer = 4200; klasse = 'feier-wippen';
+    teil('fd-dunkel', '--t:'+dauer+'ms;');
+    teil('fl-nebel', '--t:'+dauer+'ms;');
+    var strahlen = [
+      ['6%', '#ff2d6f', 10, 55], ['6%', '#2dff9a', 25, 70], ['94%', '#2dc8ff', -10, -55],
+      ['94%', '#ffe12d', -25, -70], ['50%', '#b02dff', -35, 35]
+    ];
+    strahlen.forEach(function(s, k){
+      teil('fl', 'left:'+s[0]+';--f:'+s[1]+';--a:'+s[2]+'deg;--b:'+s[3]+'deg;'+
+        '--u:'+(0.7 + k*0.13).toFixed(2)+'s;--t:'+dauer+'ms;');
+    });
+  } else {
+    /* Ein Teddy hat gewonnen: Er fängt im Bild seinen Knochen, hier
+       rieseln danach noch ein paar kleine herunter. */
+    dauer = 4300;
+    for (i=0;i<12;i++){
+      var gk = Math.round(zufall(26, 44));
+      teil('fn', 'left:'+zufall(3, 93).toFixed(1)+'%;--dx:'+zufall(-40, 40).toFixed(0)+'px;'+
+        '--r:'+zufall(-540, 540).toFixed(0)+'deg;--t:'+zufall(2, 2.9).toFixed(2)+'s;'+
+        '--d:'+zufall(1.1, 2).toFixed(2)+'s;',
+        '<svg width="'+gk+'" height="'+Math.round(gk*.6)+'" viewBox="-20 -12 40 24">'+
+        knochenForm('#f6eedd', '#b9a888')+'</svg>');
+    }
+  }
+
+  body.appendChild(ebene);
+  if (klasse) body.classList.add(klasse);
+
+  var weg = 0;
+  function ende(sofort){
+    if (feierEnde !== ende) return;
+    feierEnde = null;
+    clearTimeout(weg);
+    document.removeEventListener('pointerdown', tippen, true);
+    if (klasse) body.classList.remove(klasse);
+    if (sofort){ if (ebene.parentNode) ebene.parentNode.removeChild(ebene); return; }
+    ebene.classList.add('aus');
+    setTimeout(function(){ if (ebene.parentNode) ebene.parentNode.removeChild(ebene); }, 500);
+  }
+  function tippen(){ ende(false); }
+  feierEnde = ende;
+  weg = setTimeout(function(){ ende(false); }, dauer);
+  /* Erst ein wenig später lauschen, sonst beendet der Tipp, der das Spiel
+     beendet hat, die Feier gleich wieder. */
+  setTimeout(function(){
+    if (feierEnde === ende) document.addEventListener('pointerdown', tippen, true);
+  }, 600);
+}
