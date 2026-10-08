@@ -225,19 +225,21 @@ table.times td.r{text-align:right; font-variant-numeric:tabular-nums;}
 /* ---------- Schwebendes Zahlenfeld ---------- */
 #pad{
   position:absolute; z-index:14; display:none; padding:10px;
-  background:linear-gradient(180deg,#ffffff 0%,#e2f2fc 55%,#bfe0f5 100%);
-  border-radius:18px; box-shadow:0 10px 24px rgba(15,10,50,.45), inset 0 0 0 3px rgba(255,255,255,.8);
+  background:linear-gradient(180deg,rgba(255,255,255,.8) 0%,rgba(226,242,252,.6) 100%);
+  -webkit-backdrop-filter:blur(3px) saturate(0); backdrop-filter:blur(3px) saturate(0);
+  border-radius:18px; box-shadow:0 10px 24px rgba(15,10,50,.3), inset 0 0 0 1.5px rgba(255,255,255,.75),
+    inset 0 2px 1px rgba(255,255,255,.9);
 }
 #pad.show{display:block;}
 #pad::after{content:""; position:absolute; left:var(--ax,50%); margin-left:-11px; border:11px solid transparent;}
-#pad.below::after{top:-21px; border-bottom-color:#fff;}
-#pad.above::after{bottom:-21px; border-top-color:#c6e3f6;}
+#pad.below::after{top:-21px; border-bottom-color:rgba(255,255,255,.75);}
+#pad.above::after{bottom:-21px; border-top-color:rgba(226,242,252,.6);}
 .padgrid{display:grid; grid-template-columns:repeat(3,1fr); gap:7px;}
 .padbtn{
   width:56px; height:48px; border-radius:12px; display:flex; align-items:center; justify-content:center;
-  font-size:27px; font-weight:bold; color:var(--ink); cursor:pointer;
-  background:linear-gradient(180deg,#ffffff 0%,#eaf7ff 50%,#cfe8f8 100%);
-  box-shadow:0 3px 0 rgba(20,40,90,.3), inset 0 2px 0 rgba(255,255,255,.9);
+  font-size:27px; font-weight:bold; color:var(--ink); cursor:pointer; -webkit-text-stroke:.6px currentColor;
+  background:linear-gradient(180deg,rgba(255,255,255,.7) 0%,rgba(234,247,255,.42) 100%);
+  box-shadow:0 2px 6px rgba(20,40,90,.18), inset 0 0 0 1px rgba(255,255,255,.7), inset 0 2px 0 rgba(255,255,255,.9);
 }
 .padbtn:active{transform:translateY(2px); box-shadow:0 1px 0 rgba(20,40,90,.3);}
 .padbtn.blocked{opacity:.34;}
@@ -245,10 +247,11 @@ table.times td.r{text-align:right; font-variant-numeric:tabular-nums;}
 .padwide{
   flex:1; height:40px; border-radius:12px; display:flex; align-items:center; justify-content:center;
   font-size:18px; font-weight:bold; cursor:pointer; color:#8a3a2a;
-  background:linear-gradient(180deg,#ffd9cf,#f0ab97);
-  box-shadow:0 3px 0 rgba(90,30,10,.3);
+  background:linear-gradient(180deg,rgba(255,217,207,.7),rgba(240,171,151,.5));
+  box-shadow:0 2px 6px rgba(90,30,10,.18), inset 0 0 0 1px rgba(255,255,255,.6);
 }
-.padwide.close{color:var(--ink); background:linear-gradient(180deg,#ffffff,#cfe8f8); box-shadow:0 3px 0 rgba(20,40,90,.3);}
+.padwide.close{color:var(--ink); background:linear-gradient(180deg,rgba(255,255,255,.6),rgba(207,232,248,.35));
+  box-shadow:0 2px 6px rgba(20,40,90,.18), inset 0 0 0 1px rgba(255,255,255,.7);}
 
 /* ---------- Teddys Markierungen ---------- */
 .cell.coach{background:#e2f6e1;}
@@ -313,6 +316,12 @@ body.handy .cell{font-size:36px;}
 body.handy .pal{display:none;}
 body.handy .gamebar{top:712px;}
 body.handy .gamebtns{display:none;}
+body.handy.zahlenfeld #pb-nums{display:none;}
+body.handy .padbtn{width:84px; height:74px; font-size:40px; border-radius:16px;}
+body.handy .padgrid, body.handy .padrow{gap:10px;}
+body.handy .padrow{margin-top:12px;}
+body.handy .padwide{height:60px; font-size:26px; border-radius:16px;}
+body.handy #pad{padding:14px; border-radius:24px;}
 body.handy #bubble{
   position:fixed; left:8px; right:8px; bottom:var(--bar-h,120px); transform:none; width:auto; z-index:40;
   max-height:42vh; padding:12px 14px;
@@ -412,7 +421,7 @@ body.handy #phonebar{display:flex;}
     </div>
     <div id="pad"></div>
     <div id="bubble"></div>
-    <div class="hint" id="hint">Auf ein Feld tippen. Hängst du fest: frag Teddy.</div>
+    <div class="hint" id="hint"></div>
   </div>
 
   <div id="overlay"></div>
@@ -425,6 +434,7 @@ body.handy #phonebar{display:flex;}
 </div>
 
 <div id="printarea"></div>
+
 
 <script>
 "use strict";
@@ -456,7 +466,7 @@ function levelColor(n){
        :        'linear-gradient(180deg,#f7a89c,#e2402f)';
 }
 function levelInk(n){ return (n>=6 && n<=7) ? '#5a3200' : '#fff'; }
-var cfg = { user:'Uli', level:4, errors:true, highlight:true, sameNum:true };
+var cfg = { user:'Uli', level:4, errors:true, highlight:true, sameNum:true, zahlenfeld:true };
 var users = ['Uli'];
 var puzzle = null, solution = null, board = null, fixed = null;
 var diffLevel = 4, selCell = -1, pen = 0, eraser = false;
@@ -652,7 +662,7 @@ function zeigeSpiel(){
   bd.textContent = diffLevel+' · '+LV(diffLevel).name;
   bd.style.background = levelColor(diffLevel);
   bd.style.color = levelInk(diffLevel);
-  document.getElementById('hint').textContent='Auf ein Feld tippen. Hängst du fest: frag Teddy.';
+  document.getElementById('hint').textContent='';
   menuview.classList.add('hidden'); gameview.classList.remove('hidden');
   closeOverlay(); closePad(); closeBubble(); konfettiAus(); startTimer(); render();
 }
@@ -711,7 +721,7 @@ function tapCell(i){
   if(fixed[i]){ selCell=i; closePad(); render(); return; }
   if(eraser){ selCell=i; place(i,0); closePad(); render(); return; }
   if(pen>0){ selCell=i; place(i,pen); closePad(); render(); return; }
-  selCell=i; render(); openPad(i);          /* schwebendes Zahlenfeld */
+  selCell=i; render(); if(cfg.zahlenfeld) openPad(i);
 }
 function place(i,v){
   if(solved || fixed[i]) return;
@@ -734,16 +744,18 @@ function openPad(i){
         '<div class="padwide close" data-x="1">Zu</div></div>';
   padEl.innerHTML=html; padEl.classList.add('show');
 
-  var cell=cellEls[i], bx=cell.parentNode;
+  var cell=cellEls[i];
   var gx=gridEl.offsetLeft-gridEl.offsetWidth/2, gy=gridEl.offsetTop;
-  var cx=gx+bx.offsetLeft+cell.offsetLeft, cy=gy+bx.offsetTop+cell.offsetTop;
+  var cx=gx+cell.offsetLeft, cy=gy+cell.offsetTop;
   var pw=padEl.offsetWidth, ph=padEl.offsetHeight;
-  var px=Math.max(10, Math.min(1000-pw-10, cx+cell.offsetWidth/2-pw/2));
+  var sw=stage.offsetWidth, sh=stage.offsetHeight;
+  var px=Math.max(10, Math.min(sw-pw-10, cx+cell.offsetWidth/2-pw/2));
   var py=cy+cell.offsetHeight+14, below=true;
-  if(py+ph>688){ py=cy-ph-14; below=false; }
+  if(py+ph>sh-12){ py=cy-ph-14; below=false; }
   if(py<8){ py=8; }
   padEl.style.left=px+'px'; padEl.style.top=py+'px';
-  padEl.style.setProperty('--ax', (cx+cell.offsetWidth/2-px)+'px');
+  var rand=parseFloat(getComputedStyle(padEl).borderTopLeftRadius)+11;
+  padEl.style.setProperty('--ax', Math.max(rand, Math.min(pw-rand, cx+cell.offsetWidth/2-px))+'px');
   padEl.className='show '+(below?'below':'above');
 
   Array.prototype.forEach.call(padEl.querySelectorAll('[data-v]'), function(b){
@@ -818,7 +830,7 @@ function render(){
 }
 function checkSolved(){
   for(var i=0;i<81;i++) if(board[i]!==solution[i]) return;
-  solved=true; stopTimer(); konfettiAn(); spielLoeschen();
+  solved=true; stopTimer(); konfettiAn(); spielLoeschen(); aufNeueFassungPruefen();
   var list=bestTimes(cfg.user,diffLevel);
   var rank=0;
   if(!gaveUp){
@@ -842,13 +854,16 @@ function checkSolved(){
     ]
   });
 }
+/* Nach dem Aufgeben steht die Lösung ohne Dialog im Feld. Ein Neuladen würde
+   sie wegnehmen, bevor man sie angesehen hat. */
+function darfNeuLaden(){ return !gaveUp; }
 function giveUp(){
   dialog({ title:'Aufgeben?', html:'<p>Die Lösung wird eingetragen, die Zeit zählt dann nicht.</p>',
     buttons:[
       {label:'Ja', cls:'red', fn:function(){
         gaveUp=true;
         for(var i=0;i<81;i++) board[i]=solution[i];
-        stopTimer(); solved=true; spielLoeschen(); render();
+        stopTimer(); solved=true; spielLoeschen(); render(); aufNeueFassungPruefen();
         document.getElementById('hint').textContent='Aufgegeben – die Lösung steht im Feld.';
       }},
       {label:'Weiterspielen', fn:function(){}}
@@ -956,7 +971,7 @@ function showRules(){
     '<div class="scrollbox"><ul>'+
     '<li>Trage die Ziffern 1 bis 9 so ein, dass jede Zeile, jede Spalte und jedes der neun 3&times;3-Kästchen jede Ziffer genau einmal enthält.</li>'+
     '<li>Die schwarzen Ziffern sind vorgegeben und lassen sich nicht ändern; deine Eingaben stehen in Blau.</li>'+
-    '<li>Tippe auf ein leeres Feld – dann erscheint direkt daneben ein Zahlenfeld mit allen neun Ziffern.</li>'+
+    '<li>Tippe auf ein leeres Feld – dann erscheint direkt daneben ein Zahlenfeld mit allen neun Ziffern. In den Spieloptionen lässt es sich abschalten; auf dem Handy liegen die Ziffern dann unten in der Leiste.</li>'+
     '<li>Alternativ eine Ziffer an den Rändern wählen und dann ins Feld tippen. Nach jeder Eingabe ist die Auswahl wieder frei – man wählt also jedes Mal neu.</li>'+
     '<li><b>Radieren</b> löscht wieder.</li>'+
     '<li><b>Frag Teddy</b> erklärt dir einen Trick, mit dem es weitergeht – in drei Stufen: erst die Technik, dann das genaue Feld, dann die Ziffer.</li>'+
@@ -977,12 +992,15 @@ function showOptions(){
     '<div class="rowline"><span>Gleiche Ziffern</span><span class="opts">'+
       '<div class="pill sm '+(cfg.sameNum?'hot':'')+'" data-o="sameNum" data-v="1">Ein</div>'+
       '<div class="pill sm '+(!cfg.sameNum?'hot':'')+'" data-o="sameNum" data-v="0">Aus</div></span></div>'+
+    '<div class="rowline"><span>Zahlenfeld am Feld</span><span class="opts">'+
+      '<div class="pill sm '+(cfg.zahlenfeld?'hot':'')+'" data-o="zahlenfeld" data-v="1">Ein</div>'+
+      '<div class="pill sm '+(!cfg.zahlenfeld?'hot':'')+'" data-o="zahlenfeld" data-v="0">Aus</div></span></div>'+
     '<p style="font-size:15px;color:#cfe4ff;margin-top:16px">Musik und Klänge gibt es in dieser Fassung nicht.</p>');
   highlightMenu('b-opts');
   Array.prototype.forEach.call(panel.querySelectorAll('[data-o]'), function(b){
     b.onclick=function(){
       cfg[b.getAttribute('data-o')] = b.getAttribute('data-v')==='1';
-      saveCfg(); showOptions();
+      saveCfg(); showOptions(); applyLayout();
       if(!gameview.classList.contains('hidden')) render();
     };
   });
@@ -1638,6 +1656,8 @@ function fitStage(){
 /* Desktop: Blase liegt in der Bühne. Handy: fest über der Bedienleiste. */
 function applyLayout(){
   document.body.classList.toggle('handy', handyMq.matches);
+  document.body.classList.toggle('zahlenfeld', cfg.zahlenfeld);
+  if(!cfg.zahlenfeld) closePad();
   if(isHandy()) document.body.insertBefore(bubbleEl, document.getElementById('phonebar'));
   else stage.querySelector('#gameview').insertBefore(bubbleEl, document.getElementById('hint'));
   fitStageAndBubble();

@@ -915,7 +915,7 @@ function dialog(opts){
   return d;
 }
 function finish(won){
-  if(won) feiern('mensch');
+  if(won) feiern('mensch'); else aufNeueFassungPruefen();
   var rest=countStones(), key=cfgKey(), list=scoresFor(key);
   var qualifies = list.length<10 || score>list[list.length-1].score;
   var msg = won

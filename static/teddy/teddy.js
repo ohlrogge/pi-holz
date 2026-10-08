@@ -106,12 +106,22 @@ function sofortSichern(){
     sofortSichern();
     location.reload();
   }
+  document.addEventListener('visibilitychange', function(){ if (!document.hidden) aufNeueFassungPruefen(); });
   navigator.serviceWorker.addEventListener('message', function(e){
     if (!e.data || e.data.teddy !== 'neueFassung' || wartet) return;
     wartet = setInterval(versuchen, 1000);
     versuchen();
   });
 })();
+
+/* Eine Web-App, die nur aus dem Hintergrund zurueckkommt, laedt nichts neu.
+   Dieser Abruf laeuft durch den Service Worker, der wie beim Start vergleicht
+   und eine neue Fassung meldet. */
+function aufNeueFassungPruefen(){
+  if (!('serviceWorker' in navigator) || !navigator.serviceWorker.controller) return;
+  fetch(location.href).catch(function(){});
+  fetch('teddy.js').catch(function(){});
+}
 
 /* ---------- Spielstaende: Schluessel und Fassung ----------
    Alle Schluessel liegen unter teddy.<spiel>., damit kein Spiel
@@ -447,6 +457,7 @@ function teddyKnochen(){
 var feierLetzte = '';
 var feierEnde = null;
 function feiern(art){
+  aufNeueFassungPruefen();
   if (feierEnde) feierEnde(true);
   if (art !== 'teddy' && art !== 'mensch') return;
   try{ if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return; }catch(e){}
