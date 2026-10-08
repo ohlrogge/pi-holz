@@ -28,7 +28,7 @@
   --ink:#123c8c; --gold:#ffd23a;
   --pill:#f2fbff; --pill2:#c8e6f6;
   --hot:#ffb02e; --hot2:#f08a12;
-  --green:#3fae4a; --green2:#2b8434;
+  --green:#2e8b37; --green2:#226b2a;
   --red:#e2402f; --red2:#b32a1c;
   --blue:#4fa8e8; --blue2:#2b7fc4;
   --tap:44px; --tap-abstand:12px;
@@ -101,52 +101,59 @@ body{
 .pill:hover{filter:brightness(1.06);}
 .pill:active{transform:translateY(2px); box-shadow:0 2px 0 rgba(20,40,90,.28);}
 .pill.hot{background:linear-gradient(180deg,#ffe9a8 0%, var(--hot) 55%, var(--hot2) 100%); color:#5a3200;}
-.pill.green{background:linear-gradient(180deg,#a9e6a2 0%, var(--green) 55%, var(--green2) 100%); color:#fff;}
-.pill.red{background:linear-gradient(180deg,#f7a89c 0%, var(--red) 55%, var(--red2) 100%); color:#fff;}
+.pill.green{background:linear-gradient(180deg,#5fbf63 0%, var(--green) 50%, var(--green2) 100%); color:#fff; text-shadow:0 1px 1px rgba(0,0,0,.3);}
+.pill.red{background:linear-gradient(180deg,#ee6a58 0%, var(--red) 50%, var(--red2) 100%); color:#fff; text-shadow:0 1px 1px rgba(0,0,0,.3);}
 .pill.blue{background:linear-gradient(180deg,#bfe6ff 0%, var(--blue) 60%, var(--blue2) 100%); color:#fff;}
 .pill.sm{font-size:19px; min-width:112px; padding:7px 16px;}
 .pill.off{opacity:.45; cursor:default;}
 
-.menu-left{position:absolute; left:112px; top:236px; display:flex; flex-direction:column; gap:26px; z-index:4;}
-.menu-right{position:absolute; right:112px; top:236px; display:flex; flex-direction:column; gap:26px; align-items:flex-end; z-index:4;}
-.menu-print{position:absolute; right:120px; bottom:52px; z-index:4; display:flex; gap:var(--tap-abstand);}
 .pill.ecke{gap:8px; padding-left:8px;}
 .pill.ecke .ecke-ico{width:30px; height:30px; border-radius:22%; flex:0 0 30px; margin:-6px 0;}
 
 /* ---------- Mittleres Panel ---------- */
 .panel{
-  position:absolute; left:50%; top:176px; transform:translateX(-50%);
-  width:456px; min-height:330px; padding:26px 26px 30px; z-index:3;
+  position:relative; box-sizing:border-box; width:456px; padding:26px 28px 28px; z-index:3; overflow-y:auto;
   background:linear-gradient(180deg,#1a4ea8 0%, var(--panel) 55%, var(--panel2) 100%);
   border-radius:22px; color:#fff; text-align:center;
   box-shadow:0 10px 26px rgba(10,20,60,.45), inset 0 0 0 3px rgba(255,255,255,.18);
 }
 .panel h2{margin:4px 0 2px; font-size:34px; color:var(--gold); text-shadow:0 3px 0 rgba(0,0,0,.35);}
-.panel h3{margin:0 0 18px; font-size:19px; font-weight:normal; color:#cfe4ff;}
+.panel h3{margin:0 0 18px; font-size:19px; font-weight:normal; color:#dbe9ff;}
 .panel p{margin:0 0 12px; font-size:18px; line-height:1.45;}
 .panel .big{font-size:30px; font-weight:bold; color:var(--gold);}
 .panel ul{margin:0 0 12px; padding-left:22px; text-align:left; font-size:17px; line-height:1.5;}
 .panel .stack{display:flex; flex-direction:column; align-items:center; gap:var(--tap-abstand); margin-top:18px;}
-.panel .rowline{display:flex; align-items:center; justify-content:space-between; gap:14px; margin:var(--tap-abstand) 0; font-size:19px;}
-.panel .rowline .opts{display:flex; gap:var(--tap-abstand);}
-.panel .rowline .pill.sm{min-width:88px;}
-body.handy .panel .rowline .pill.sm{min-width:112px;}
 .scrollbox{max-height:250px; overflow:auto;}
+.panel.start{width:760px;} .panel.menue{width:420px;} .panel.lang{width:600px;}
+.startspalten{display:grid; grid-template-columns:1fr 1fr; gap:32px; text-align:left; margin-top:8px;}
+.startspalten .stufe{text-align:center;}
+.abschnitt{margin:0 0 6px; font-size:15px; font-weight:bold; letter-spacing:.08em; text-transform:uppercase; color:var(--gold);}
+.weiterbox{display:flex; flex-direction:column; align-items:center; gap:6px; margin:4px 0 20px; padding-bottom:20px;
+  border-bottom:1px solid rgba(255,255,255,.22);}
+.weiterbox small{font-size:16px; color:#dbe9ff;}
+.zeile{display:flex; gap:var(--tap-abstand); justify-content:center; margin-top:var(--tap-abstand);}
+.zeile .pill{min-width:0; flex:1 1 0;}
+.menuegrid.unter{margin-top:var(--tap-abstand);}
+.menuegrid{display:flex; flex-direction:column; gap:var(--tap-abstand); margin-top:18px;}
+.menuegrid .pill{min-width:0; width:100%;}
+/* Ohne Rätsel gibt es nichts zu zeigen, nur das Startbild. */
+body.ohnespiel #gameview, body.ohnespiel .card{display:none;}
+/* Schalter: die ganze Zeile ist die Tippfläche. */
+.schalter{display:flex; align-items:center; gap:14px; min-height:var(--tap); padding:6px 0; cursor:pointer; text-align:left;}
+.schalter .text{flex:1 1 auto;}
+.schalter b{display:block; font-size:18px;}
+.schalter small{display:block; font-size:15px; line-height:1.3; color:#dbe9ff;}
+.sw{position:relative; flex:0 0 60px; height:34px; border-radius:999px; background:rgba(255,255,255,.2);
+  box-shadow:inset 0 2px 4px rgba(0,0,0,.35), inset 0 0 0 1px rgba(255,255,255,.25); transition:background .15s;}
+.sw::after{content:""; position:absolute; top:3px; left:3px; width:28px; height:28px; border-radius:50%;
+  background:linear-gradient(180deg,#ffffff,#d8eefb); box-shadow:0 2px 3px rgba(0,0,0,.35); transition:transform .15s;}
+.schalter.an .sw{background:linear-gradient(180deg,#ffe9a8,var(--hot));}
+.schalter.an .sw::after{transform:translateX(26px);}
+.regeln{text-align:left;}
+.regeln h4{margin:14px 0 4px; font-size:18px; color:var(--gold);}
+.regeln p, .regeln ul{font-size:17px; line-height:1.5; margin:0 0 8px;}
+.regeln ul{padding-left:22px;}
 
-/* Benutzerliste */
-.userbox{display:flex; gap:16px; align-items:flex-start; justify-content:center; margin-top:8px;}
-.userlist{
-  width:230px; height:186px; overflow:auto; text-align:left; border-radius:10px;
-  background:linear-gradient(180deg,#ffffff,#d8eefb); color:var(--ink); padding:6px;
-  box-shadow:inset 0 2px 6px rgba(0,0,0,.28);
-}
-.userlist div{padding:6px 10px; min-height:var(--tap); box-sizing:border-box; display:flex; align-items:center; border-radius:6px; font-size:19px; cursor:pointer;}
-.userlist div.sel{background:linear-gradient(180deg,#bfe6ff,#7ec2ea);}
-.userbtns{display:flex; flex-direction:column; gap:var(--tap-abstand);}
-input.name{
-  font:inherit; font-size:19px; padding:7px 10px; width:100%; border:none; border-radius:8px;
-  background:#fff; color:var(--ink); box-shadow:inset 0 2px 6px rgba(0,0,0,.28); outline:none;
-}
 .lvlwrap{margin:6px 12px 2px;}
 input[type=range].lvl{-webkit-appearance:none; appearance:none; width:100%; height:34px;
   background:transparent; outline:none; margin:0;}
@@ -162,12 +169,13 @@ input[type=range].lvl::-moz-range-track{height:14px; border-radius:999px;
 input[type=range].lvl::-moz-range-thumb{width:30px; height:30px; border:none; border-radius:999px;
   background:linear-gradient(180deg,#ffffff,#b8dcf2); box-shadow:0 3px 0 rgba(20,40,90,.4);}
 .lvlticks{display:flex; justify-content:space-between; padding:0 6px; margin-top:-2px;
-  font-size:14px; color:#cfe4ff; font-variant-numeric:tabular-nums;}
+  font-size:14px; color:#dbe9ff; font-variant-numeric:tabular-nums;}
 .lvlname{display:inline-block; margin:14px auto 6px; padding:7px 24px; border-radius:999px;
   font-size:24px; font-weight:bold; box-shadow:0 3px 0 rgba(20,40,90,.3);}
-.lvlinfo{font-size:16px; color:#cfe4ff; min-height:22px;}
+.lvlinfo{font-size:16px; color:#dbe9ff; min-height:22px; margin:0;}
 table.times{width:100%; border-collapse:collapse; font-size:18px; color:#fff;}
 table.times td{padding:5px 8px; border-bottom:1px solid rgba(255,255,255,.18);}
+table.times td{text-align:left;}
 table.times td.r{text-align:right; font-variant-numeric:tabular-nums;}
 
 /* ---------- Spielansicht ---------- */
@@ -184,7 +192,7 @@ table.times td.r{text-align:right; font-variant-numeric:tabular-nums;}
   background:#fff; display:flex; align-items:center; justify-content:center;
   font-size:28px; font-weight:bold; color:#111; cursor:pointer; position:relative;
 }
-.cell.user{color:#2b7fc4;}
+.cell.user{color:#1d64a6;}
 .cell.wrong{color:var(--red);}
 .cell.peer{background:#e8f4ff;}
 .cell.same{background:#d5ecff;}
@@ -314,19 +322,27 @@ table.times td.r{text-align:right; font-variant-numeric:tabular-nums;}
 .winteddy svg{width:118px; height:118px;}
 
 /* ---------- Handy-Layout (schmaler Bildschirm, per body.handy) ---------- */
-body.handy #stage{width:640px; height:940px;}
-body.handy.imspiel #stage{height:792px;}
-body.handy.imspiel .card{height:664px;}
-body.handy .card{left:18px; width:604px; height:820px;}
-body.handy .menu-left{left:50%; transform:translateX(-50%); top:628px; flex-direction:row; gap:var(--tap-abstand);}
-body.handy .menu-right{right:auto; left:50%; transform:translateX(-50%); top:720px;
-  flex-direction:row; gap:var(--tap-abstand); align-items:normal;}
-body.handy .menu-print{right:auto; bottom:auto; top:812px; left:50%; transform:translateX(-50%); gap:var(--tap-abstand);}
-body.handy .menu-left .pill, body.handy .menu-right .pill{min-width:172px; font-size:27px;}
-body.handy .pill.sm{font-size:24px;}
-body.handy #menuview .panel{top:130px; width:556px; height:476px; min-height:0; box-sizing:border-box;
-  padding:22px 24px 24px; overflow-y:auto;}
-body.handy .userlist{height:240px;}
+body.handy #stage{width:640px; height:792px;}
+body.handy .card{left:18px; width:604px; height:664px;}
+body.handy .panel, body.handy .panel.start, body.handy .panel.menue, body.handy .panel.lang{width:600px; padding:30px 30px 32px;}
+body.handy .startspalten{grid-template-columns:1fr; gap:24px;}
+body.handy .panel h2{font-size:46px;}
+body.handy .panel h3, body.handy .weiterbox small, body.handy .lvlinfo{font-size:27px;}
+body.handy .panel p, body.handy .regeln p, body.handy .regeln ul{font-size:27px;}
+body.handy .regeln h4{font-size:29px;}
+body.handy .abschnitt{font-size:23px;}
+body.handy .schalter b{font-size:28px;}
+body.handy .schalter small{font-size:23px;}
+body.handy .sw{flex-basis:96px; height:54px;}
+body.handy .sw::after{top:4px; left:4px; width:46px; height:46px;}
+body.handy .schalter.an .sw::after{transform:translateX(42px);}
+body.handy .lvlticks{font-size:23px;}
+body.handy .lvlname{font-size:32px;}
+body.handy table.times{font-size:27px;}
+body.handy .scrollbox{max-height:none;}
+body.handy .winteddy svg{width:150px; height:150px;}
+body.handy .panel .pill{font-size:30px;}
+body.handy .panel .pill.sm{font-size:27px;}
 body.handy input[type=range].lvl{height:64px;}
 body.handy input[type=range].lvl::-webkit-slider-thumb{width:56px; height:56px; margin-top:-21px;}
 body.handy input[type=range].lvl::-moz-range-thumb{width:56px; height:56px;}
@@ -359,7 +375,9 @@ body.handy #bubble.top{ bottom:auto; top:calc(8px + env(safe-area-inset-top)); }
   box-shadow:0 -4px 14px rgba(20,10,60,.45);
   display:none; flex-direction:column; gap:8px;
 }
-body.handy.imspiel #phonebar{display:flex;}
+body.handy #phonebar{display:flex;}
+/* Solange ein Dialog offen ist, bleibt die Leiste stehen, ist aber nicht bedienbar. */
+body.dialogoffen #phonebar{visibility:hidden;}
 #phonebar .row{display:flex; gap:8px; justify-content:center;}
 #phonebar .k{
   flex:1 1 0; min-width:0; height:48px; border-radius:10px; cursor:pointer;
@@ -371,7 +389,7 @@ body.handy.imspiel #phonebar{display:flex;}
 #phonebar .k.tool{font-size:15px; height:44px; gap:6px;}
 #phonebar .k.on{background:linear-gradient(180deg,#ffe9a8,#ffb02e); color:#5a3200;}
 #phonebar .k.wide{font-size:min(13px, 3.4vw); height:50px; flex-direction:column; gap:1px;}
-#phonebar .k.teddy{background:linear-gradient(180deg,#a9e6a2,#3fae4a); color:#fff;}
+#phonebar .k.teddy{background:linear-gradient(180deg,#5fbf63,var(--green) 50%,var(--green2)); color:#fff; text-shadow:0 1px 1px rgba(0,0,0,.3);}
 #phonebar .k:active{transform:translateY(2px); box-shadow:0 1px 0 rgba(20,40,90,.4);}
 #phonebar .k svg{width:22px; height:22px; flex:0 0 22px;}
 #phonebar .k .ecke-ico{width:30px; height:30px; border-radius:22%; display:block;}
@@ -406,24 +424,8 @@ body.handy.imspiel #phonebar{display:flex;}
     <div class="sub">Challenge!</div>
   </div>
 
-  <!-- Menüansicht -->
-  <div id="menuview">
-    <div class="menu-left">
-      <div class="pill" id="b-play">Spielen</div>
-      <div class="pill" id="b-user">Benutzer</div>
-      <div class="pill" id="b-rules">Regeln</div>
-    </div>
-    <div class="menu-right">
-      <div class="pill" id="b-opts">Optionen</div>
-      <div class="pill" id="b-times">Zeiten</div>
-      <div class="pill" id="b-quit">Beenden</div>
-    </div>
-    <div class="menu-print"><div class="pill sm ecke" id="b-ecke"><img class="ecke-ico" src="favicon.svg" alt="">Spieleecke</div><div class="pill green sm" id="b-print">Drucken</div></div>
-    <div class="panel" id="panel"></div>
-  </div>
-
   <!-- Spielansicht -->
-  <div id="gameview" class="hidden">
+  <div id="gameview">
     <div class="pal left" id="pal-left"></div>
     <div class="pal right" id="pal-right"></div>
     <div class="palkopf left" id="palkopf-left"></div>
@@ -439,7 +441,6 @@ body.handy.imspiel #phonebar{display:flex;}
       <div class="pill sm ecke" id="b-ecke-spiel"><img class="ecke-ico" src="favicon.svg" alt="">Spieleecke</div>
       <div class="pill sm teddybtn" id="b-teddy"><span id="teddy-icon"></span>Frag Teddy</div>
       <div class="pill sm" id="b-menu">Menü</div>
-      <div class="pill sm" id="b-give">Aufgeben</div>
     </div>
     <div id="pad"></div>
     <div id="bubble"></div>
@@ -483,34 +484,40 @@ var LEVELS = [
 ];
 function LV(n){ return LEVELS[Math.max(1,Math.min(10,n))]; }
 function levelColor(n){
-  return n<=3 ? 'linear-gradient(180deg,#bfe6ff,#4fa8e8)'
-       : n<=5 ? 'linear-gradient(180deg,#a9e6a2,#3fae4a)'
+  return n<=3 ? 'linear-gradient(180deg,#bfe6ff,#7cc0f0)'
+       : n<=5 ? 'linear-gradient(180deg,#a9e6a2,#6fcf6b)'
        : n<=7 ? 'linear-gradient(180deg,#ffe9a8,#ffb02e)'
-       :        'linear-gradient(180deg,#f7a89c,#e2402f)';
+       :        'linear-gradient(180deg,#f7a89c,#ee7b68)';
 }
-function levelInk(n){ return (n>=6 && n<=7) ? '#5a3200' : '#fff'; }
-var cfg = { user:'Uli', level:4, errors:true, highlight:true, sameNum:true, zahlenfeld:true };
-var users = ['Uli'];
+function levelInk(n){ return n<=3 ? '#0d3a6b' : n<=5 ? '#17451c' : n<=7 ? '#5a3200' : '#5c1209'; }
+var cfg = { level:4, errors:true, highlight:true, sameNum:true, zahlenfeld:true };
 var puzzle = null, solution = null, board = null, fixed = null;
 var diffLevel = 4, selCell = -1, pen = 0, eraser = false;
 var undoStack = [], seconds = 0, timerId = null, solved = false, gaveUp = false;
 
 var stage = document.getElementById('stage');
-var panel = document.getElementById('panel');
-var menuview = document.getElementById('menuview');
 var gameview = document.getElementById('gameview');
 var gridEl = document.getElementById('grid');
 var overlay = document.getElementById('overlay');
 
 /* ---------- Speichern ---------- */
-users = lsGet('teddy.doku.benutzer', ['Uli']);
-if(!users.length) users = ['Uli'];
 var savedCfg = lsGet('teddy.doku.cfg', null);
 if(savedCfg) for(var k in savedCfg) if(k in cfg) cfg[k]=savedCfg[k];
-if(users.indexOf(cfg.user)<0) cfg.user = users[0];
 function saveCfg(){ lsSet('teddy.doku.cfg', cfg); }
-function timesKey(u,d){ return 'teddy.doku.zeiten.'+u+'.'+d; }
-function bestTimes(u,d){ return lsGet(timesKey(u,d), []); }
+/* Bestzeiten gehören zum Gerät, der Name kommt aus der Spieleecke. Früher gab es
+   eigene Benutzer; die Liste des zuletzt gewählten wird einmal übernommen. Die
+   alten Einträge unter teddy.doku.zeiten.<name>.<stufe> bleiben unangetastet. */
+function timesKey(d){ return 'teddy.doku.bestzeiten.'+d; }
+function bestTimes(d){ return lsGet(timesKey(d), []); }
+(function(){
+  if(lsGet('teddy.doku.bestzeiten.uebernommen', false)) return;
+  var alt=savedCfg && savedCfg.user;
+  if(alt) for(var d=1;d<=10;d++){
+    var l=lsGet('teddy.doku.zeiten.'+alt+'.'+d, []);
+    if(l.length && !bestTimes(d).length) lsSet(timesKey(d), l);
+  }
+  lsSet('teddy.doku.bestzeiten.uebernommen', true);
+})();
 
 /* ==================================================================
    Sudoku: Erzeugen, Lösen, Eindeutigkeit
@@ -678,6 +685,7 @@ function startGame(n){
   zeigeSpiel();
 }
 function zeigeSpiel(){
+  document.body.classList.remove('ohnespiel');
   fixed = puzzle.map(function(v){ return v>0; });
   selCell=-1; pen=0; eraser=false; solved=false; gaveUp=false; lastKind=null;
   buildGrid(); buildPalettes();
@@ -686,8 +694,6 @@ function zeigeSpiel(){
   bd.style.background = levelColor(diffLevel);
   bd.style.color = levelInk(diffLevel);
   document.getElementById('hint').textContent='';
-  menuview.classList.add('hidden'); gameview.classList.remove('hidden');
-  document.body.classList.add('imspiel'); fitStageAndBubble();
   closeOverlay(); closePad(); closeBubble(); konfettiAus(); startTimer(); render();
 }
 var cellEls = new Array(81);
@@ -742,7 +748,7 @@ function pickEraser(){
   render();
 }
 function tapCell(i){
-  if(solved) return;
+  if(!puzzle || solved) return;
   clearCoach();
   if(fixed[i]){ selCell=i; closePad(); render(); return; }
   if(eraser){ selCell=i; place(i,0); closePad(); render(); return; }
@@ -775,11 +781,18 @@ function openPad(i){
   var gx=gridEl.offsetLeft-gridEl.offsetWidth/2, gy=gridEl.offsetTop;
   var cx=gx+cell.offsetLeft, cy=gy+cell.offsetTop;
   var pw=padEl.offsetWidth, ph=padEl.offsetHeight;
-  var sw=stage.offsetWidth, sh=stage.offsetHeight;
+  /* Platz zählt bis zum Rand des Sichtbaren, nicht der Bühne: auf dem Handy liegt
+     unter der Bühne noch freie Fläche bis zur Leiste. Unten hat Vorrang. */
+  var sw=stage.offsetWidth, r=stage.getBoundingClientRect(), k=r.width/sw;
+  var vv=window.visualViewport, sichtUnten=(vv? vv.height : window.innerHeight);
+  if(isHandy()) sichtUnten=document.getElementById('phonebar').getBoundingClientRect().top;
+  var grenzeOben=(0-r.top)/k+8, grenzeUnten=(sichtUnten-r.top)/k-8;
   var px=Math.max(10, Math.min(sw-pw-10, cx+cell.offsetWidth/2-pw/2));
-  var py=cy+cell.offsetHeight+14, below=true;
-  if(py+ph>sh-12){ py=cy-ph-14; below=false; }
-  if(py<8){ py=8; }
+  var unten=cy+cell.offsetHeight+14, oben=cy-ph-14, below=true, py=unten;
+  if(unten+ph>grenzeUnten){
+    if(oben>=grenzeOben || grenzeUnten-unten<cy-14-grenzeOben){ py=Math.max(grenzeOben, oben); below=false; }
+    else py=Math.min(unten, grenzeUnten-ph);
+  }
   padEl.style.left=px+'px'; padEl.style.top=py+'px';
   var rand=parseFloat(getComputedStyle(padEl).borderTopLeftRadius)+11;
   padEl.style.setProperty('--ax', Math.max(rand, Math.min(pw-rand, cx+cell.offsetWidth/2-px))+'px');
@@ -805,15 +818,15 @@ function undo(){
 function countOf(v){ var n=0; for(var i=0;i<81;i++) if(board[i]===v) n++; return n; }
 /* ---------- Spielstand sichern ---------- */
 function spielSpeichern(){
-  if(!board || solved) return;
-  standSpeichern('teddy.doku.spiel', {user:cfg.user, level:diffLevel, puzzle:puzzle, solution:solution,
+  if(!puzzle || solved) return;
+  standSpeichern('teddy.doku.spiel', {level:diffLevel, puzzle:puzzle, solution:solution,
     board:board, undo:undoStack, seconds:seconds,
-    fortsetzen: cfg.user + ' \u00b7 Stufe ' + diffLevel + ' \u00b7 ' + fmt(seconds)});
+    fortsetzen: 'Stufe ' + diffLevel + ' \u00b7 ' + fmt(seconds)});
 }
 function spielLoeschen(){ lsDel('teddy.doku.spiel'); }
 function gespeichertesSpiel(){
   var d=standLaden('teddy.doku.spiel');
-  if(!d || d.user!==cfg.user) return null;
+  if(!d) return null;
   if(!d.board || d.board.length!==81 || !d.puzzle || !d.solution) return null;
   return d;
 }
@@ -859,25 +872,25 @@ function render(){
 function checkSolved(){
   for(var i=0;i<81;i++) if(board[i]!==solution[i]) return;
   solved=true; stopTimer(); konfettiAn(); spielLoeschen(); aufNeueFassungPruefen();
-  var list=bestTimes(cfg.user,diffLevel);
+  var list=bestTimes(diffLevel);
   var rank=0;
   if(!gaveUp){
     list.push({t:seconds, date:new Date().toLocaleDateString('de-DE')});
     list.sort(function(a,b){ return a.t-b.t; });
     list=list.slice(0,5);
-    lsSet(timesKey(cfg.user,diffLevel), list);
+    lsSet(timesKey(diffLevel), list);
     for(var j=0;j<list.length;j++) if(list[j].t===seconds){ rank=j+1; break; }
   }
   render();
   dialog({
     title:'Gelöst!',
     html:'<div class="winteddy">'+teddySVG('jubel')+'</div>'+
-         '<p>Sauber, '+esc(cfg.user)+'!</p><p class="big">'+fmt(seconds)+'</p>'+
+         '<p>Sauber'+(meinName()? ', '+esc(meinName()) : '')+'!</p><p class="big">'+fmt(seconds)+'</p>'+
          '<p>Stufe '+diffLevel+' &ndash; '+LV(diffLevel).name+'</p>'+
-         (rank? '<p>Neue Bestzeit &ndash; Platz '+rank+' in deiner Liste.</p>' : ''),
+         (rank? '<p>Platz '+rank+' in den Bestzeiten.</p>' : ''),
     buttons:[
       {label:'Nochmal', cls:'green', fn:function(){ startGame(diffLevel); }},
-      {label:'Menü', fn:toMenu},
+      {label:'Andere Stufe', fn:zeigeStart},
       {label:'Spieleecke', fn:zurSpieleecke}
     ]
   });
@@ -894,7 +907,7 @@ function giveUp(){
         stopTimer(); solved=true; spielLoeschen(); render(); aufNeueFassungPruefen();
         document.getElementById('hint').textContent='Aufgegeben – die Lösung steht im Feld.';
       }},
-      {label:'Weiterspielen', fn:function(){}}
+      {label:'Weiterspielen', fn:weiterspielen}
     ]});
 }
 /* ---------- Uhr ---------- */
@@ -918,155 +931,152 @@ function stopTimer(){ if(timerId){ clearInterval(timerId); timerId=null; } }
 function esc(s){ return String(s).replace(/[&<>"]/g, function(c){
   return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
 
-function toMenu(){ stopTimer(); closePad(); closeBubble(); konfettiAus(); gameview.classList.add('hidden'); menuview.classList.remove('hidden');
-  document.body.classList.remove('imspiel'); fitStageAndBubble(); showWelcome(); }
-function setPanel(html){ panel.innerHTML=html; }
-function pillHTML(id,label,cls){ return '<div class="pill '+(cls||'')+' sm" id="'+id+'">'+label+'</div>'; }
+/* Startbild und Menü liegen wie in den anderen Spielen als Dialog über dem Spielfeld. */
+function laeuft(){ return !!puzzle && !solved; }
+function weiterspielen(){ closeOverlay(); if(laeuft()) startTimer(); }
+function panelOeffnen(cls, html){
+  closePad(); stopTimer();
+  overlay.innerHTML='';
+  var p=document.createElement('div'); p.className='panel '+(cls||''); p.innerHTML=html;
+  overlay.appendChild(p); overlay.classList.add('show');
+  document.body.classList.add('dialogoffen');
+  panelEinpassen(p);
+  return p;
+}
+/* Das Panel darf über die Bühne hinaus, aber nicht über den sichtbaren Bereich. */
+function panelEinpassen(p){
+  var r=stage.getBoundingClientRect(), k=r.width/stage.offsetWidth;
+  var vv=window.visualViewport, h=(vv? vv.height : window.innerHeight);
+  if(isHandy()) h=document.getElementById('phonebar').getBoundingClientRect().top;
+  p.style.maxHeight=Math.floor((h-24)/k)+'px';
+}
+function knopf(p, sel, fn){ var b=p.querySelector(sel); if(b) b.onclick=fn; }
 
-function showWelcome(){
-  setPanel('<h2>Willkommen</h2><h3>'+esc(cfg.user)+'</h3>'+
-    '<p>Willkommen zu Teddydoku.</p>'+
-    '<p>Das ursprünglich aus Japan stammende Spiel ist mittlerweile auf der ganzen Welt beliebt.</p>'+
-    '<p>Nun ist dieses äußerst fesselnde Puzzle auch für dich hier – ganz ohne Musik und Klingeln.</p>'+
-    (gespeichertesSpiel() ? '<div class="stack">'+pillHTML('b-weiter','Weiterspielen','green')+'</div>' : ''));
-  if(gespeichertesSpiel()) document.getElementById('b-weiter').onclick=spielFortsetzen;
-  highlightMenu(null);
+var HILFEN = [
+  ['errors',     'Fehler rot zeigen',           'Eine falsche Ziffer wird sofort rot.'],
+  ['highlight',  'Zeile, Spalte und Kästchen',  'Färbt alles ein, was zum gewählten Feld gehört.'],
+  ['sameNum',    'Gleiche Ziffern hervorheben', 'Zeigt, wo die gewählte Ziffer schon steht.'],
+  ['zahlenfeld', 'Zahlenfeld beim Antippen',    'Die Ziffern erscheinen direkt am Feld.']
+];
+function hilfenHtml(){
+  return HILFEN.map(function(h){
+    return '<div class="schalter'+(cfg[h[0]]?' an':'')+'" data-hilfe="'+h[0]+'" role="switch" aria-checked="'+cfg[h[0]]+'">'+
+           '<span class="text"><b>'+h[1]+'</b><small>'+h[2]+'</small></span><span class="sw"></span></div>';
+  }).join('');
 }
-function showDifficulty(){
-  var ticks=''; for(var t=1;t<=10;t++) ticks+='<span>'+t+'</span>';
-  setPanel('<h2>Schwierigkeitsgrad</h2><h3>Stufe 1 bis 10 einstellen</h3>'+
-    '<div class="lvlwrap">'+
-      '<input type="range" class="lvl" id="lvl" min="1" max="10" step="1" value="'+cfg.level+'">'+
-      '<div class="lvlticks">'+ticks+'</div>'+
-    '</div>'+
-    '<div class="lvlname" id="lvlname"></div>'+
-    '<p class="lvlinfo" id="lvlinfo"></p>'+
-    '<div class="stack">'+pillHTML('go','Spielen','green')+'</div>');
-  highlightMenu('b-play');
-  var sl=document.getElementById('lvl'), nm=document.getElementById('lvlname'), inf=document.getElementById('lvlinfo');
-  function paint(){
-    var n=parseInt(sl.value,10), L=LV(n);
-    nm.textContent='Stufe '+n+' – '+L.name;
-    nm.style.background=levelColor(n); nm.style.color=levelInk(n);
-    inf.innerHTML='etwa '+L.clues+' vorgegebene Ziffern';
-  }
-  sl.addEventListener('input',paint); sl.addEventListener('change',paint); paint();
-  document.getElementById('go').onclick=function(){
-    var n=parseInt(sl.value,10); cfg.level=n; saveCfg();
-    setPanel('<h2>Einen Moment</h2><h3>Das Rätsel wird erzeugt …</h3>');
-    setTimeout(function(){ startGame(n); }, 60);
-  };
-}
-function showUsers(){
-  var html='<h2>Aktuelle Benutzer</h2><h3>Bitte aus der Liste auswählen</h3><div class="userbox">'+
-    '<div class="userlist" id="ulist"></div><div class="userbtns">'+
-    pillHTML('u-new','Neu','hot')+pillHTML('u-del','Löschen','red')+pillHTML('u-ok','OK','hot')+
-    '</div></div>';
-  setPanel(html); highlightMenu('b-user');
-  var sel = cfg.user;
-  function paint(){
-    var l=document.getElementById('ulist'); l.innerHTML='';
-    users.forEach(function(u){
-      var d=document.createElement('div'); d.textContent=u;
-      if(u===sel) d.className='sel';
-      d.onclick=function(){ sel=u; paint(); };
-      l.appendChild(d);
-    });
-  }
-  paint();
-  document.getElementById('u-new').onclick=function(){
-    dialogInput('Neuer Benutzer','Name eingeben:', '', function(name){
-      name=(name||'').trim().substring(0,16);
-      if(!name) return;
-      if(users.indexOf(name)<0){ users.push(name); lsSet('teddy.doku.benutzer',users); }
-      sel=name; cfg.user=name; saveCfg(); showUsers();
-    });
-  };
-  document.getElementById('u-del').onclick=function(){
-    if(users.length<=1){ dialog({title:'Geht nicht', html:'<p>Es muss mindestens ein Benutzer übrig bleiben.</p>', buttons:[{label:'OK'}]}); return; }
-    dialog({title:'Benutzer löschen', html:'<p>'+esc(sel)+' wirklich löschen? Die Zeiten gehen mit.</p>',
-      buttons:[{label:'Ja', cls:'red', fn:function(){
-        users=users.filter(function(u){ return u!==sel; });
-        lsSet('teddy.doku.benutzer',users);
-        for(var n=1;n<=10;n++) lsSet(timesKey(sel,n),[]);
-        if(cfg.user===sel){ cfg.user=users[0]; saveCfg(); }
-        showUsers();
-      }},{label:'Nein'}]});
-  };
-  document.getElementById('u-ok').onclick=function(){ cfg.user=sel; saveCfg(); showWelcome(); };
-}
-function showRules(){
-  setPanel('<h2>Regeln</h2><h3>So geht Teddydoku</h3>'+
-    '<div class="scrollbox"><ul>'+
-    '<li>Trage die Ziffern 1 bis 9 so ein, dass jede Zeile, jede Spalte und jedes der neun 3&times;3-Kästchen jede Ziffer genau einmal enthält.</li>'+
-    '<li>Die schwarzen Ziffern sind vorgegeben und lassen sich nicht ändern; deine Eingaben stehen in Blau.</li>'+
-    '<li>Tippe auf ein leeres Feld – dann erscheint direkt daneben ein Zahlenfeld mit allen neun Ziffern. In den Spieloptionen lässt es sich abschalten; auf dem Handy liegen die Ziffern dann unten in der Leiste.</li>'+
-    '<li>Alternativ eine Ziffer an den Rändern wählen und dann ins Feld tippen. Nach jeder Eingabe ist die Auswahl wieder frei – man wählt also jedes Mal neu.</li>'+
-    '<li><b>Radieren</b> löscht wieder.</li>'+
-    '<li><b>Frag Teddy</b> erklärt dir einen Trick, mit dem es weitergeht – in drei Stufen: erst die Technik, dann das genaue Feld, dann die Ziffer.</li>'+
-    '<li>Teddy kennt neun Tricks und wechselt sie durch: <i>nur eine Möglichkeit</i>, <i>die einzige Stelle</i>, <i>Zeigerpaar</i>, <i>Kästchen-Reduktion</i>, <i>Zwillinge</i>, <i>versteckte Zwillinge</i>, <i>Drillinge</i>, <i>X-Wing</i> und <i>XY-Flügel</i>. Kommt keiner davon zum Zug, zeigt er die <i>Widerspruchsprobe</i>. Ab Stufe 5 mischen sich die anspruchsvollen Tricks von Anfang an dazu.</li>'+
-    '<li><b>Rückg.</b> nimmt den letzten Eintrag zurück – so oft du willst.</li>'+
-    '<li>Jedes Rätsel hat genau eine Lösung; Raten ist nie nötig.</li>'+
-    '</ul></div>');
-  highlightMenu('b-rules');
-}
-function showOptions(){
-  setPanel('<h2>Spieloptionen</h2><h3>Bitte auswählen</h3>'+
-    '<div class="rowline"><span>Fehler anzeigen</span><span class="opts">'+
-      '<div class="pill sm '+(cfg.errors?'hot':'')+'" data-o="errors" data-v="1">Ein</div>'+
-      '<div class="pill sm '+(!cfg.errors?'hot':'')+'" data-o="errors" data-v="0">Aus</div></span></div>'+
-    '<div class="rowline"><span>Reihe hervorheben</span><span class="opts">'+
-      '<div class="pill sm '+(cfg.highlight?'hot':'')+'" data-o="highlight" data-v="1">Ein</div>'+
-      '<div class="pill sm '+(!cfg.highlight?'hot':'')+'" data-o="highlight" data-v="0">Aus</div></span></div>'+
-    '<div class="rowline"><span>Gleiche Ziffern</span><span class="opts">'+
-      '<div class="pill sm '+(cfg.sameNum?'hot':'')+'" data-o="sameNum" data-v="1">Ein</div>'+
-      '<div class="pill sm '+(!cfg.sameNum?'hot':'')+'" data-o="sameNum" data-v="0">Aus</div></span></div>'+
-    '<div class="rowline"><span>Zahlenfeld am Feld</span><span class="opts">'+
-      '<div class="pill sm '+(cfg.zahlenfeld?'hot':'')+'" data-o="zahlenfeld" data-v="1">Ein</div>'+
-      '<div class="pill sm '+(!cfg.zahlenfeld?'hot':'')+'" data-o="zahlenfeld" data-v="0">Aus</div></span></div>'+
-    '<p style="font-size:15px;color:#cfe4ff;margin-top:16px">Musik und Klänge gibt es in dieser Fassung nicht.</p>');
-  highlightMenu('b-opts');
-  Array.prototype.forEach.call(panel.querySelectorAll('[data-o]'), function(b){
-    b.onclick=function(){
-      cfg[b.getAttribute('data-o')] = b.getAttribute('data-v')==='1';
-      saveCfg(); showOptions(); applyLayout();
-      if(!gameview.classList.contains('hidden')) render();
+function hilfenVerdrahten(p){
+  Array.prototype.forEach.call(p.querySelectorAll('[data-hilfe]'), function(z){
+    z.onclick=function(){
+      var f=z.getAttribute('data-hilfe');
+      cfg[f]=!cfg[f]; saveCfg();
+      z.classList.toggle('an', cfg[f]); z.setAttribute('aria-checked', cfg[f]);
+      if(f==='zahlenfeld') applyLayout();
+      render();
     };
   });
 }
-function showTimes(){
-  var html='<h2>Zeiten</h2><h3>Beste Zeiten von '+esc(cfg.user)+'</h3><div class="scrollbox">'+
-           '<table class="times">';
-  var any=false;
-  for(var n=1;n<=10;n++){
-    var list=bestTimes(cfg.user,n);
-    if(list.length) any=true;
-    html+='<tr><td class="r" style="color:#ffd23a;font-weight:bold">'+n+'.</td>'+
-          '<td>'+LV(n).name+'</td>'+
-          '<td class="r">'+(list.length? fmt(list[0].t) : '&ndash;')+'</td>'+
-          '<td class="r" style="opacity:.7">'+(list.length>1? '('+list.length+' Zeiten)' : '')+'</td></tr>';
+
+function zeigeStart(){
+  var d=laeuft() ? {level:diffLevel, seconds:seconds} : gespeichertesSpiel();
+  var ticks=''; for(var t=1;t<=10;t++) ticks+='<span>'+t+'</span>';
+  var h='<h2>'+(d ? 'Teddydoku' : 'Neues Spiel')+'</h2>';
+  if(d) h+='<div class="weiterbox"><div class="pill green" data-act="weiter">Weiterspielen</div>'+
+           '<small>Stufe '+d.level+' · '+LV(d.level).name+' · '+fmt(d.seconds||0)+'</small></div>';
+  h+='<div class="startspalten"><div class="stufe">'+
+       '<p class="abschnitt">Stufe</p>'+
+       '<div class="lvlwrap"><input type="range" class="lvl" id="lvl" min="1" max="10" step="1" value="'+cfg.level+'" aria-label="Stufe">'+
+       '<div class="lvlticks">'+ticks+'</div></div>'+
+       '<div class="lvlname" id="lvlname"></div><p class="lvlinfo" id="lvlinfo"></p>'+
+     '</div><div><p class="abschnitt">Hilfen</p>'+hilfenHtml()+'</div></div>'+
+     '<div class="zeile"><div class="pill '+(d?'':'green')+'" data-act="neu">'+(d?'Neues Rätsel':'Spielen')+'</div></div>'+
+     '<div class="menuegrid unter"><div class="pill sm" data-act="zeiten">Bestzeiten</div>'+
+       '<div class="pill sm" data-act="regeln">Regeln</div>'+
+       '<div class="pill sm ecke" data-act="ecke"><img class="ecke-ico" src="favicon.svg" alt="">Zur Spieleecke</div></div>';
+  var p=panelOeffnen('start', h);
+  var sl=p.querySelector('#lvl'), nm=p.querySelector('#lvlname'), inf=p.querySelector('#lvlinfo');
+  function paint(){
+    var n=parseInt(sl.value,10), L=LV(n);
+    nm.textContent='Stufe '+n+' · '+L.name;
+    nm.style.background=levelColor(n); nm.style.color=levelInk(n);
+    inf.textContent='etwa '+L.clues+' vorgegebene Ziffern';
   }
-  html+='</table></div>'+(any? '<div class="stack">'+pillHTML('t-clear','Liste leeren','red')+'</div>':'');
-  setPanel(html); highlightMenu('b-times');
-  var c=document.getElementById('t-clear');
-  if(c) c.onclick=function(){
-    for(var n=1;n<=10;n++) lsSet(timesKey(cfg.user,n),[]);
-    showTimes();
-  };
-}
-function showQuit(){
-  setPanel('<h2>Beenden</h2><h3>Bis zum nächsten Mal</h3>'+
-    '<p>Danke fürs Spielen, '+esc(cfg.user)+'.</p>'+
-    '<p>Du kannst das Fenster jetzt schließen – oder einfach weitermachen.</p>'+
-    '<div class="stack">'+pillHTML('q-back','Weiterspielen','green')+pillHTML('q-ecke','Zur Spieleecke','blue')+'</div>');
-  highlightMenu('b-quit');
-  document.getElementById('q-back').onclick=showWelcome;
-  document.getElementById('q-ecke').onclick=function(){ location.href='./'; };
-}
-function highlightMenu(id){
-  ['b-play','b-user','b-rules','b-opts','b-times','b-quit'].forEach(function(x){
-    document.getElementById(x).className='pill'+(x===id?' hot':'');
+  sl.addEventListener('input', function(){ cfg.level=parseInt(sl.value,10); saveCfg(); paint(); });
+  paint();
+  hilfenVerdrahten(p);
+  knopf(p,'[data-act=weiter]', function(){ if(laeuft()) weiterspielen(); else { closeOverlay(); spielFortsetzen(); } });
+  knopf(p,'[data-act=neu]', function(){
+    var n=parseInt(sl.value,10);
+    p.innerHTML='<h2>Einen Moment</h2><h3>Das Rätsel wird erzeugt …</h3>';
+    setTimeout(function(){ startGame(n); }, 60);
   });
+  knopf(p,'[data-act=zeiten]', function(){ zeigeZeiten(zeigeStart); });
+  knopf(p,'[data-act=regeln]', function(){ zeigeRegeln(zeigeStart); });
+  knopf(p,'[data-act=ecke]', zurSpieleecke);
+}
+
+function zeigeMenue(){
+  var p=panelOeffnen('menue', '<h2>Menü</h2>'+
+    '<div class="menuegrid">'+
+      (laeuft() ? '<div class="pill green" data-act="weiter">Weiterspielen</div>' : '')+
+      '<div class="pill sm" data-act="neu">Neues Spiel</div>'+
+      '<div class="pill sm" data-act="einst">Einstellungen</div>'+
+      '<div class="pill sm" data-act="zeiten">Bestzeiten</div>'+
+      '<div class="pill sm" data-act="regeln">Regeln</div>'+
+      '<div class="pill sm" data-act="druck">Rätsel drucken</div>'+
+      (laeuft() ? '<div class="pill sm" data-act="aufgeben">Aufgeben</div>' : '<div class="pill sm" data-act="zu">Schließen</div>')+
+      '<div class="pill sm ecke" data-act="ecke"><img class="ecke-ico" src="favicon.svg" alt="">Zur Spieleecke</div>'+
+    '</div>');
+  knopf(p,'[data-act=weiter]', weiterspielen);
+  knopf(p,'[data-act=zu]', weiterspielen);
+  knopf(p,'[data-act=neu]', zeigeStart);
+  knopf(p,'[data-act=einst]', zeigeEinstellungen);
+  knopf(p,'[data-act=zeiten]', function(){ zeigeZeiten(zeigeMenue); });
+  knopf(p,'[data-act=regeln]', function(){ zeigeRegeln(zeigeMenue); });
+  knopf(p,'[data-act=druck]', function(){ printPuzzle(); });
+  knopf(p,'[data-act=aufgeben]', giveUp);
+  knopf(p,'[data-act=ecke]', zurSpieleecke);
+}
+
+function zeigeEinstellungen(){
+  var p=panelOeffnen('', '<h2>Einstellungen</h2><h3>Hilfen beim Spielen</h3>'+hilfenHtml()+
+    '<div class="zeile"><div class="pill" data-act="fertig">Fertig</div></div>');
+  hilfenVerdrahten(p);
+  knopf(p,'[data-act=fertig]', zeigeMenue);
+}
+
+function zeigeZeiten(zurueck){
+  var h='<h2>Bestzeiten</h2>'+(meinName()? '<h3>von '+esc(meinName())+'</h3>' : '<h3>Die schnellste Lösung je Stufe</h3>')+
+        '<div class="scrollbox"><table class="times">', any=false;
+  for(var n=1;n<=10;n++){
+    var list=bestTimes(n);
+    if(list.length) any=true;
+    h+='<tr><td class="r" style="color:var(--gold);font-weight:bold">'+n+'</td>'+
+       '<td>'+LV(n).name+'</td>'+
+       '<td class="r">'+(list.length? fmt(list[0].t) : '&ndash;')+'</td></tr>';
+  }
+  h+='</table></div><div class="zeile">'+(any? '<div class="pill sm" data-act="leeren">Liste leeren</div>' : '')+
+     '<div class="pill sm" data-act="zurueck">Zurück</div></div>';
+  var p=panelOeffnen('', h);
+  knopf(p,'[data-act=zurueck]', zurueck);
+  knopf(p,'[data-act=leeren]', function(){
+    dialog({title:'Liste leeren?', html:'<p>Alle Bestzeiten auf diesem Gerät werden gelöscht.</p>',
+      buttons:[{label:'Löschen', cls:'red', fn:function(){ for(var n=1;n<=10;n++) lsSet(timesKey(n),[]); zeigeZeiten(zurueck); }},
+               {label:'Abbrechen', fn:function(){ zeigeZeiten(zurueck); }}]});
+  });
+}
+
+function zeigeRegeln(zurueck){
+  var p=panelOeffnen('lang', '<h2>Regeln und Bedienung</h2><div class="regeln">'+
+    '<h4>Ziel</h4><p>Fülle das Gitter mit den Ziffern 1 bis 9. Jede Zeile, jede Spalte und jedes 3&times;3-Kästchen enthält jede Ziffer genau einmal. Jedes Rätsel hat genau eine Lösung, Raten ist nie nötig.</p>'+
+    '<h4>Bedienung</h4><ul>'+
+      '<li>Tippe auf ein leeres Feld und wähle die Ziffer im Zahlenfeld.</li>'+
+      '<li>Oder wähle erst eine Ziffer am Rand und tippe dann auf das Feld.</li>'+
+      '<li>Schwarze Ziffern sind vorgegeben, deine stehen in Blau.</li>'+
+      '<li><b>Radieren</b> löscht ein Feld, <b>Rückgängig</b> nimmt den letzten Eintrag zurück.</li>'+
+    '</ul>'+
+    '<h4>Frag Teddy</h4><p>Teddy hilft in drei Schritten: erst der Trick, dann das Feld, dann die Ziffer. Er kennt neun Tricks, von <i>nur eine Möglichkeit</i> bis <i>XY-Flügel</i>.</p>'+
+    '</div><div class="zeile"><div class="pill" data-act="zurueck">Zurück</div></div>');
+  knopf(p,'[data-act=zurueck]', zurueck);
 }
 
 /* ==================================================================
@@ -1560,6 +1570,7 @@ function positionBubble(){
   if(br.top < bottom + 8) bubbleEl.classList.add('top');
 }
 function askTeddy(){
+  if(!puzzle) return;
   closePad();
   if(solved){ sayTeddy('Alles voll!','<p>Das Rätsel ist gelöst — da brauchst du mich nicht mehr.</p>',
     [{label:'Danke', fn:closeBubble}], 'jubel'); return; }
@@ -1608,35 +1619,17 @@ function showHint(){
 }
 
 /* ---------- Overlay-Dialoge ---------- */
-function closeOverlay(){ overlay.classList.remove('show'); overlay.innerHTML=''; }
+function closeOverlay(){ overlay.classList.remove('show'); overlay.innerHTML=''; document.body.classList.remove('dialogoffen'); }
 function dialog(o){
-  overlay.innerHTML='';
-  var p=document.createElement('div'); p.className='panel'; p.style.position='relative';
-  p.style.left='auto'; p.style.top='auto'; p.style.transform='none'; p.style.minHeight='0';
-  p.innerHTML='<h2>'+o.title+'</h2>'+o.html;
+  var p=panelOeffnen('', '<h2>'+o.title+'</h2>'+o.html);
   var st=document.createElement('div'); st.className='stack';
   (o.buttons||[{label:'OK'}]).forEach(function(b){
     var el=document.createElement('div'); el.className='pill '+(b.cls||''); el.textContent=b.label;
     el.onclick=function(){ closeOverlay(); if(b.fn) b.fn(); };
     st.appendChild(el);
   });
-  p.appendChild(st); overlay.appendChild(p); overlay.classList.add('show');
-}
-function dialogInput(title, label, val, fn){
-  overlay.innerHTML='';
-  var p=document.createElement('div'); p.className='panel'; p.style.position='relative';
-  p.style.left='auto'; p.style.top='auto'; p.style.transform='none'; p.style.minHeight='0';
-  p.innerHTML='<h2>'+title+'</h2><p>'+label+'</p>';
-  var inp=document.createElement('input'); inp.className='name'; inp.type='text'; inp.maxLength=16; inp.value=val||'';
-  p.appendChild(inp);
-  var st=document.createElement('div'); st.className='stack';
-  var ok=document.createElement('div'); ok.className='pill hot'; ok.textContent='OK';
-  ok.onclick=function(){ var v=inp.value; closeOverlay(); fn(v); };
-  var no=document.createElement('div'); no.className='pill'; no.textContent='Abbrechen';
-  no.onclick=closeOverlay;
-  st.appendChild(ok); st.appendChild(no); p.appendChild(st);
-  overlay.appendChild(p); overlay.classList.add('show');
-  setTimeout(function(){ inp.focus(); inp.select(); }, 40);
+  p.appendChild(st);
+  panelEinpassen(p);
 }
 
 /* ---------- Drucken ---------- */
@@ -1728,7 +1721,7 @@ function buildPhoneBar(){
     tools.appendChild(k);
   });
   [['Teddy',    askTeddy,   'teddy',  teddySVG('normal')],
-   ['Menü',     toMenu,     '',       ICON_MENUE]].forEach(function(a){
+   ['Menü',     zeigeMenue, '',       ICON_MENUE]].forEach(function(a){
     var k=document.createElement('div');
     k.className='k wide'+(a[2]==='teddy'?' teddy':'');
     k.innerHTML=a[3]+'<span>'+a[0]+'</span>';
@@ -1748,7 +1741,7 @@ function paintPhoneBar(){
 
 /* ---------- Tastatur ---------- */
 document.addEventListener('keydown', function(e){
-  if(gameview.classList.contains('hidden')) return;
+  if(overlay.classList.contains('show')) return;
   if(e.key>='1' && e.key<='9'){ pickNumber(parseInt(e.key,10)); e.preventDefault(); return; }
   if(e.key==='Backspace'||e.key==='Delete'||e.key==='0'){ pickEraser(); e.preventDefault(); return; }
   if(e.key==='z' && (e.ctrlKey||e.metaKey)){ undo(); e.preventDefault(); return; }
@@ -1766,24 +1759,21 @@ document.addEventListener('keydown', function(e){
 });
 
 /* ---------- Knöpfe ---------- */
-document.getElementById('b-play').onclick=showDifficulty;
-document.getElementById('b-user').onclick=showUsers;
-document.getElementById('b-rules').onclick=showRules;
-document.getElementById('b-opts').onclick=showOptions;
-document.getElementById('b-times').onclick=showTimes;
-document.getElementById('b-quit').onclick=showQuit;
-document.getElementById('b-print').onclick=printPuzzle;
-document.getElementById('b-ecke').onclick=zurSpieleecke;
 document.getElementById('teddy-icon').innerHTML=teddySVG();
 document.getElementById('b-teddy').onclick=askTeddy;
-document.getElementById('b-menu').onclick=toMenu;
-document.getElementById('b-give').onclick=giveUp;
+document.getElementById('b-menu').onclick=zeigeMenue;
 document.getElementById('b-ecke-spiel').onclick=zurSpieleecke;
 
 /* ---------- Start ---------- */
 buildPhoneBar();
 applyLayout();
-if (gespeichertesSpiel()) spielFortsetzen(); else showWelcome();
+document.body.classList.add('ohnespiel');
+board=new Array(81).fill(0); fixed=board.map(function(){ return false; });
+buildGrid(); buildPalettes(); render();
+document.getElementById('badge-diff').textContent=cfg.level+' · '+LV(cfg.level).name;
+document.getElementById('badge-diff').style.background=levelColor(cfg.level);
+document.getElementById('badge-diff').style.color=levelInk(cfg.level);
+if (gespeichertesSpiel()) spielFortsetzen(); else zeigeStart();
 </script>
 </body>
 </html>
