@@ -16,7 +16,7 @@
 <title>Teddydoku</title>
 <style>
 /* ==================================================================
-   Teddydoku - die Sudoku Challenge für Uli
+   Teddydoku - die Sudoku Challenge
    Eine Nachempfindung der alten Windows-Sudoku-Spiele: lila Grund mit
    Zahlen-Tapete, hellblaue Karte, Pillen-Knöpfe, Zahlenleisten links
    und rechts. Ohne Musik und ohne Klänge. Läuft komplett offline.
@@ -31,12 +31,16 @@
   --green:#3fae4a; --green2:#2b8434;
   --red:#e2402f; --red2:#b32a1c;
   --blue:#4fa8e8; --blue2:#2b7fc4;
+  --tap:44px; --tap-abstand:12px;
 }
+/* Tippflächen: 44 Bildpunkte nach dem Einpassen der Bühne. Auf dem Handy wird die
+   Bühne auf etwa 0,6 verkleinert, darum sind die Werte dort größer. */
+body.handy{--tap:72px; --tap-abstand:20px;}
 *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
 html,body{height:100%; margin:0; padding:0;}
 body{
   position:fixed; top:0; left:0; right:0; bottom:0; overflow:hidden;
-  background:#4a3a86;
+  background:radial-gradient(120% 100% at 50% 0%, var(--violet3) 0%, var(--violet) 45%, var(--violet2) 100%) #4a3a86;
   font-family:"Trebuchet MS","Segoe UI",Tahoma,Verdana,sans-serif;
   color:var(--ink);
   user-select:none; -webkit-user-select:none; -webkit-touch-callout:none;
@@ -47,12 +51,9 @@ body{
 #stage{
   position:absolute; left:50%; top:50%; width:1000px; height:700px;
   transform-origin:50% 50%;
-  background:
-    radial-gradient(120% 100% at 50% 0%, var(--violet3) 0%, var(--violet) 45%, var(--violet2) 100%);
-  overflow:hidden;
 }
 /* Zahlen-Tapete im Hintergrund */
-.wallpaper{position:absolute; inset:0; overflow:hidden; pointer-events:none;}
+.wallpaper{position:fixed; inset:0; overflow:hidden; pointer-events:none;}
 .wallpaper span{
   position:absolute; font-weight:bold; color:#ffffff; opacity:.13;
   font-family:"Trebuchet MS",Verdana,sans-serif; line-height:1;
@@ -60,7 +61,7 @@ body{
 
 /* ---------- Karte ---------- */
 .card{
-  position:absolute; left:78px; top:96px; width:844px; height:566px;
+  position:absolute; left:78px; top:96px; width:844px; height:572px;
   background:linear-gradient(165deg,#dff3fd 0%, var(--card) 42%, var(--card2) 100%);
   border-radius:54px; transform:rotate(-.7deg);
   box-shadow:0 18px 44px rgba(30,10,70,.42), inset 0 3px 0 rgba(255,255,255,.75);
@@ -91,7 +92,7 @@ body{
 /* ---------- Pillen-Knöpfe ---------- */
 .pill{
   display:flex; align-items:center; justify-content:center; text-align:center;
-  padding:9px 20px; min-width:150px; border-radius:999px; cursor:pointer;
+  padding:9px 20px; min-width:150px; min-height:var(--tap); box-sizing:border-box; border-radius:999px; cursor:pointer;
   font-size:23px; font-weight:bold; color:var(--ink);
   background:linear-gradient(180deg,#ffffff 0%, var(--pill) 46%, var(--pill2) 100%);
   box-shadow:0 4px 0 rgba(20,40,90,.28), inset 0 2px 0 rgba(255,255,255,.9);
@@ -108,9 +109,9 @@ body{
 
 .menu-left{position:absolute; left:112px; top:236px; display:flex; flex-direction:column; gap:26px; z-index:4;}
 .menu-right{position:absolute; right:112px; top:236px; display:flex; flex-direction:column; gap:26px; align-items:flex-end; z-index:4;}
-.menu-print{position:absolute; right:120px; bottom:120px; z-index:4; display:flex; gap:16px;}
+.menu-print{position:absolute; right:120px; bottom:52px; z-index:4; display:flex; gap:var(--tap-abstand);}
 .pill.ecke{gap:8px; padding-left:8px;}
-.pill.ecke .ecke-ico{width:30px; height:30px; border-radius:22%; flex:0 0 30px;}
+.pill.ecke .ecke-ico{width:30px; height:30px; border-radius:22%; flex:0 0 30px; margin:-6px 0;}
 
 /* ---------- Mittleres Panel ---------- */
 .panel{
@@ -125,9 +126,11 @@ body{
 .panel p{margin:0 0 12px; font-size:18px; line-height:1.45;}
 .panel .big{font-size:30px; font-weight:bold; color:var(--gold);}
 .panel ul{margin:0 0 12px; padding-left:22px; text-align:left; font-size:17px; line-height:1.5;}
-.panel .stack{display:flex; flex-direction:column; align-items:center; gap:16px; margin-top:18px;}
-.panel .rowline{display:flex; align-items:center; justify-content:space-between; gap:14px; margin:12px 0; font-size:19px;}
-.panel .rowline .opts{display:flex; gap:10px;}
+.panel .stack{display:flex; flex-direction:column; align-items:center; gap:var(--tap-abstand); margin-top:18px;}
+.panel .rowline{display:flex; align-items:center; justify-content:space-between; gap:14px; margin:var(--tap-abstand) 0; font-size:19px;}
+.panel .rowline .opts{display:flex; gap:var(--tap-abstand);}
+.panel .rowline .pill.sm{min-width:88px;}
+body.handy .panel .rowline .pill.sm{min-width:112px;}
 .scrollbox{max-height:250px; overflow:auto;}
 
 /* Benutzerliste */
@@ -137,9 +140,9 @@ body{
   background:linear-gradient(180deg,#ffffff,#d8eefb); color:var(--ink); padding:6px;
   box-shadow:inset 0 2px 6px rgba(0,0,0,.28);
 }
-.userlist div{padding:6px 10px; border-radius:6px; font-size:19px; cursor:pointer;}
+.userlist div{padding:6px 10px; min-height:var(--tap); box-sizing:border-box; display:flex; align-items:center; border-radius:6px; font-size:19px; cursor:pointer;}
 .userlist div.sel{background:linear-gradient(180deg,#bfe6ff,#7ec2ea);}
-.userbtns{display:flex; flex-direction:column; gap:12px;}
+.userbtns{display:flex; flex-direction:column; gap:var(--tap-abstand);}
 input.name{
   font:inherit; font-size:19px; padding:7px 10px; width:100%; border:none; border-radius:8px;
   background:#fff; color:var(--ink); box-shadow:inset 0 2px 6px rgba(0,0,0,.28); outline:none;
@@ -169,7 +172,7 @@ table.times td.r{text-align:right; font-variant-numeric:tabular-nums;}
 
 /* ---------- Spielansicht ---------- */
 .grid{
-  position:absolute; left:50%; top:120px; transform:translateX(-50%);
+  position:absolute; left:50%; top:175px; transform:translateX(-50%);
   width:396px; height:396px; z-index:3;
   display:grid; grid-template-columns:repeat(3,1fr); grid-template-rows:repeat(3,1fr);
   gap:3px; padding:3px; background:#1b3f86; border-radius:8px;
@@ -188,39 +191,46 @@ table.times td.r{text-align:right; font-variant-numeric:tabular-nums;}
 .cell.sel{background:#ffe9a8; box-shadow:inset 0 0 0 3px var(--hot);}
 .cell.given{background:#f4f7fb;}
 
-.pal{position:absolute; top:104px; display:flex; flex-direction:column; gap:7px; z-index:4;}
-.pal.left{left:118px;} .pal.right{right:118px;}
-.pal .undo{margin-top:12px; width:96px; min-width:0; padding:7px 6px; font-size:16px;}
+/* Die Ziffernspalten haben dieselbe Teilung wie das Gitter (Rand 3, Kästchen-Abstand 3,
+   Zellen-Abstand 1), damit jede Ziffer auf Höhe ihrer Reihe steht. */
+.pal{position:absolute; top:175px; width:104px; height:396px; box-sizing:border-box; padding:3px 0;
+  display:grid; grid-template-rows:repeat(3,1fr); gap:3px; z-index:4;}
+.pal .drei{display:grid; grid-template-rows:repeat(3,1fr); gap:1px; justify-items:center; align-items:center;}
+.palkopf, .palfuss{position:absolute; width:104px; display:flex; justify-content:center; align-items:center; z-index:4;}
+.palkopf{top:125px; height:34px;} .palfuss{top:587px; height:52px;}
+.pal.left, .palkopf.left, .palfuss.left{left:110px;} .pal.right, .palkopf.right, .palfuss.right{right:110px;}
+.palkopf .eraser, .palfuss .undo{width:72px; height:var(--tap); min-width:0; padding:0; border-radius:999px; transform:none;}
+.palkopf .ico, .palfuss .ico{width:24px; height:24px;}
+.ico{display:block; width:1.15em; height:1.15em; flex:0 0 auto;}
 .num{
-  width:56px; height:36px; border-radius:999px; display:flex; align-items:center; justify-content:center;
-  font-size:23px; font-weight:bold; color:var(--ink); cursor:pointer;
+  width:60px; height:33px; border-radius:999px; display:flex; align-items:center; justify-content:center;
+  font-size:23px; font-weight:bold; color:var(--ink); cursor:pointer; -webkit-text-stroke:.6px currentColor;
   background:linear-gradient(180deg,#ffffff 0%, var(--pill) 50%, var(--pill2) 100%);
   box-shadow:0 3px 0 rgba(20,40,90,.25), inset 0 2px 0 rgba(255,255,255,.9);
 }
 .num.on{background:linear-gradient(180deg,#ffe9a8 0%, var(--hot) 55%, var(--hot2) 100%); color:#5a3200;}
 .num.done{opacity:.4;}
 .eraser{
-  width:104px; margin-bottom:10px; padding:7px 0; text-align:center; cursor:pointer;
+  width:104px; padding:7px 0; display:flex; align-items:center; justify-content:center; gap:5px; cursor:pointer;
   font-size:18px; font-weight:bold; color:#8a3a2a; transform:rotate(-7deg);
   background:linear-gradient(180deg,#ffd9cf 0%, #f7b9a6 55%, #e69a86 100%);
   border-radius:6px; box-shadow:0 3px 0 rgba(90,30,10,.3);
 }
-.pal.right .eraser{transform:rotate(7deg);}
 .num.on.eraseron{}
 .eraser.on{background:linear-gradient(180deg,#ffe9a8 0%, var(--hot) 55%, var(--hot2) 100%); color:#5a3200;}
 
-.gamebar{position:absolute; left:50%; top:528px; transform:translateX(-50%);
+.gamebar{position:absolute; left:50%; top:125px; transform:translateX(-50%);
   display:flex; align-items:center; gap:14px; z-index:4;}
 .badge{
-  padding:6px 20px; border-radius:8px; font-size:19px; font-weight:bold; color:#fff;
+  padding:6px 20px; border-radius:999px; font-size:19px; font-weight:bold; color:#fff;
   box-shadow:0 3px 0 rgba(20,40,90,.28);
 }
 .badge.diff{background:linear-gradient(180deg,#a9e6a2,var(--green));}
 .badge.time{background:linear-gradient(180deg,#ffe9a8,var(--hot)); color:#5a3200;
   font-variant-numeric:tabular-nums; min-width:118px; text-align:center;}
-.gamebtns{position:absolute; left:50%; top:574px; transform:translateX(-50%);
-  display:flex; gap:14px; z-index:4; width:max-content;}
-.gamebtns .pill{white-space:nowrap;}
+.gamebtns{position:absolute; left:50%; top:587px; height:52px; transform:translateX(-50%);
+  display:flex; align-items:center; gap:var(--tap-abstand); z-index:4; width:max-content;}
+.gamebtns .pill{white-space:nowrap; font-size:18px; padding:7px 12px; min-width:96px;}
 
 /* ---------- Schwebendes Zahlenfeld ---------- */
 #pad{
@@ -234,7 +244,7 @@ table.times td.r{text-align:right; font-variant-numeric:tabular-nums;}
 #pad::after{content:""; position:absolute; left:var(--ax,50%); margin-left:-11px; border:11px solid transparent;}
 #pad.below::after{top:-21px; border-bottom-color:rgba(255,255,255,.75);}
 #pad.above::after{bottom:-21px; border-top-color:rgba(226,242,252,.6);}
-.padgrid{display:grid; grid-template-columns:repeat(3,1fr); gap:7px;}
+.padgrid{display:grid; grid-template-columns:repeat(3,1fr); gap:8px;}
 .padbtn{
   width:56px; height:48px; border-radius:12px; display:flex; align-items:center; justify-content:center;
   font-size:27px; font-weight:bold; color:var(--ink); cursor:pointer; -webkit-text-stroke:.6px currentColor;
@@ -243,13 +253,14 @@ table.times td.r{text-align:right; font-variant-numeric:tabular-nums;}
 }
 .padbtn:active{transform:translateY(2px); box-shadow:0 1px 0 rgba(20,40,90,.3);}
 .padbtn.blocked{opacity:.34;}
-.padrow{display:flex; gap:7px; margin-top:8px;}
+.padrow{display:flex; gap:8px; margin-top:8px;}
 .padwide{
-  flex:1; height:40px; border-radius:12px; display:flex; align-items:center; justify-content:center;
+  flex:1; height:var(--tap); border-radius:12px; display:flex; align-items:center; justify-content:center; gap:6px;
   font-size:18px; font-weight:bold; cursor:pointer; color:#8a3a2a;
   background:linear-gradient(180deg,rgba(255,217,207,.7),rgba(240,171,151,.5));
   box-shadow:0 2px 6px rgba(90,30,10,.18), inset 0 0 0 1px rgba(255,255,255,.6);
 }
+.padwide .ico{width:24px; height:24px;}
 .padwide.close{color:var(--ink); background:linear-gradient(180deg,rgba(255,255,255,.6),rgba(207,232,248,.35));
   box-shadow:0 2px 6px rgba(20,40,90,.18), inset 0 0 0 1px rgba(255,255,255,.7);}
 
@@ -260,7 +271,9 @@ table.times td.r{text-align:right; font-variant-numeric:tabular-nums;}
 
 /* ---------- Teddy ---------- */
 .teddybtn{display:flex; align-items:center; gap:8px; padding:5px 18px 5px 8px;}
-.teddybtn svg{width:34px; height:34px; flex:0 0 34px;}
+#teddy-icon{display:flex;}
+/* Symbole ragen ins Polster, damit Knöpfe mit Symbol so hoch sind wie die ohne. */
+.teddybtn svg{display:block; width:32px; height:32px; flex:0 0 32px; margin:-5px 0 -7px;}
 #bubble{
   position:absolute; left:50%; bottom:8px; transform:translateX(-50%); width:700px; z-index:13; display:none;
   max-height:150px; padding:12px 16px; border-radius:18px; color:#fff; text-align:left; overflow:auto;
@@ -279,14 +292,11 @@ table.times td.r{text-align:right; font-variant-numeric:tabular-nums;}
 
 
 /* ---------- Overlay-Dialoge ---------- */
-#overlay{position:absolute; inset:0; z-index:20; display:none; background:rgba(20,10,60,.45);}
+/* Reicht weit über die Bühne hinaus, damit der Schleier auch die Ränder neben der Bühne abdunkelt. */
+#overlay{position:absolute; inset:-200vmax; z-index:20; display:none; background:rgba(20,10,60,.45);}
 #overlay.show{display:flex; align-items:center; justify-content:center;}
 .hint{position:absolute; left:50%; bottom:4px; transform:translateX(-50%);
   color:#fff; opacity:.85; font-size:16px; z-index:6; text-shadow:0 2px 3px rgba(0,0,0,.4);}
-.credit{position:absolute; left:50%; bottom:44px; transform:translateX(-50%);
-  z-index:4; text-align:center; color:#22306b; font-size:12px; letter-spacing:2px;}
-.credit .tag{margin-top:4px; display:inline-block; background:#14203f; color:#fff;
-  padding:8px 20px; border-radius:12px; font-size:19px; font-weight:bold; letter-spacing:0;}
 .hidden{display:none !important;}
 
 /* ---------- Konfetti beim Lösen ---------- */
@@ -304,23 +314,33 @@ table.times td.r{text-align:right; font-variant-numeric:tabular-nums;}
 .winteddy svg{width:118px; height:118px;}
 
 /* ---------- Handy-Layout (schmaler Bildschirm, per body.handy) ---------- */
-body.handy #stage{width:640px; height:900px;}
-body.handy .card{left:18px; width:604px; height:706px;}
-body.handy .menu-left{left:50%; transform:translateX(-50%); top:556px; flex-direction:row; gap:16px;}
-body.handy .menu-right{right:auto; left:50%; transform:translateX(-50%); top:628px;
-  flex-direction:row; gap:16px; align-items:normal;}
-body.handy .menu-print{right:auto; left:50%; transform:translateX(-50%);}
-body.handy .panel{top:142px; width:556px; min-height:380px; padding:24px 24px 28px;}
-body.handy .grid{top:132px; width:558px; height:558px;}
+body.handy #stage{width:640px; height:940px;}
+body.handy.imspiel #stage{height:792px;}
+body.handy.imspiel .card{height:664px;}
+body.handy .card{left:18px; width:604px; height:820px;}
+body.handy .menu-left{left:50%; transform:translateX(-50%); top:628px; flex-direction:row; gap:var(--tap-abstand);}
+body.handy .menu-right{right:auto; left:50%; transform:translateX(-50%); top:720px;
+  flex-direction:row; gap:var(--tap-abstand); align-items:normal;}
+body.handy .menu-print{right:auto; bottom:auto; top:812px; left:50%; transform:translateX(-50%); gap:var(--tap-abstand);}
+body.handy .menu-left .pill, body.handy .menu-right .pill{min-width:172px; font-size:27px;}
+body.handy .pill.sm{font-size:24px;}
+body.handy #menuview .panel{top:130px; width:556px; height:476px; min-height:0; box-sizing:border-box;
+  padding:22px 24px 24px; overflow-y:auto;}
+body.handy .userlist{height:240px;}
+body.handy input[type=range].lvl{height:64px;}
+body.handy input[type=range].lvl::-webkit-slider-thumb{width:56px; height:56px; margin-top:-21px;}
+body.handy input[type=range].lvl::-moz-range-thumb{width:56px; height:56px;}
+body.handy .grid{top:174px; width:558px; height:558px;}
 body.handy .cell{font-size:36px;}
-body.handy .pal{display:none;}
-body.handy .gamebar{top:712px;}
+body.handy .pal, body.handy .palkopf, body.handy .palfuss{display:none;}
+body.handy .gamebar{top:124px;}
 body.handy .gamebtns{display:none;}
-body.handy.zahlenfeld #pb-nums{display:none;}
+body.handy.zahlenfeld #pb-nums, body.handy.zahlenfeld #pb-tools{display:none;}
 body.handy .padbtn{width:84px; height:74px; font-size:40px; border-radius:16px;}
-body.handy .padgrid, body.handy .padrow{gap:10px;}
-body.handy .padrow{margin-top:12px;}
-body.handy .padwide{height:60px; font-size:26px; border-radius:16px;}
+body.handy .padgrid, body.handy .padrow{gap:14px;}
+body.handy .padrow{margin-top:14px;}
+body.handy .padwide{font-size:26px; border-radius:16px;}
+body.handy .padwide .ico{width:34px; height:34px;}
 body.handy #pad{padding:14px; border-radius:24px;}
 body.handy #bubble{
   position:fixed; left:8px; right:8px; bottom:var(--bar-h,120px); transform:none; width:auto; z-index:40;
@@ -330,7 +350,6 @@ body.handy #bubble{
 /* Liegt das markierte Feld im unteren Teil des Bildschirms, springt die Blase
    nach oben, damit sie das Feld nicht verdeckt. */
 body.handy #bubble.top{ bottom:auto; top:calc(8px + env(safe-area-inset-top)); }
-body.handy .credit{bottom:34px;}
 
 /* ---------- Feste Bedienleiste am unteren Rand (nur Handy) ---------- */
 #phonebar{
@@ -338,10 +357,10 @@ body.handy .credit{bottom:34px;}
   padding:6px 6px calc(6px + env(safe-area-inset-bottom));
   background:linear-gradient(180deg,#6f57bd,#4b3790);
   box-shadow:0 -4px 14px rgba(20,10,60,.45);
-  display:none; flex-direction:column; gap:6px;
+  display:none; flex-direction:column; gap:8px;
 }
-body.handy #phonebar{display:flex;}
-#phonebar .row{display:flex; gap:5px; justify-content:center;}
+body.handy.imspiel #phonebar{display:flex;}
+#phonebar .row{display:flex; gap:8px; justify-content:center;}
 #phonebar .k{
   flex:1 1 0; min-width:0; height:48px; border-radius:10px; cursor:pointer;
   display:flex; align-items:center; justify-content:center;
@@ -349,19 +368,19 @@ body.handy #phonebar{display:flex;}
   background:linear-gradient(180deg,#ffffff 0%,#eaf7ff 55%,#cfe6f6 100%);
   box-shadow:0 3px 0 rgba(20,40,90,.4), inset 0 2px 0 rgba(255,255,255,.9);
 }
+#phonebar .k.tool{font-size:15px; height:44px; gap:6px;}
 #phonebar .k.on{background:linear-gradient(180deg,#ffe9a8,#ffb02e); color:#5a3200;}
-#phonebar .k.wide{font-size:15px; height:44px;}
+#phonebar .k.wide{font-size:min(13px, 3.4vw); height:50px; flex-direction:column; gap:1px;}
 #phonebar .k.teddy{background:linear-gradient(180deg,#a9e6a2,#3fae4a); color:#fff;}
 #phonebar .k:active{transform:translateY(2px); box-shadow:0 1px 0 rgba(20,40,90,.4);}
-#phonebar .k svg{width:26px; height:26px; margin-right:5px; flex:0 0 26px;}
-#phonebar .k.ecke{flex:0 0 50px;}
+#phonebar .k svg{width:22px; height:22px; flex:0 0 22px;}
 #phonebar .k .ecke-ico{width:30px; height:30px; border-radius:22%; display:block;}
 
 /* ---------- Drucken ---------- */
 #printarea{display:none;}
 @media print{
   body{position:static; background:#fff;}
-  #stage{display:none;}
+  #stage, .wallpaper{display:none;}
   #printarea{display:block; padding:24px; font-family:Georgia,serif;}
   #printarea h1{font-size:22px; margin:0 0 4px;}
   #printarea .meta{font-size:13px; color:#444; margin-bottom:16px;}
@@ -377,8 +396,8 @@ body.handy #phonebar{display:flex;}
 </head>
 <body>
 
+<div class="wallpaper" id="wallpaper"></div>
 <div id="stage">
-  <div class="wallpaper" id="wallpaper"></div>
   <div class="card"></div>
 
   <div class="logo">
@@ -401,13 +420,16 @@ body.handy #phonebar{display:flex;}
     </div>
     <div class="menu-print"><div class="pill sm ecke" id="b-ecke"><img class="ecke-ico" src="favicon.svg" alt="">Spieleecke</div><div class="pill green sm" id="b-print">Drucken</div></div>
     <div class="panel" id="panel"></div>
-    <div class="credit">EIN SPIEL FÜR<div class="tag">Uli</div></div>
   </div>
 
   <!-- Spielansicht -->
   <div id="gameview" class="hidden">
     <div class="pal left" id="pal-left"></div>
     <div class="pal right" id="pal-right"></div>
+    <div class="palkopf left" id="palkopf-left"></div>
+    <div class="palkopf right" id="palkopf-right"></div>
+    <div class="palfuss left" id="palfuss-left"></div>
+    <div class="palfuss right" id="palfuss-right"></div>
     <div class="grid" id="grid"></div>
     <div class="gamebar">
       <div class="badge diff" id="badge-diff">Einfach</div>
@@ -430,6 +452,7 @@ body.handy #phonebar{display:flex;}
 
 <div id="phonebar">
   <div class="row" id="pb-nums"></div>
+  <div class="row" id="pb-tools"></div>
   <div class="row" id="pb-acts"></div>
 </div>
 
@@ -664,6 +687,7 @@ function zeigeSpiel(){
   bd.style.color = levelInk(diffLevel);
   document.getElementById('hint').textContent='';
   menuview.classList.add('hidden'); gameview.classList.remove('hidden');
+  document.body.classList.add('imspiel'); fitStageAndBubble();
   closeOverlay(); closePad(); closeBubble(); konfettiAus(); startTimer(); render();
 }
 var cellEls = new Array(81);
@@ -686,19 +710,21 @@ function numPill(v, side){
   return d;
 }
 function buildPalettes(){
-  var L=document.getElementById('pal-left'), R=document.getElementById('pal-right');
-  L.innerHTML=''; R.innerHTML='';
-  var eL=document.createElement('div'); eL.className='eraser'; eL.textContent='Radieren';
-  eL.onclick=pickEraser; L.appendChild(eL);
-  var eR=document.createElement('div'); eR.className='eraser'; eR.textContent='Radieren';
-  eR.onclick=pickEraser; R.appendChild(eR);
-  for(var v=1;v<=9;v++) L.appendChild(numPill(v));
-  for(var w=9;w>=1;w--) R.appendChild(numPill(w));
-  [L,R].forEach(function(host){
+  ['left','right'].forEach(function(seite){
+    var pal=document.getElementById('pal-'+seite), kopf=document.getElementById('palkopf-'+seite),
+        fuss=document.getElementById('palfuss-'+seite);
+    pal.innerHTML=''; kopf.innerHTML=''; fuss.innerHTML='';
+    for(var g=0;g<3;g++){
+      var drei=document.createElement('div'); drei.className='drei';
+      for(var v=g*3+1;v<=g*3+3;v++) drei.appendChild(numPill(v));
+      pal.appendChild(drei);
+    }
+    var e=document.createElement('div'); e.className='eraser'; e.title='Radieren'; e.innerHTML=ICON_RADIER;
+    e.onclick=pickEraser; kopf.appendChild(e);
     var u=document.createElement('div');
-    u.className='pill sm undo'; u.textContent='Rückg.';
-    u.onclick=function(e){ e.stopPropagation(); undo(); };
-    host.appendChild(u);
+    u.className='pill sm undo'; u.title='Rückgängig'; u.innerHTML=ICON_RUECK;
+    u.onclick=function(ev){ ev.stopPropagation(); undo(); };
+    fuss.appendChild(u);
   });
 }
 /* Nach jeder Eingabe wird die Ziffer zurückgesetzt - man wählt jedes Mal neu. */
@@ -740,8 +766,9 @@ function openPad(i){
   if(solved || fixed[i]) return;
   var v, html='<div class="padgrid">';
   for(v=1;v<=9;v++) html+='<div class="padbtn" data-v="'+v+'">'+v+'</div>';
-  html+='</div><div class="padrow"><div class="padwide" data-v="0">Radieren</div>'+
-        '<div class="padwide close" data-x="1">Zu</div></div>';
+  html+='</div><div class="padrow"><div class="padwide" data-v="0" title="Radieren">'+ICON_RADIER+'</div>'+
+        '<div class="padwide close" data-u="1" title="Rückgängig">'+ICON_RUECK+'</div>'+
+        '<div class="padwide close" data-x="1" title="Zu">'+ICON_ZU+'</div></div>';
   padEl.innerHTML=html; padEl.classList.add('show');
 
   var cell=cellEls[i];
@@ -765,6 +792,7 @@ function openPad(i){
       closePad();
     };
   });
+  padEl.querySelector('[data-u]').onclick=function(e){ e.stopPropagation(); closePad(); undo(); };
   padEl.querySelector('[data-x]').onclick=function(e){ e.stopPropagation(); closePad(); };
 }
 document.addEventListener('click', function(e){
@@ -890,7 +918,8 @@ function stopTimer(){ if(timerId){ clearInterval(timerId); timerId=null; } }
 function esc(s){ return String(s).replace(/[&<>"]/g, function(c){
   return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
 
-function toMenu(){ stopTimer(); closePad(); closeBubble(); konfettiAus(); gameview.classList.add('hidden'); menuview.classList.remove('hidden'); showWelcome(); }
+function toMenu(){ stopTimer(); closePad(); closeBubble(); konfettiAus(); gameview.classList.add('hidden'); menuview.classList.remove('hidden');
+  document.body.classList.remove('imspiel'); fitStageAndBubble(); showWelcome(); }
 function setPanel(html){ panel.innerHTML=html; }
 function pillHTML(id,label,cls){ return '<div class="pill '+(cls||'')+' sm" id="'+id+'">'+label+'</div>'; }
 
@@ -1045,6 +1074,13 @@ function highlightMenu(id){
    mit hellem Bart und Doktorhut.
    ================================================================== */
 /* mood: 'normal' (Porträt), 'lupe' (beim Tipp), 'jubel' (gelöst) */
+var ICON_RUECK = '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.5 8.5h6.5a5 5 0 0 1 0 10H9" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>'+
+  '<path d="M10.5 4 6 8.5l4.5 4.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+var ICON_RADIER = '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 21h14" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" opacity=".45"/>'+
+  '<g transform="rotate(-38 12 12)"><rect x="2.5" y="7.5" width="19" height="9" rx="2.6" fill="#fff" stroke="currentColor" stroke-width="2.2"/>'+
+  '<path d="M11 7.5h7.9a2.6 2.6 0 0 1 2.6 2.6v3.8a2.6 2.6 0 0 1-2.6 2.6H11z" fill="#ef8a74" stroke="currentColor" stroke-width="2.2"/></g></svg>';
+var ICON_ZU = '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>';
+var ICON_MENUE = '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M5 12h14M5 17h14" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>';
 function teddySVG(mood){
   var inner;
   if(mood === 'lupe')
@@ -1607,7 +1643,7 @@ function dialogInput(title, label, val, fn){
 function printPuzzle(){
   var g = puzzle, name = LV(diffLevel).name, lv = diffLevel;
   if(!g){ var made=puzzleForLevel(cfg.level); g=made.puzzle; name=LV(cfg.level).name; lv=cfg.level; }
-  var html='<h1>Teddydoku &ndash; für Uli</h1><div class="meta">Stufe '+lv+' – '+name+
+  var html='<h1>Teddydoku</h1><div class="meta">Stufe '+lv+' – '+name+
            ' &middot; '+new Date().toLocaleDateString('de-DE')+'</div><table>';
   for(var r=0;r<9;r++){
     html+='<tr>';
@@ -1629,8 +1665,8 @@ function printPuzzle(){
   for(i=0;i<spots.length;i++){
     var s=document.createElement('span');
     s.textContent = 1+Math.floor(Math.random()*9);
-    s.style.left=spots[i][0]+'px'; s.style.top=spots[i][1]+'px';
-    s.style.fontSize=spots[i][2]+'px';
+    s.style.left=(spots[i][0]/10)+'%'; s.style.top=(spots[i][1]/7)+'%';
+    s.style.fontSize=(spots[i][2]/7)+'vmin';
     s.style.transform='rotate('+((i%5)-2)*3+'deg)';
     w.appendChild(s);
   }
@@ -1644,7 +1680,7 @@ function fitStage(){
   var w=(vv? vv.width : window.innerWidth), h=(vv? vv.height : window.innerHeight), s;
   if(isHandy()){
     var bh=document.getElementById('phonebar').offsetHeight;
-    s=Math.min(w/640, (h-bh)/900);
+    s=Math.min(w/640, (h-bh)/stage.offsetHeight);
     stage.style.top=((h-bh)/2)+'px';
     bubbleEl.style.setProperty('--bar-h', (bh+8)+'px');
   } else {
@@ -1668,8 +1704,9 @@ beiGroessenwechsel(fitStageAndBubble);
 
 /* ---------- Bedienleiste unten (Handy) ---------- */
 function buildPhoneBar(){
-  var nums=document.getElementById('pb-nums'), acts=document.getElementById('pb-acts'), v;
-  nums.innerHTML=''; acts.innerHTML='';
+  var nums=document.getElementById('pb-nums'), tools=document.getElementById('pb-tools'),
+      acts=document.getElementById('pb-acts'), v;
+  nums.innerHTML=''; tools.innerHTML=''; acts.innerHTML='';
   for(v=1;v<=9;v++){
     var k=document.createElement('div');
     k.className='k'; k.setAttribute('data-v',v); k.textContent=v;
@@ -1681,14 +1718,20 @@ function buildPhoneBar(){
   ecke.innerHTML='<img class="ecke-ico" src="favicon.svg" alt="Spieleecke">';
   ecke.onclick=zurSpieleecke;
   acts.appendChild(ecke);
-  [['Radieren', pickEraser, 'eraser'],
-   ['Rückg.',   undo,       ''],
-   ['Teddy',    askTeddy,   'teddy'],
-   ['Menü',     toMenu,     '']].forEach(function(a){
+  [['Radieren', pickEraser, ICON_RADIER, true],
+   ['Rückg.',   undo,       ICON_RUECK,  false]].forEach(function(a){
+    var k=document.createElement('div');
+    k.className='k tool';
+    k.innerHTML=a[2]+'<span>'+a[0]+'</span>';
+    if(a[3]) k.setAttribute('data-eraser','1');
+    k.onclick=a[1];
+    tools.appendChild(k);
+  });
+  [['Teddy',    askTeddy,   'teddy',  teddySVG('normal')],
+   ['Menü',     toMenu,     '',       ICON_MENUE]].forEach(function(a){
     var k=document.createElement('div');
     k.className='k wide'+(a[2]==='teddy'?' teddy':'');
-    if(a[2]==='teddy') k.innerHTML=teddySVG('normal')+'Teddy'; else k.textContent=a[0];
-    if(a[2]==='eraser') k.setAttribute('data-eraser','1');
+    k.innerHTML=a[3]+'<span>'+a[0]+'</span>';
     k.onclick=a[1];
     acts.appendChild(k);
   });
@@ -1699,8 +1742,8 @@ function paintPhoneBar(){
     var v=parseInt(ks[i].getAttribute('data-v'),10);
     ks[i].className='k'+(pen===v && !eraser ? ' on':'');
   }
-  var er=document.querySelector('#pb-acts .k[data-eraser]');
-  if(er) er.className='k wide'+(eraser?' on':'');
+  var er=document.querySelector('#pb-tools .k[data-eraser]');
+  if(er) er.className='k tool'+(eraser?' on':'');
 }
 
 /* ---------- Tastatur ---------- */
