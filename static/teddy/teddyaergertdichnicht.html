@@ -1307,12 +1307,15 @@ function ausfuehren(z){
     } else naechster();
   }
 }
+/* Der Wechsel steht sofort im Spielstand, nur das Würfeln wartet die Pause ab.
+   Sonst würfelte nach einem Laden in der Pause, wer gerade gezogen hat. */
 function naechster(){
-  G.phase = 'pause'; aktualisieren();
   var nr = G.spielNr, pause = istMensch(G.dran) ? 250 : teddyTempo(350);
+  do { G.dran = (G.dran + 1) % 4; } while (!spielt(G.dran));
+  G.versuche = dreiVersuche(G.fig, G.dran, G.team) ? 3 : 1;
+  G.phase = 'pause'; aktualisieren();
   setTimeout(function(){
     if (nr !== G.spielNr) return;
-    do { G.dran = (G.dran + 1) % 4; } while (!spielt(G.dran));
     zugBeginnen();
   }, pause);
 }
@@ -1519,8 +1522,11 @@ function beschreibung(sitze, stufe, team){
   if (team) teile.push('Team');
   return teile.join(' · ');
 }
+/* Solange eine Figur läuft, ist der Zug halb ausgeführt. Der wird weder
+   gesichert noch durch ein Neuladen eingefroren. */
+function darfNeuLaden(){ return G.phase !== 'laufen'; }
 function spielSpeichern(){
-  if (!G.laeuft) return;
+  if (!G.laeuft || G.phase === 'laufen') return;
   standSpeichern('teddy.aerger.spiel', {
     fig:G.fig, dran:G.dran, versuche:G.versuche,
     wurf: (G.phase === 'ziehen' && istMensch(G.dran)) ? G.wurf : 0,

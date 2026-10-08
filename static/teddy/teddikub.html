@@ -1968,6 +1968,7 @@ function ziehen(){
     if (G.passen >= G.spieler.length) return ende(-1);
     return naechster();
   }
+  G.halb = true;
   var t = G.deck.pop(), nr = G.spielNr;
   G.warten = true; knoepfe();
   summ(12);
@@ -2181,8 +2182,8 @@ function kiZug(pi){
    ================================================================== */
 function naechster(nr){
   if (nr !== undefined && nr !== G.spielNr) return;   /* Nachzuegler aus einer alten Partie */
-  sofortSichern();
   G.dran = (G.dran + 1) % G.spieler.length;
+  G.halb = false;
   if (G.dran === 0){
     G.warten = false;
     G.zugStart = schnapp();
@@ -2190,6 +2191,7 @@ function naechster(nr){
     G.meldung = '';
     renderAll(); sofortSichern();
   } else {
+    sofortSichern();
     G.warten = true; renderAll();
     var nr2 = G.spielNr;
     setTimeout(function(){ kiSchritt(nr2); }, 620);
@@ -2198,6 +2200,7 @@ function naechster(nr){
 function kiSchritt(nr){
   if (!G.laeuft || nr !== G.spielNr) return;
   var pi = G.dran, fertig = false;
+  G.halb = true;
   try { fertig = kiZug(pi); }
   catch(err){ meldung('Ein Gegner hat gestockt.', 2000); }
   renderAll();
@@ -2211,7 +2214,7 @@ function kiSchritt(nr){
    Abrechnung
    ================================================================== */
 function ende(gewinner){
-  G.laeuft = false;
+  G.laeuft = false; G.halb = false;
   lsDel('teddy.kub.spiel');
   var i, werte = [];
   for (i=0;i<G.spieler.length;i++) werte.push(handWert(G.spieler[i].hand));
@@ -2244,7 +2247,7 @@ function neuesSpiel(){
   G.deck = neuerVorrat();
   G.minOut = cfg.minOut; G.kiStufe = cfg.ki;
   G.saetze = []; G.gehoben = []; G.undo = []; G.passen = 0; G.laeuft = true;
-  G.dran = 0; G.warten = false; setId = 1; G.spielNr = (G.spielNr || 0) + 1;
+  G.dran = 0; G.warten = false; G.halb = false; setId = 1; G.spielNr = (G.spielNr || 0) + 1;
   var alt = lsGet('teddy.kub.karte', null), punkte = {};
   if (alt && alt.stand) alt.stand.forEach(function(x, k){
     punkte[x.platz != null ? x.platz : k] = x.punkte;
@@ -2265,15 +2268,24 @@ function neuesSpiel(){
 }
 
 /* ---------- Spielstand sichern und laden ---------- */
+/* Gesichert wird nur ein ganzer Stand. Zwischen einem Zug und dem Wechsel
+   (G.halb) wäre der Zug drin, aber derselbe Spieler noch dran; beim Ziehen
+   fehlte der Stein im Stapel und in der Hand. Im eigenen Zug zählt der Stand
+   vom Zugbeginn, ein halb gelegter Zug ist noch nichts Festes. */
+function darfNeuLaden(){ return !G.halb; }
 function spielSpeichern(){
-  if (!G.laeuft) return;
+  if (!G.laeuft || G.halb) return;
+  var basis = (G.dran === 0 && G.zugStart) ? G.zugStart : null;
   try{
     standSpeichern('teddy.kub.spiel', {
       fortsetzen: 'Runde ' + (G.runde + 1) + ' \u00b7 ' + stufenKurz(),
       deck:G.deck, dran:G.dran, minOut:G.minOut, kiStufe:G.kiStufe,
       passen:G.passen, runde:G.runde,
-      saetze:G.saetze.map(function(s){ return { t:s.tiles, x:s.x, y:s.y }; }),
-      spieler:G.spieler.map(function(p){ return {name:p.name, hand:p.hand, aus:p.aus, punkte:p.punkte, ki:p.ki}; })
+      saetze:(basis ? basis.saetze : G.saetze).map(function(s){ return { t:s.tiles, x:s.x, y:s.y }; }),
+      spieler:G.spieler.map(function(p, i){
+        return {name:p.name, hand:(basis && i === 0) ? basis.hand.concat(basis.gehoben || []) : p.hand,
+                aus:p.aus, punkte:p.punkte, ki:p.ki};
+      })
     });
   }catch(e){}
 }
@@ -2291,11 +2303,18 @@ function spielLaden(){
     return { name:p.name, hand:p.hand.map(fix), aus:p.aus, punkte:p.punkte, ki:p.ki };
   });
   nextId = maxId + 1;
-  G.dran = 0; G.minOut = d.minOut; G.kiStufe = d.kiStufe; G.passen = d.passen || 0;
-  G.runde = d.runde || 0; G.gehoben = []; G.undo = []; G.laeuft = true; G.warten = false;
+  G.dran = (d.dran > 0 && d.dran < G.spieler.length) ? d.dran : 0;
+  G.minOut = d.minOut; G.kiStufe = d.kiStufe; G.passen = d.passen || 0;
+  G.runde = d.runde || 0; G.gehoben = []; G.undo = []; G.laeuft = true; G.warten = false; G.halb = false;
   cfg.minOut = G.minOut; cfg.ki = G.kiStufe;
   G.spielNr = (G.spielNr || 0) + 1;
   G.zugStart = schnapp();
+  /* Mitten in den Teddy-Zügen gesichert: die übrigen Teddys ziehen weiter. */
+  if (G.dran !== 0){
+    G.warten = true;
+    var nr = G.spielNr;
+    setTimeout(function(){ kiSchritt(nr); }, 700);
+  }
   return true;
 }
 

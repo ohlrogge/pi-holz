@@ -621,7 +621,7 @@ function neuesSpiel(){
   G.brett[feld(3,3)] = 2; G.brett[feld(3,4)] = 1;
   G.brett[feld(4,3)] = 1; G.brett[feld(4,4)] = 2;
   G.dran = anfaenger(); cfg.zuletzt = G.dran; saveCfg();
-  G.laeuft = true; G.warten = false; G.spielNr = (G.spielNr||0) + 1;
+  G.laeuft = true; G.warten = false; G.halb = false; G.spielNr = (G.spielNr||0) + 1;
   brettAufbauen();
   steinSetzen(feld(3,3),2,false); steinSetzen(feld(3,4),1,false);
   steinSetzen(feld(4,3),1,false); steinSetzen(feld(4,4),2,false);
@@ -677,8 +677,12 @@ function meldung(txt, dauer, art){
   renderStatus();
 }
 /* ---------- Spielstand sichern ---------- */
+/* Zwischen Zug und Spielerwechsel steht ein halber Stand im Brett: der Zug ist
+   drin, aber derselbe Spieler noch dran. Der wird weder gesichert noch durch
+   ein Neuladen eingefroren, sonst zöge er nach dem Laden ein zweites Mal. */
+function darfNeuLaden(){ return !G.halb; }
 function spielSpeichern(){
-  if (!G.laeuft) return;
+  if (!G.laeuft || G.halb) return;
   standSpeichern('teddy.versi.spiel', { brett:G.brett, dran:G.dran, modus:G.modus, stufe:cfg.stufe,
     fortsetzen: (G.modus === 'zweit' ? 'Zu zweit' : STUFEN[cfg.stufe].name) });
 }
@@ -687,7 +691,7 @@ function spielLaden(){
   if (!d || !d.brett || d.brett.length !== 64) return false;
   cfg.modus = d.modus; cfg.stufe = d.stufe; G.modus = d.modus;
   namenAnzeigen();
-  G.brett = d.brett; G.dran = d.dran; G.laeuft = true; G.warten = false; G.spielNr = (G.spielNr||0) + 1;
+  G.brett = d.brett; G.dran = d.dran; G.laeuft = true; G.warten = false; G.halb = false; G.spielNr = (G.spielNr||0) + 1;
   brettAufbauen();
   for (var i=0;i<64;i++) if (G.brett[i]) steinSetzen(i, G.brett[i], false);
   meldung('Spiel fortgesetzt.', 1800);
@@ -709,6 +713,7 @@ function aktualisieren(){
 
 /* ---------- Einen Zug ausfuehren und anzeigen ---------- */
 function zugZeigen(zug, spieler, danach){
+  G.halb = true;
   steinSetzen(zug.idx, spieler, true);
   G.brett[zug.idx] = spieler;
   for (var i=0;i<zug.flips.length;i++){
@@ -723,6 +728,7 @@ function zugZeigen(zug, spieler, danach){
 /* ---------- Rundenlauf ---------- */
 function naechsterZug(){
   var nr = G.spielNr;
+  G.halb = false;
   legaleZuegeAnzeigen([]);
   var naechster = gegner(G.dran);
   var seineZuege = zuegeMitFlips(G.brett, naechster);
