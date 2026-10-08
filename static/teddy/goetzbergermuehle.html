@@ -44,7 +44,9 @@ body{
 }
 #status.warn{background:var(--rot2);}
 /* Wer dran ist: der eigene Stein vor dem Text, weiss umrandet */
-#dranStein{width:26px; height:26px; flex:0 0 auto; display:block; border-radius:50%; box-shadow:0 0 0 2px #fff;}
+#dranStein{width:26px; height:26px; flex:0 0 auto; align-self:center; display:block;
+  border-radius:50%; overflow:hidden; box-shadow:0 0 0 2px #fff;}
+#dranStein svg{display:block; width:100%; height:100%;}
 #dranStein.aus{display:none;}
 #statusTxt{text-align:center; font-size:16px; letter-spacing:.3px;}
 
@@ -232,7 +234,7 @@ table.sc tr.me{background:rgba(140,20,25,.14);}
 </svg>
 <div id="wrap">
   <div id="status">
-    <svg id="dranStein" class="aus" viewBox="-43 -42 86 86"></svg>
+    <span id="dranStein" class="aus"></span>
     <span id="statusTxt">Götzberger Mühle</span>
   </div>
   <div id="brettrahmen"><div class="ablage" id="ablage2"></div><svg id="brett" viewBox="-26 -26 752 752" xmlns="http://www.w3.org/2000/svg">
@@ -496,7 +498,7 @@ function teddyWahl(b, v, stufe){
    Spielstand
    ================================================================== */
 var G = {
-  brett:null, vorrat:[0,9,9], dran:1, laeuft:false, warten:false, spielNr:0, modus:'ki',
+  brett:null, vorrat:[0,9,9], dran:1, hell:1, laeuft:false, warten:false, spielNr:0, modus:'ki',
   wahl:-1, wegnehmen:false, wegZiel:-1, ohneWeg:0, verlauf:{}
 };
 function istKI(s){ return G.modus !== 'zweit' && s === 2; }
@@ -539,6 +541,9 @@ var STEIN_SATZ = {
   logo: [null, { flaeche:'#f6f3ee', kante:'#c9bfb2', klasse:'s1' }, { flaeche:'#8e151b', kante:'#5a0b10', klasse:'s2' }],
   holz: [null, { flaeche:'#e0bd8a', kante:'#ac8954', klasse:'h1' }, { flaeche:'#5a3a1e', kante:'#311e0d', klasse:'h2' }]
 };
+/* Wie beim Brettspiel beginnt immer Weiss: die Seite, die anfaengt, bekommt die
+   hellen Steine. Wer anfaengt, wechselt, also wechselt auch die Farbe. */
+function farbe(s){ return G.hell === 2 ? gegner(s) : s; }
 function steinInhalt(s, satz){
   var f = (STEIN_SATZ[satz || cfg.steine] || STEIN_SATZ.logo)[s];
   return '<ellipse cx="2" cy="6" rx="45" ry="44" fill="url(#bodenSchatten)"/>'+
@@ -575,7 +580,7 @@ function steinNeu(idx, s, animiert){
   var g = document.createElementNS(SVGNS, 'g');
   g.setAttribute('class', 'pos');
   g.style.transform = 'translate('+px(idx)+'px,'+py(idx)+'px)';
-  g.innerHTML = '<g class="stein'+(animiert ? ' neu' : '')+'">'+steinInhalt(s)+'</g>';
+  g.innerHTML = '<g class="stein'+(animiert ? ' neu' : '')+'">'+steinInhalt(farbe(s))+'</g>';
   $steine.appendChild(g);
   steinEl[idx] = g;
 }
@@ -644,12 +649,12 @@ function statusText(){
   if (ph === 'springen') return { t:wer + (du ? ' darfst springen' : ' darf springen'), k:'' };
   return { t:wer + (du ? ' ziehst' : ' zieht'), k:'' };
 }
-var dranGezeigt = 0;
+var dranGezeigt = '';
 function renderStatus(){
-  var wer = G.laeuft ? G.dran : 0;
-  if (wer !== dranGezeigt){
-    dranGezeigt = wer;
-    el('dranStein').innerHTML = wer ? steinInhalt(wer) : '';
+  var wer = G.laeuft ? G.dran : 0, kennung = wer + '/' + G.hell;
+  if (kennung !== dranGezeigt){
+    dranGezeigt = kennung;
+    el('dranStein').innerHTML = wer ? '<svg viewBox="-43 -43 86 86">'+steinInhalt(farbe(wer))+'</svg>' : '';
     el('dranStein').setAttribute('class', wer ? '' : 'aus');
   }
   if (G.meldung){ $statusTxt.textContent = G.meldung; $status.className = G.meldungArt || ''; return; }
@@ -671,7 +676,7 @@ function stapelHtml(art, spieler, wieViele, letzterKlasse){
   var h = '<span class="stapel '+art+'">';
   for (var i=0;i<wieViele;i++)
     h += '<svg viewBox="-46 -46 92 92" data-vorrat="'+(art === 'vorrat' ? spieler : 0)+'"'+
-         (i === wieViele-1 && letzterKlasse ? ' class="'+letzterKlasse+'"' : '')+'>'+steinInhalt(spieler)+'</svg>';
+         (i === wieViele-1 && letzterKlasse ? ' class="'+letzterKlasse+'"' : '')+'>'+steinInhalt(farbe(spieler))+'</svg>';
   return h + '</span>';
 }
 /* Jede Ablage zeigt zwei Stapel: den eigenen Vorrat, der noch gesetzt werden
@@ -694,7 +699,7 @@ function aktualisieren(){
 function spielSpeichern(){
   if (!G.laeuft) return;
   standSpeichern('teddy.muehle.spiel', {
-    brett:G.brett, vorrat:G.vorrat, dran:G.dran, wegnehmen:G.wegnehmen || !!G.dreht, ohneWeg:G.ohneWeg,
+    brett:G.brett, vorrat:G.vorrat, dran:G.dran, hell:G.hell, wegnehmen:G.wegnehmen || !!G.dreht, ohneWeg:G.ohneWeg,
     verlauf:G.verlauf, modus:G.modus, stufe:cfg.stufe,
     fortsetzen:(G.modus === 'zweit' ? 'Zu zweit' : STUFEN[cfg.stufe].name)
   });
@@ -707,7 +712,7 @@ function spielLaden(){
   var d = standLaden('teddy.muehle.spiel');
   if (!d || !d.brett || d.brett.length !== 24 || !d.vorrat) return false;
   cfg.modus = d.modus; cfg.stufe = d.stufe; G.modus = d.modus;
-  G.brett = d.brett; G.vorrat = d.vorrat; G.dran = d.dran; G.wegnehmen = !!d.wegnehmen;
+  G.brett = d.brett; G.vorrat = d.vorrat; G.dran = d.dran; G.hell = d.hell || 1; G.wegnehmen = !!d.wegnehmen;
   G.ohneWeg = d.ohneWeg || 0; G.verlauf = d.verlauf || {};
   G.laeuft = true; G.warten = false; G.dreht = false; G.wahl = -1; G.wegZiel = -1; G.spielNr = (G.spielNr||0) + 1;
   ablageAlt = [null, null, null];
@@ -732,6 +737,7 @@ function anfaenger(){
 function neuesSpiel(){
   G.modus = cfg.modus;
   G.dran = anfaenger();
+  G.hell = G.dran;
   cfg.zuletzt = G.dran;
   saveCfg();
   G.brett = []; for (var i=0;i<24;i++) G.brett.push(0);
@@ -979,7 +985,7 @@ function freiePunkte(){
 function geistStein(spieler){
   var g = document.createElementNS(SVGNS, 'g');
   g.setAttribute('class', 'pos zieht');
-  g.innerHTML = '<g class="stein">'+steinInhalt(spieler)+'</g>';
+  g.innerHTML = '<g class="stein">'+steinInhalt(farbe(spieler))+'</g>';
   $steine.appendChild(g);
   return g;
 }
@@ -1280,7 +1286,7 @@ function zeigeHilfe(){
   auf('<h2>Mühle – Regeln</h2>'+
   '<h3>Ziel</h3><p>Nimm dem Gegner so viele Steine weg, dass er nur noch zwei hat – oder sperre ihn so ein, dass er nicht mehr ziehen kann.</p>'+
   '<h3>Steine</h3><p>In den <b>Einstellungen</b> kannst du zwischen den Steinen in den Farben der Mühle und klassischen hell- und dunkelbraunen Steinen wechseln. Dort lässt sich auch die Drehung der Mühlenflügel abschalten.</p>'+
-  '<h3>Setzen</h3><p>Jede Seite hat <b>neun Steine</b>. Abwechselnd setzt ihr sie auf freie Punkte. Du hast die hellen Steine. Wer beginnt, stellst du im Startbild unter <b>Anfang</b> ein. Deine noch zu setzenden Steine liegen neben dem Brett: von dort wischst du sie auf einen freien Punkt oder tippst den Punkt an. Geschlagene Steine landen daneben.</p>'+
+  '<h3>Setzen</h3><p>Jede Seite hat <b>neun Steine</b>. Abwechselnd setzt ihr sie auf freie Punkte. Wer anfängt, spielt mit den hellen Steinen. Wer beginnt, stellst du im Startbild unter <b>Anfang</b> ein. Deine noch zu setzenden Steine liegen neben dem Brett: von dort wischst du sie auf einen freien Punkt oder tippst den Punkt an. Geschlagene Steine landen daneben.</p>'+
   '<h3>Ziehen</h3><p>Sind alle Steine gesetzt, schiebt ihr abwechselnd einen eigenen Stein entlang einer Linie auf einen freien Nachbarpunkt. '+
   'Du kannst den Stein mit dem Finger auf sein Ziel <b>wischen</b> oder erst ihn und dann das Ziel antippen.</p>'+
   '<h3>Springen</h3><p>Wer nur noch <b>drei Steine</b> hat, darf mit einem davon auf jeden freien Punkt springen.</p>'+
