@@ -579,10 +579,35 @@ function steineAufbauen(){
 function steinNeu(idx, s, animiert){
   var g = document.createElementNS(SVGNS, 'g');
   g.setAttribute('class', 'pos');
+  g.setAttribute('data-s', s);
   g.style.transform = 'translate('+px(idx)+'px,'+py(idx)+'px)';
   g.innerHTML = '<g class="stein'+(animiert ? ' neu' : '')+'">'+steinInhalt(farbe(s))+'</g>';
   $steine.appendChild(g);
   steinEl[idx] = g;
+}
+/* Sicherheitsnetz: Vor jedem Spielerwechsel muss das Brett zeigen, was im
+   Spielstand steht. Richtig stehende Steine bleiben unberührt, damit eine
+   laufende Bewegung nicht springt. */
+function steineAbgleichen(){
+  var gueltig = [], i, g;
+  for (i=0;i<24;i++){
+    g = steinEl[i];
+    if (g && (!G.brett[i] || g.getAttribute('data-s') !== String(G.brett[i]) || g.parentNode !== $steine)){
+      if (g.parentNode) g.parentNode.removeChild(g);
+      steinEl[i] = g = null;
+    }
+    if (!g && G.brett[i]) steinNeu(i, G.brett[i], false);
+    g = steinEl[i];
+    if (g){
+      g.classList.remove('zieht');
+      var soll = 'translate('+px(i)+'px,'+py(i)+'px)';
+      if (g.style.transform.replace(/\s/g,'') !== soll) g.style.transform = soll;
+      gueltig.push(g);
+    }
+  }
+  Array.prototype.slice.call($steine.children).forEach(function(n){
+    if (gueltig.indexOf(n) < 0) n.parentNode.removeChild(n);
+  });
 }
 function steinBewegen(von, nach){
   var g = steinEl[von]; steinEl[von] = null; steinEl[nach] = g;
@@ -696,8 +721,11 @@ function aktualisieren(){
 }
 
 /* ---------- Spielstand sichern ---------- */
+/* Während eines Zuges steht ein halber Stand auf dem Brett: Teddys Stein liegt
+   schon, aber er ist noch dran. Gesichert wird darum nur in Ruhe, und vor Teddys
+   Zug einmal ausdrücklich, damit er nach dem Laden genau einmal zieht. */
 function spielSpeichern(){
-  if (!G.laeuft) return;
+  if (!G.laeuft || G.warten) return;
   standSpeichern('teddy.muehle.spiel', {
     brett:G.brett, vorrat:G.vorrat, dran:G.dran, hell:G.hell, wegnehmen:G.wegnehmen || !!G.dreht, ohneWeg:G.ohneWeg,
     verlauf:G.verlauf, modus:G.modus, stufe:cfg.stufe,
@@ -706,7 +734,7 @@ function spielSpeichern(){
 }
 /* Ein ausgewaehlter Stein steht in keinem Spielstand. Neuladen kostet dann den
    Antipper, der schon getan war. */
-function darfNeuLaden(){ return G.wahl < 0; }
+function darfNeuLaden(){ return G.wahl < 0 && !G.warten; }
 
 function spielLaden(){
   var d = standLaden('teddy.muehle.spiel');
@@ -722,6 +750,7 @@ function spielLaden(){
   aktualisieren();
   if (istKI(G.dran)){
     var nr = G.spielNr;
+    sofortSichern();
     G.warten = true; aktualisieren();
     setTimeout(function(){ teddyZug(nr); }, 700);
   }
@@ -749,6 +778,7 @@ function neuesSpiel(){
   aktualisieren();
   if (istKI(G.dran)){
     var nr = G.spielNr;
+    sofortSichern();
     G.warten = true; aktualisieren();
     setTimeout(function(){ teddyZug(nr); }, 700);
   }
@@ -765,6 +795,7 @@ function zugFertig(mitWegnahme){
 }
 function naechsterZug(){
   var nr = G.spielNr;
+  steineAbgleichen();
   G.dran = gegner(G.dran);
   var grund = verlorenGrund(G.brett, G.vorrat, G.dran);
   if (grund){ spielEnde(gegner(G.dran), grund); return; }
@@ -775,6 +806,7 @@ function naechsterZug(){
     if (G.ohneWeg >= 50){ spielEnde(0, 'zuege'); return; }
   }
   if (istKI(G.dran)){
+    G.warten = false; sofortSichern();
     G.warten = true; aktualisieren();
     setTimeout(function(){ teddyZug(nr); }, 550);
   } else {
